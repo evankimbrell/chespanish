@@ -5,8 +5,8 @@ const client = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY!,
 });
 
-// Default: Rachel voice with eleven_multilingual_v2 handles Argentine Spanish well
-export const DEFAULT_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
+// Facundo — Argentine Spanish male voice
+export const DEFAULT_VOICE_ID = 'qnvusyIjzlSoWYJ0C2Nm';
 
 export async function POST(req: NextRequest) {
   const { text, voiceId = DEFAULT_VOICE_ID } = await req.json();
