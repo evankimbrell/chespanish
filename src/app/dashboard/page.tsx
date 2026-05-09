@@ -34,7 +34,7 @@ export default function DashboardPage() {
               ))}
             </div>
             <span className="eyebrow">Buenos días, Mateo · martes, 9 de mayo</span>
-            <h1 className="h-1" style={{ marginTop: 8 }}>
+            <h1 className="ty-h1" style={{ marginTop: 8 }}>
               Pick up where you left off, or{' '}
               <em style={{ fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic', color: 'var(--warm)' }}>
                 build something new
@@ -47,7 +47,7 @@ export default function DashboardPage() {
             <div className="card" style={{ padding: 36, position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', right: -40, top: -40, width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle,rgba(212,165,116,.12),transparent 70%)' }} />
               <span className="eyebrow eyebrow-warm">Recommended next · for you</span>
-              <h2 className="h-2" style={{ marginTop: 14, marginBottom: 16, maxWidth: 480 }}>
+              <h2 className="ty-h2" style={{ marginTop: 14, marginBottom: 16, maxWidth: 480 }}>
                 Practice making plans and responding faster.
               </h2>
               <p className="body" style={{ maxWidth: 560 }}>

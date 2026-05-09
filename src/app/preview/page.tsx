@@ -41,7 +41,7 @@ export default function PreviewPage() {
         </button>
 
         <span className="eyebrow eyebrow-warm">{generating ? 'Generating…' : 'Lesson · ready'}</span>
-        <h1 className="h-1" style={{ marginTop: 14, marginBottom: 24, maxWidth: 680 }}>
+        <h1 className="ty-h1" style={{ marginTop: 14, marginBottom: 24, maxWidth: 680 }}>
           {generating
             ? <span className="shimmer" style={{ display: 'inline-block', width: '70%', height: 48, borderRadius: 2 }} />
             : `${LESSON.title}.`}

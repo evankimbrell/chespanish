@@ -161,7 +161,7 @@ export default function BuilderPage() {
           <aside style={{ position: 'sticky', top: 120 }}>
             <div className="card" style={{ padding: 24 }}>
               <span className="eyebrow">Lesson summary</span>
-              <h3 className="h-3" style={{ marginTop: 14, marginBottom: 18 }}>
+              <h3 className="ty-h3" style={{ marginTop: 14, marginBottom: 18 }}>
                 {builder.custom ? 'Custom-shaped lesson' : `${scenarioLabel} · ${focusLabel}`}
               </h3>
               <div className="col gap-3">

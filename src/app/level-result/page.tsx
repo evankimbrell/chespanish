@@ -59,7 +59,7 @@ export default function LevelResultPage() {
               <span className="eyebrow eyebrow-warm">Recommended first lesson</span>
               <Tag kind="warm">Personalized</Tag>
             </div>
-            <h2 className="h-2" style={{ marginBottom: 10 }}>Making plans with a friend.</h2>
+            <h2 className="ty-h2" style={{ marginBottom: 10 }}>Making plans with a friend.</h2>
             <p className="body" style={{ maxWidth: 620 }}>
               Casual invitations, near-future (&ldquo;voy a&rdquo;), and the vos forms you missed. About 25 minutes of audio practice.
             </p>

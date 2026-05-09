@@ -17,7 +17,7 @@ function LessonDetail({ lesson, back }: { lesson: LessonItem; back: () => void }
         <Icons.arrowLeft /> All lessons
       </button>
       <span className="eyebrow">Completed {lesson.date} · {lesson.duration} min · {lesson.level}</span>
-      <h1 className="h-1" style={{ marginTop: 14, marginBottom: 24 }}>{lesson.title}.</h1>
+      <h1 className="ty-h1" style={{ marginTop: 14, marginBottom: 24 }}>{lesson.title}.</h1>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, border: '1px solid var(--line)', marginBottom: 40 }}>
         {[['Score', lesson.score, 'of 100'], ['Mistakes', lesson.mistakes, 'mostly conjugation'], ['Avg response', '5.2s', 'vs target 4.0s']].map(([k, v, s], i) => (
@@ -104,7 +104,7 @@ export default function LessonsPage() {
                 <span className="kicker">{l.date} · {l.duration} min · {l.level}</span>
                 <Tag kind={l.score >= 85 ? 'leaf' : 'warm'}>{l.score}</Tag>
               </div>
-              <h3 className="h-3" style={{ marginBottom: 10 }}>{l.title}.</h3>
+              <h3 className="ty-h3" style={{ marginBottom: 10 }}>{l.title}.</h3>
               <p className="small" style={{ marginBottom: 18 }}>Focus · {l.focus}</p>
               <div className="row gap-2" style={{ alignItems: 'center' }}>
                 <Tag kind="mute">{l.mistakes} mistakes</Tag>

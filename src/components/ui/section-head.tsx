@@ -12,7 +12,7 @@ export function SectionHead({ num, title, sub, right }: SectionHeadProps) {
     <div className="section-head">
       <div className="col gap-2">
         {num && <span className="section-num">{num}</span>}
-        <h2 className="h-2">{title}</h2>
+        <h2 className="ty-h2">{title}</h2>
         {sub && <p className="small" style={{ maxWidth: 560, marginTop: 4 }}>{sub}</p>}
       </div>
       {right}

@@ -24,7 +24,7 @@ export function EditorialPlayer({ p }: { p: FakePlayer }) {
       </div>
 
       <span className="eyebrow eyebrow-warm">Lesson player</span>
-      <h1 className="h-2" style={{ marginTop: 14, marginBottom: 32 }}>{LESSON.title}.</h1>
+      <h1 className="ty-h2" style={{ marginTop: 14, marginBottom: 32 }}>{LESSON.title}.</h1>
 
       <Scrubber progress={p.progress} markers={SECTIONS.map((s) => ({ t: s.pct, label: s.label }))} onSeek={p.seek} />
 
@@ -74,7 +74,7 @@ export function EditorialPlayer({ p }: { p: FakePlayer }) {
 
       {p.state === 'complete' && (
         <div className="card fade-in" style={{ padding: 32, textAlign: 'center', marginTop: 40 }}>
-          <h2 className="h-2">Buen laburo.</h2>
+          <h2 className="ty-h2">Buen laburo.</h2>
           <button className="btn btn-primary btn-lg" style={{ marginTop: 18 }} onClick={() => router.push('/report')}>
             See your report <Icons.arrow />
           </button>

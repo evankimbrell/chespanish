@@ -120,7 +120,7 @@ export function OrbPlayer({ p }: { p: FakePlayer }) {
           {/* Complete */}
           {p.state === 'complete' && (
             <div className="col gap-4 fade-in" style={{ alignItems: 'center', marginTop: 24 }}>
-              <h2 className="h-1">Buen laburo.</h2>
+              <h2 className="ty-h1">Buen laburo.</h2>
               <button className="btn btn-primary btn-lg" onClick={() => router.push('/report')}>
                 See your report <Icons.arrow />
               </button>

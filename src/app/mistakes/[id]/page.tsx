@@ -23,7 +23,7 @@ export default function MistakeDetailPage() {
         </button>
 
         <span className="eyebrow eyebrow-warm">Conjugation · 14 misses</span>
-        <h1 className="h-1" style={{ marginTop: 14, marginBottom: 24 }}>
+        <h1 className="ty-h1" style={{ marginTop: 14, marginBottom: 24 }}>
           Vos:{' '}
           <em style={{ fontStyle: 'italic', color: 'var(--warm)' }}>tenés</em>{' '}
           vs{' '}

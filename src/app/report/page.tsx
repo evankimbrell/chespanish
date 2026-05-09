@@ -43,7 +43,7 @@ export default function ReportPage() {
       <TopNav />
       <div className="page-narrow fade-in">
         <span className="eyebrow eyebrow-warm">Lesson complete · 100%</span>
-        <h1 className="h-1" style={{ marginTop: 14, marginBottom: 18 }}>{LESSON.title}.</h1>
+        <h1 className="ty-h1" style={{ marginTop: 14, marginBottom: 18 }}>{LESSON.title}.</h1>
         <p className="lede" style={{ maxWidth: 560 }}>
           You finished in 27 minutes. Most prompts were natural; a few still slipped into{' '}
           <span className="serif" style={{ fontStyle: 'italic' }}>tú</span> forms.

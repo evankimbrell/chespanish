@@ -31,7 +31,7 @@ export function AskOverlay({ p }: { p: FakePlayer }) {
 
         {p.state === 'asking' && (
           <div className="col gap-4">
-            <h2 className="h-3">What do you want to know?</h2>
+            <h2 className="ty-h3">What do you want to know?</h2>
             <textarea
               autoFocus
               className="textarea"
