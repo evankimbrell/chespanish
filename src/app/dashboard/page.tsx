@@ -23,25 +23,23 @@ export default function DashboardPage() {
       <div className="page fade-in">
         <div className="col gap-12">
           {/* Hero strip */}
-          <div className="row between" style={{ alignItems: 'flex-end', gap: 32, paddingBottom: 32, borderBottom: '1px solid var(--line)', flexWrap: 'wrap' }}>
-            <div className="col gap-4" style={{ flex: '1 1 400px', minWidth: 0 }}>
-              <span className="eyebrow">Buenos días, Mateo · martes, 9 de mayo</span>
-              <h1 className="h-1">
-                Pick up where you left off, or{' '}
-                <em style={{ fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic', color: 'var(--warm)' }}>
-                  build something new
-                </em>.
-              </h1>
-            </div>
-            <div className="row gap-8" style={{ paddingBottom: 6, flexShrink: 0 }}>
+          <div style={{ paddingBottom: 32, borderBottom: '1px solid var(--line)' }}>
+            <div className="row gap-8" style={{ justifyContent: 'flex-end', marginBottom: 32 }}>
               {STATS.map((s) => (
-                <div key={s.k} className="col gap-1" style={{ minWidth: 80 }}>
+                <div key={s.k} className="col gap-1" style={{ minWidth: 90, textAlign: 'right' }}>
                   <span className="eyebrow">{s.k}</span>
                   <span className="serif" style={{ fontSize: 28, letterSpacing: '-.01em' }}>{s.v}</span>
                   <span className="small" style={{ color: 'var(--mute-2)' }}>{s.s}</span>
                 </div>
               ))}
             </div>
+            <span className="eyebrow">Buenos días, Mateo · martes, 9 de mayo</span>
+            <h1 className="h-1" style={{ marginTop: 8 }}>
+              Pick up where you left off, or{' '}
+              <em style={{ fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic', color: 'var(--warm)' }}>
+                build something new
+              </em>.
+            </h1>
           </div>
 
           {/* Recommended + in-progress */}
@@ -49,7 +47,7 @@ export default function DashboardPage() {
             <div className="card" style={{ padding: 36, position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', right: -40, top: -40, width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle,rgba(212,165,116,.12),transparent 70%)' }} />
               <span className="eyebrow eyebrow-warm">Recommended next · for you</span>
-              <h2 className="h-1" style={{ marginTop: 16, marginBottom: 18, maxWidth: 520 }}>
+              <h2 className="h-2" style={{ marginTop: 14, marginBottom: 16, maxWidth: 480 }}>
                 Practice making plans and responding faster.
               </h2>
               <p className="body" style={{ maxWidth: 560 }}>
