@@ -23,8 +23,8 @@ export default function DashboardPage() {
       <div className="page fade-in">
         <div className="col gap-12">
           {/* Hero strip */}
-          <div className="row between" style={{ alignItems: 'flex-end', gap: 48, paddingBottom: 32, borderBottom: '1px solid var(--line)' }}>
-            <div className="col gap-4" style={{ flex: 1 }}>
+          <div className="row between" style={{ alignItems: 'flex-end', gap: 32, paddingBottom: 32, borderBottom: '1px solid var(--line)', flexWrap: 'wrap' }}>
+            <div className="col gap-4" style={{ flex: '1 1 400px', minWidth: 0 }}>
               <span className="eyebrow">Buenos días, Mateo · martes, 9 de mayo</span>
               <h1 className="h-1">
                 Pick up where you left off, or{' '}
@@ -33,11 +33,11 @@ export default function DashboardPage() {
                 </em>.
               </h1>
             </div>
-            <div className="row gap-8" style={{ paddingBottom: 6 }}>
+            <div className="row gap-8" style={{ paddingBottom: 6, flexShrink: 0 }}>
               {STATS.map((s) => (
-                <div key={s.k} className="col gap-1" style={{ minWidth: 90 }}>
+                <div key={s.k} className="col gap-1" style={{ minWidth: 80 }}>
                   <span className="eyebrow">{s.k}</span>
-                  <span className="serif" style={{ fontSize: 30, letterSpacing: '-.01em' }}>{s.v}</span>
+                  <span className="serif" style={{ fontSize: 28, letterSpacing: '-.01em' }}>{s.v}</span>
                   <span className="small" style={{ color: 'var(--mute-2)' }}>{s.s}</span>
                 </div>
               ))}
