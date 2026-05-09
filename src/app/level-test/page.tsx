@@ -1,12 +1,26 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { BrandBar } from '@/components/ui/top-nav';
 import { Wave } from '@/components/ui/wave';
 import { Tag } from '@/components/ui/tag';
 import { Icons } from '@/components/ui/icons';
+import { useTTS } from '@/hooks/use-tts';
 
-const TOTAL = 12;
+const PROMPTS = [
+  { text: '¿Querés tomar algo antes de ir?',               hint: 'A friend asks before you head out.' },
+  { text: '¿Qué hacés los fines de semana?',               hint: 'Someone is making small talk.' },
+  { text: 'Necesito que me expliqués cómo llegar al centro.', hint: 'A stranger needs directions.' },
+  { text: '¿Podés ayudarme con esto un momento?',           hint: 'A colleague needs a hand.' },
+  { text: '¿A qué hora cierra el kiosco?',                 hint: 'You\'re passing a corner store.' },
+  { text: 'Che, ¿dónde está la parada del bondi?',         hint: 'Someone stops you on the street.' },
+  { text: 'Tenés que llamar al encargado del edificio.',   hint: 'Your neighbor gives you advice.' },
+  { text: '¿Vos sos el que reservó la mesa para las ocho?', hint: 'The host checks at a restaurant.' },
+  { text: 'No sé si voy a poder ir esta noche.',           hint: 'A friend is unsure about plans.' },
+  { text: 'Mirá, lo que te digo es importante para el trabajo.', hint: 'A coworker wants your attention.' },
+  { text: 'Necesito alquilar un departamento por un mes.', hint: 'You\'re speaking to a real estate agent.' },
+  { text: 'La verdad, no entendí bien lo que me dijiste.', hint: 'You need clarification.' },
+];
 
 export default function LevelTestPage() {
   const [step, setStep] = useState(0);
@@ -14,15 +28,28 @@ export default function LevelTestPage() {
   const [done, setDone] = useState(false);
   const [showText, setShowText] = useState(false);
   const router = useRouter();
+  const { play, stop, isLoading, isPlaying } = useTTS();
+
+  const prompt = PROMPTS[step];
+
+  // Auto-play the prompt when the step changes
+  useEffect(() => {
+    play(prompt.text);
+    setShowText(false);
+    return () => stop();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   const record = () => {
+    stop();
     setRecording(true);
     setTimeout(() => { setRecording(false); setDone(true); }, 2200);
   };
 
   const next = () => {
-    setDone(false); setShowText(false);
-    if (step < TOTAL - 1) setStep((s) => s + 1);
+    setDone(false);
+    setShowText(false);
+    if (step < PROMPTS.length - 1) setStep((s) => s + 1);
     else router.push('/level-result');
   };
 
@@ -34,14 +61,14 @@ export default function LevelTestPage() {
           <div className="col gap-2">
             <span className="eyebrow">Level Test</span>
             <span className="mono" style={{ fontSize: 13, color: 'var(--mute)' }}>
-              {String(step + 1).padStart(2, '0')} / {TOTAL}
+              {String(step + 1).padStart(2, '0')} / {PROMPTS.length}
             </span>
           </div>
           <button className="btn btn-text small" onClick={() => router.push('/welcome')}>Exit test</button>
         </div>
 
         <div className="progress" style={{ marginBottom: 64 }}>
-          <div className="progress-fill" style={{ width: `${((step + 1) / TOTAL) * 100}%` }} />
+          <div className="progress-fill" style={{ width: `${((step + 1) / PROMPTS.length) * 100}%` }} />
         </div>
 
         <div className="col gap-8" style={{ alignItems: 'center', textAlign: 'center' }}>
@@ -49,16 +76,27 @@ export default function LevelTestPage() {
 
           <div className="col gap-6" style={{ alignItems: 'center' }}>
             <div className="row gap-4" style={{ alignItems: 'center' }}>
-              <button className="btn btn-icon btn-ghost" style={{ width: 64, height: 64, borderRadius: '50%' }}>
-                <Icons.play />
+              <button
+                className="btn btn-icon btn-ghost"
+                style={{ width: 64, height: 64, borderRadius: '50%', position: 'relative' }}
+                onClick={() => isPlaying ? stop() : play(prompt.text)}
+                disabled={isLoading}
+              >
+                {isLoading
+                  ? <span className="spinner" />
+                  : isPlaying
+                    ? <Icons.pause />
+                    : <Icons.play />}
               </button>
-              <Wave count={48} height={44} />
-              <span className="mono small">0:08</span>
+              <Wave count={48} height={44} playing={isPlaying} />
+              <span className="mono small" style={{ color: isPlaying ? 'var(--warm)' : 'var(--mute)', minWidth: 32 }}>
+                {isLoading ? '…' : isPlaying ? '●' : '○'}
+              </span>
             </div>
 
             {showText && (
               <p className="serif" style={{ fontSize: 32, letterSpacing: '-.01em', maxWidth: 680, fontStyle: 'italic' }}>
-                &ldquo;¿Querés tomar algo antes de ir?&rdquo;
+                &ldquo;{prompt.text}&rdquo;
               </p>
             )}
             <button className="btn btn-text small" onClick={() => setShowText((s) => !s)}>
@@ -66,14 +104,12 @@ export default function LevelTestPage() {
             </button>
           </div>
 
-          <p className="lede" style={{ maxWidth: 520 }}>
-            A friend just asked you something. Respond naturally in Spanish.
-          </p>
+          <p className="lede" style={{ maxWidth: 520 }}>{prompt.hint}</p>
 
           <div className="col gap-4" style={{ alignItems: 'center', marginTop: 16 }}>
             <button
               className={'mic-btn' + (recording ? ' recording' : '')}
-              disabled={done}
+              disabled={done || isLoading}
               onClick={record}
             >
               <Icons.mic />
@@ -98,7 +134,7 @@ export default function LevelTestPage() {
           )}
 
           <div className="row gap-3">
-            <button className="btn btn-ghost" onClick={() => { setRecording(false); setDone(false); }}>Skip</button>
+            <button className="btn btn-ghost" onClick={() => { setRecording(false); setDone(false); next(); }}>Skip</button>
             <button className="btn btn-primary" disabled={!done} onClick={next}>
               Continue <Icons.arrow />
             </button>
