@@ -1,0 +1,144 @@
+'use client';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Icons } from '@/components/ui/icons';
+import { Scrubber } from '@/components/ui/scrubber';
+import { OrbWithSections } from './orb-with-sections';
+import { UserResponseAnalysis } from './user-response-analysis';
+import { AskOverlay } from './ask-overlay';
+import { LESSON, SECTIONS, SUBTITLE_LINES } from '@/lib/data';
+import type { FakePlayer } from './use-fake-player';
+
+export function OrbPlayer({ p }: { p: FakePlayer }) {
+  const [hoverSection, setHoverSection] = useState<number | null>(null);
+  const [showText, setShowText] = useState(false);
+  const router = useRouter();
+
+  const prompt = LESSON.prompts[p.promptIdx];
+  const activeSection = SECTIONS.find((s) => p.progress >= s.pct && p.progress < s.end) || SECTIONS[0];
+  const displaySection = hoverSection != null ? SECTIONS.find((s) => s.id === hoverSection) : activeSection;
+
+  const mins  = Math.floor(p.progress * 25);
+  const secs  = String(Math.floor((p.progress * 25 % 1) * 60)).padStart(2, '0');
+
+  return (
+    <div style={{ minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column' }}>
+      <div className="page" style={{ paddingTop: 28, paddingBottom: 0, flex: 1, display: 'flex', flexDirection: 'column', maxWidth: 1200 }}>
+
+        {/* Top bar */}
+        <div className="row between" style={{ marginBottom: 8 }}>
+          <button className="btn btn-text small" style={{ paddingLeft: 0 }} onClick={() => router.push('/preview')}>
+            <Icons.arrowLeft /> Exit lesson
+          </button>
+          <div className="col gap-1" style={{ textAlign: 'center' }}>
+            <span className="kicker">{LESSON.title}</span>
+            <span className="mono" style={{ fontSize: 11, color: 'var(--mute-2)' }}>
+              {Math.round(p.progress * 100)}% · section {String(activeSection.id).padStart(2, '0')} of 06
+            </span>
+          </div>
+          <button className="btn btn-text small" onClick={p.ask}>
+            <Icons.spark /> Ask a question
+          </button>
+        </div>
+
+        {/* Orb area */}
+        <div className="col center" style={{ flex: 1, padding: '24px 0', position: 'relative' }}>
+          <OrbWithSections
+            progress={p.progress}
+            sections={SECTIONS}
+            prompts={LESSON.prompts}
+            active={p.state === 'playing' || p.state === 'recording'}
+            accent={p.state === 'recording'}
+            hoverSection={hoverSection}
+            setHoverSection={setHoverSection}
+            onSeek={p.seek}
+            state={p.state}
+            onPlay={p.play}
+            onPause={p.pause}
+            onRecord={p.record}
+          />
+
+          {/* Section description */}
+          <div style={{ minHeight: 64, maxWidth: 560, textAlign: 'center', marginTop: 18, transition: 'opacity .2s', opacity: displaySection ? 1 : 0 }}>
+            <span className="eyebrow eyebrow-warm">
+              SECTION {String(displaySection?.id).padStart(2, '0')} · {displaySection?.label}
+            </span>
+            <p className="body" style={{ marginTop: 8, fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic', fontSize: 18, color: 'var(--ink-2)' }}>
+              {displaySection?.blurb}
+            </p>
+          </div>
+
+          {/* Show text toggle */}
+          <button className="btn btn-ghost btn-sm" style={{ marginTop: 12 }} onClick={() => setShowText((s) => !s)}>
+            {showText ? 'Hide text' : 'Show text'}
+          </button>
+
+          {/* Subtitle card */}
+          {showText && p.state !== 'prompting' && p.state !== 'feedback' && (
+            <div
+              className="fade-in"
+              style={{
+                marginTop: 16, padding: '16px 24px',
+                background: 'rgba(10,9,8,.7)', backdropFilter: 'blur(8px)',
+                border: '1px solid var(--line)', borderRadius: 4, maxWidth: 680, textAlign: 'center',
+              }}
+            >
+              <span className="kicker">CC · {p.subtitleIdx + 1} / {SUBTITLE_LINES.length}</span>
+              <p className="serif" style={{ fontSize: 24, fontStyle: 'italic', margin: '8px 0 0', lineHeight: 1.35 }}>
+                &ldquo;{SUBTITLE_LINES[p.subtitleIdx]}&rdquo;
+              </p>
+            </div>
+          )}
+
+          {/* Prompting cue */}
+          {p.state === 'prompting' && (
+            <div className="col gap-3 fade-in" style={{ alignItems: 'center', marginTop: 20, maxWidth: 600, textAlign: 'center' }}>
+              <span className="eyebrow eyebrow-warm">Your turn · respond now</span>
+              <p className="serif" style={{ fontSize: 26, fontStyle: 'italic' }}>&ldquo;{prompt?.cue}&rdquo;</p>
+            </div>
+          )}
+
+          {/* Feedback */}
+          {p.state === 'feedback' && (
+            <div className="fade-in" style={{ marginTop: 24, maxWidth: 720, width: '100%' }}>
+              <UserResponseAnalysis target={prompt?.es ?? ''} />
+              <div className="row gap-2" style={{ marginTop: 18, justifyContent: 'center' }}>
+                <button className="btn btn-ghost btn-sm" onClick={p.retry}><Icons.refresh /> Try again</button>
+                <button className="btn btn-ghost btn-sm"><Icons.play /> Hear correct version</button>
+                <button className="btn btn-primary btn-sm" onClick={p.next}>Continue <Icons.arrow /></button>
+              </div>
+            </div>
+          )}
+
+          {/* Idle start state */}
+          {p.state === 'idle' && p.progress === 0 && (
+            <p className="lede" style={{ marginTop: 24, maxWidth: 480, textAlign: 'center' }}>
+              Press play. The audio will pause when it&rsquo;s your turn — speak naturally.
+            </p>
+          )}
+
+          {/* Complete */}
+          {p.state === 'complete' && (
+            <div className="col gap-4 fade-in" style={{ alignItems: 'center', marginTop: 24 }}>
+              <h2 className="h-1">Buen laburo.</h2>
+              <button className="btn btn-primary btn-lg" onClick={() => router.push('/report')}>
+                See your report <Icons.arrow />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom scrubber */}
+        <div style={{ padding: '20px 0', borderTop: '1px solid var(--line)' }}>
+          <Scrubber progress={p.progress} markers={SECTIONS.map((s) => ({ t: s.pct }))} onSeek={p.seek} />
+          <div className="row between" style={{ marginTop: 8 }}>
+            <span className="kicker tabular">{mins}:{secs}</span>
+            <span className="kicker">25:00</span>
+          </div>
+        </div>
+      </div>
+
+      <AskOverlay p={p} />
+    </div>
+  );
+}
