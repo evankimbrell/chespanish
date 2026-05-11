@@ -6,8 +6,13 @@ export function useTTS() {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const stop = useCallback(() => {
+    // Cancel any in-flight fetch so a second play() can't echo over the first
+    abortRef.current?.abort();
+    abortRef.current = null;
+
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.onended = null;
@@ -24,6 +29,10 @@ export function useTTS() {
 
   const play = useCallback(async (text: string, voiceId?: string) => {
     stop();
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setIsLoading(true);
 
     try {
@@ -31,13 +40,16 @@ export function useTTS() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, voiceId }),
+        signal: controller.signal,
       });
 
       if (!res.ok) throw new Error(`TTS failed: ${res.status}`);
 
-      // Collect the stream into a blob — ElevenLabs turbo streams fast so
-      // the full audio arrives well before the first chunk would finish playing
       const blob = await res.blob();
+
+      // Guard: if stop() was called while the blob was downloading, bail out
+      if (controller.signal.aborted) return;
+
       const url = URL.createObjectURL(blob);
       objectUrlRef.current = url;
 
@@ -58,6 +70,7 @@ export function useTTS() {
       setIsLoading(false);
       setIsPlaying(true);
     } catch (e) {
+      if ((e as Error).name === 'AbortError') return; // intentionally cancelled
       console.error('TTS error:', e);
       setIsLoading(false);
       setIsPlaying(false);
