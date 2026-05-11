@@ -6,52 +6,70 @@ import { Wave } from '@/components/ui/wave';
 import { Tag } from '@/components/ui/tag';
 import { Icons } from '@/components/ui/icons';
 import { useTTS } from '@/hooks/use-tts';
+import { useRecording } from '@/hooks/use-recording';
 
 const PROMPTS = [
-  { text: '¿Querés tomar algo antes de ir?',               hint: 'A friend asks before you head out.' },
-  { text: '¿Qué hacés los fines de semana?',               hint: 'Someone is making small talk.' },
+  { text: '¿Querés tomar algo antes de ir?',                  hint: 'A friend asks before you head out.' },
+  { text: '¿Qué hacés los fines de semana?',                  hint: 'Someone is making small talk.' },
   { text: 'Necesito que me expliqués cómo llegar al centro.', hint: 'A stranger needs directions.' },
-  { text: '¿Podés ayudarme con esto un momento?',           hint: 'A colleague needs a hand.' },
-  { text: '¿A qué hora cierra el kiosco?',                 hint: 'You\'re passing a corner store.' },
-  { text: 'Che, ¿dónde está la parada del bondi?',         hint: 'Someone stops you on the street.' },
-  { text: 'Tenés que llamar al encargado del edificio.',   hint: 'Your neighbor gives you advice.' },
-  { text: '¿Vos sos el que reservó la mesa para las ocho?', hint: 'The host checks at a restaurant.' },
-  { text: 'No sé si voy a poder ir esta noche.',           hint: 'A friend is unsure about plans.' },
+  { text: '¿Podés ayudarme con esto un momento?',             hint: 'A colleague needs a hand.' },
+  { text: '¿A qué hora cierra el kiosco?',                    hint: "You're passing a corner store." },
+  { text: 'Che, ¿dónde está la parada del bondi?',            hint: 'Someone stops you on the street.' },
+  { text: 'Tenés que llamar al encargado del edificio.',       hint: 'Your neighbor gives you advice.' },
+  { text: '¿Vos sos el que reservó la mesa para las ocho?',   hint: 'The host checks at a restaurant.' },
+  { text: 'No sé si voy a poder ir esta noche.',               hint: 'A friend is unsure about plans.' },
   { text: 'Mirá, lo que te digo es importante para el trabajo.', hint: 'A coworker wants your attention.' },
-  { text: 'Necesito alquilar un departamento por un mes.', hint: 'You\'re speaking to a real estate agent.' },
-  { text: 'La verdad, no entendí bien lo que me dijiste.', hint: 'You need clarification.' },
+  { text: 'Necesito alquilar un departamento por un mes.',     hint: "You're speaking to a real estate agent." },
+  { text: 'La verdad, no entendí bien lo que me dijiste.',     hint: 'You need clarification.' },
 ];
 
 export default function LevelTestPage() {
   const [step, setStep] = useState(0);
-  const [recording, setRecording] = useState(false);
-  const [done, setDone] = useState(false);
   const [showText, setShowText] = useState(false);
   const router = useRouter();
-  const { play, stop, isLoading, isPlaying } = useTTS();
+
+  const { play, stop: stopTTS, isLoading: ttsLoading, isPlaying } = useTTS();
+  const {
+    startRecording, stopRecording,
+    isRecording, isTranscribing, transcript, volume, reset,
+  } = useRecording();
 
   const prompt = PROMPTS[step];
+  const done = transcript !== null;
 
   // Auto-play the prompt when the step changes
   useEffect(() => {
     play(prompt.text);
     setShowText(false);
-    return () => stop();
+    reset();
+    return () => stopTTS();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
-  const record = () => {
-    stop();
-    setRecording(true);
-    setTimeout(() => { setRecording(false); setDone(true); }, 2200);
+  const handleMic = () => {
+    if (isRecording) {
+      stopRecording();
+    } else {
+      stopTTS(); // stop playback before recording
+      startRecording();
+    }
   };
 
   const next = () => {
-    setDone(false);
+    reset();
     setShowText(false);
     if (step < PROMPTS.length - 1) setStep((s) => s + 1);
     else router.push('/level-result');
   };
+
+  const skip = () => {
+    stopRecording();
+    reset();
+    next();
+  };
+
+  // Mic button scale: breathes with real audio volume while recording
+  const micScale = isRecording ? 1 + volume * 0.18 : 1;
 
   return (
     <>
@@ -74,23 +92,20 @@ export default function LevelTestPage() {
         <div className="col gap-8" style={{ alignItems: 'center', textAlign: 'center' }}>
           <span className="eyebrow eyebrow-warm">Prompt · listen and respond</span>
 
+          {/* Audio playback row */}
           <div className="col gap-6" style={{ alignItems: 'center' }}>
             <div className="row gap-4" style={{ alignItems: 'center' }}>
               <button
                 className="btn btn-icon btn-ghost"
-                style={{ width: 64, height: 64, borderRadius: '50%', position: 'relative' }}
-                onClick={() => isPlaying ? stop() : play(prompt.text)}
-                disabled={isLoading}
+                style={{ width: 64, height: 64, borderRadius: '50%' }}
+                onClick={() => isPlaying ? stopTTS() : play(prompt.text)}
+                disabled={ttsLoading || isRecording}
               >
-                {isLoading
-                  ? <span className="spinner" />
-                  : isPlaying
-                    ? <Icons.pause />
-                    : <Icons.play />}
+                {ttsLoading ? <span className="spinner" /> : isPlaying ? <Icons.pause /> : <Icons.play />}
               </button>
               <Wave count={48} height={44} playing={isPlaying} />
-              <span className="mono small" style={{ color: isPlaying ? 'var(--warm)' : 'var(--mute)', minWidth: 32 }}>
-                {isLoading ? '…' : isPlaying ? '●' : '○'}
+              <span className="mono small" style={{ color: isPlaying ? 'var(--warm)' : 'var(--mute)', minWidth: 12 }}>
+                {isPlaying ? '●' : '○'}
               </span>
             </div>
 
@@ -106,24 +121,40 @@ export default function LevelTestPage() {
 
           <p className="lede" style={{ maxWidth: 520 }}>{prompt.hint}</p>
 
+          {/* Mic button */}
           <div className="col gap-4" style={{ alignItems: 'center', marginTop: 16 }}>
             <button
-              className={'mic-btn' + (recording ? ' recording' : '')}
-              disabled={done || isLoading}
-              onClick={record}
+              className={'mic-btn' + (isRecording ? ' recording' : '')}
+              disabled={done || isTranscribing}
+              onClick={handleMic}
+              style={{
+                transform: `scale(${micScale})`,
+                transition: isRecording ? 'transform 0.05s ease' : 'transform 0.2s ease',
+              }}
             >
               <Icons.mic />
             </button>
-            <span className="mono small" style={{ color: recording ? 'var(--crit)' : 'var(--mute)' }}>
-              {recording ? '● RECORDING · 00:02' : done ? 'Response captured' : 'Tap to respond'}
+
+            <span className="mono small" style={{ color: isRecording ? 'var(--crit)' : 'var(--mute)' }}>
+              {isTranscribing
+                ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
+                    Transcribing…
+                  </span>
+                : isRecording
+                  ? '● Recording · tap to stop'
+                  : done
+                    ? 'Response captured'
+                    : 'Tap to respond'}
             </span>
           </div>
 
-          {done && (
+          {/* Transcript card */}
+          {done && transcript && (
             <div className="card fade-in" style={{ maxWidth: 560, width: '100%', textAlign: 'left' }}>
               <span className="eyebrow">You said</span>
               <p className="serif" style={{ fontSize: 22, marginTop: 8, fontStyle: 'italic' }}>
-                &ldquo;Sí, vamos a tomar un café.&rdquo;
+                &ldquo;{transcript}&rdquo;
               </p>
               <hr className="divider" style={{ margin: '14px 0' }} />
               <div className="row gap-2" style={{ alignItems: 'center' }}>
@@ -134,7 +165,7 @@ export default function LevelTestPage() {
           )}
 
           <div className="row gap-3">
-            <button className="btn btn-ghost" onClick={() => { setRecording(false); setDone(false); next(); }}>Skip</button>
+            <button className="btn btn-ghost" onClick={skip}>Skip</button>
             <button className="btn btn-primary" disabled={!done} onClick={next}>
               Continue <Icons.arrow />
             </button>
