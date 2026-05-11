@@ -8,24 +8,26 @@ const client = new ElevenLabsClient({
 // Facundo — Argentine Spanish male voice
 export const DEFAULT_VOICE_ID = 'qnvusyIjzlSoWYJ0C2Nm';
 
-async function streamTTS(text: string, voiceId: string) {
-  const nodeStream = await client.textToSpeech.convertAsStream(voiceId, {
+async function streamTTS(text: string, voiceId: string): Promise<ReadableStream<Uint8Array>> {
+  const result = await client.textToSpeech.convertAsStream(voiceId, {
     text,
     model_id: 'eleven_multilingual_v2',
     output_format: 'mp3_44100_128',
     optimize_streaming_latency: 3,
   });
 
+  // The SDK returns an async iterable — wrap it in a Web ReadableStream
   return new ReadableStream({
-    start(controller) {
-      nodeStream.on('data', (chunk: Buffer) => {
-        controller.enqueue(new Uint8Array(chunk));
-      });
-      nodeStream.on('end', () => controller.close());
-      nodeStream.on('error', (err: Error) => {
+    async start(controller) {
+      try {
+        for await (const chunk of result as AsyncIterable<Buffer>) {
+          controller.enqueue(new Uint8Array(chunk));
+        }
+        controller.close();
+      } catch (err) {
         console.error('[TTS] Stream error:', err);
         controller.error(err);
-      });
+      }
     },
   });
 }
