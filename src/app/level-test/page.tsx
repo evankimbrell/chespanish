@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { BrandBar } from '@/components/ui/top-nav';
 import { Wave } from '@/components/ui/wave';
-import { Tag } from '@/components/ui/tag';
 import { Icons } from '@/components/ui/icons';
 import { useTTS } from '@/hooks/use-tts';
 import { useRecording } from '@/hooks/use-recording';
@@ -24,13 +23,6 @@ const PROMPTS = [
   { text: 'Necesito alquilar un departamento por un mes.',     hint: "You're speaking to a real estate agent.",     difficulty: 'B1' },
   { text: 'La verdad, no entendí bien lo que me dijiste.',     hint: 'You need clarification.',                    difficulty: 'A2' },
 ];
-
-function scoreToTagKind(score: number): 'crit' | 'mute' | 'leaf' | 'warm' {
-  if (score <= 1) return 'crit';
-  if (score === 2) return 'mute';
-  if (score === 3) return 'leaf';
-  return 'warm';
-}
 
 function calcWPM(text: string | null, durationMs: number | null, onsetMs: number | null): number | null {
   if (!text || !durationMs) return null;
@@ -239,16 +231,11 @@ export default function LevelTestPage() {
                     <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
                     <span className="small" style={{ color: 'var(--mute)' }}>Grading…</span>
                   </span>
-                ) : gradeResult ? (
-                  <>
-                    <Tag kind={scoreToTagKind(gradeResult.score)}>● {gradeResult.label}</Tag>
-                    <span className="small">{gradeResult.feedback}</span>
-                  </>
                 ) : (
-                  <>
-                    <Tag kind="mute">● Recorded</Tag>
-                    <span className="small">Feedback unavailable · continuing.</span>
-                  </>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <span className="mono small" style={{ color: 'var(--leaf)' }}>✓</span>
+                    <span className="small" style={{ color: 'var(--mute)' }}>Graded · proceed to the next question.</span>
+                  </span>
                 )}
               </div>
             </div>
