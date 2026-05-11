@@ -34,7 +34,7 @@ export default function LevelTestPage() {
 
   // Auto-play the prompt when the step changes
   useEffect(() => {
-    play('A dónde vas');
+    play(prompt.text);
     setShowText(false);
     return () => stop();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -79,7 +79,7 @@ export default function LevelTestPage() {
               <button
                 className="btn btn-icon btn-ghost"
                 style={{ width: 64, height: 64, borderRadius: '50%', position: 'relative' }}
-                onClick={() => isPlaying ? stop() : play('A dónde vas')}
+                onClick={() => isPlaying ? stop() : play(prompt.text)}
                 disabled={isLoading}
               >
                 {isLoading
