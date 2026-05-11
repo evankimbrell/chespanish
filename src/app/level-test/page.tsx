@@ -7,22 +7,31 @@ import { Icons } from '@/components/ui/icons';
 import { useTTS } from '@/hooks/use-tts';
 import { useRecording } from '@/hooks/use-recording';
 import { useAppStore } from '@/lib/store';
-import type { GradeResult, PromptMetric } from '@/lib/types';
+import { initEngine, selectNextQuestion, updateEngine } from '@/lib/test-engine';
+import { QUESTION_BANK } from '@/lib/question-bank';
+import type { GradeResult, PromptMetric, TestEngineState, Question, PromptType } from '@/lib/types';
 
-const PROMPTS = [
-  { text: '¿Querés tomar algo antes de ir?',                  hint: 'A friend asks before you head out.',          difficulty: 'A2' },
-  { text: '¿Qué hacés los fines de semana?',                  hint: 'Someone is making small talk.',               difficulty: 'A2' },
-  { text: 'Necesito que me expliqués cómo llegar al centro.', hint: 'A stranger needs directions.',                difficulty: 'B1' },
-  { text: '¿Podés ayudarme con esto un momento?',             hint: 'A colleague needs a hand.',                   difficulty: 'A2' },
-  { text: '¿A qué hora cierra el kiosco?',                    hint: "You're passing a corner store.",              difficulty: 'A1' },
-  { text: 'Che, ¿dónde está la parada del bondi?',            hint: 'Someone stops you on the street.',            difficulty: 'A2' },
-  { text: 'Tenés que llamar al encargado del edificio.',       hint: 'Your neighbor gives you advice.',             difficulty: 'B1' },
-  { text: '¿Vos sos el que reservó la mesa para las ocho?',   hint: 'The host checks at a restaurant.',            difficulty: 'B1' },
-  { text: 'No sé si voy a poder ir esta noche.',               hint: 'A friend is unsure about plans.',             difficulty: 'B1' },
-  { text: 'Mirá, lo que te digo es importante para el trabajo.', hint: 'A coworker wants your attention.',          difficulty: 'B1' },
-  { text: 'Necesito alquilar un departamento por un mes.',     hint: "You're speaking to a real estate agent.",     difficulty: 'B1' },
-  { text: 'La verdad, no entendí bien lo que me dijiste.',     hint: 'You need clarification.',                    difficulty: 'A2' },
-];
+const TOTAL_QUESTIONS = 12;
+
+const AUDIO_TYPES = new Set<PromptType>([
+  'listen_and_respond',
+  'listen_for_meaning',
+  'mini_dialogue_comprehension',
+  'monologue_comprehension',
+  'roleplay_response',
+]);
+
+const TYPE_LABEL: Record<PromptType, string> = {
+  listen_and_respond: 'Listen & respond',
+  say_it_in_spanish: 'Say it in Spanish',
+  listen_for_meaning: 'Listen for meaning',
+  mini_dialogue_comprehension: 'Mini dialogue',
+  monologue_comprehension: 'Listen & comprehend',
+  roleplay_response: 'Roleplay',
+  open_speaking: 'Open speaking',
+  practical_problem: 'Practical scenario',
+  grammar_in_context: 'Grammar in context',
+};
 
 function calcWPM(text: string | null, durationMs: number | null, onsetMs: number | null): number | null {
   if (!text || !durationMs) return null;
@@ -34,7 +43,9 @@ function calcWPM(text: string | null, durationMs: number | null, onsetMs: number
 }
 
 export default function LevelTestPage() {
-  const [step, setStep] = useState(0);
+  const [engine, setEngine] = useState<TestEngineState | null>(null);
+  const [question, setQuestion] = useState<Question | null>(null);
+  const [questionNumber, setQuestionNumber] = useState(1);
   const [showText, setShowText] = useState(false);
   const [gradeResult, setGradeResult] = useState<GradeResult | null>(null);
   const [isGrading, setIsGrading] = useState(false);
@@ -53,42 +64,50 @@ export default function LevelTestPage() {
     reset,
   } = useRecording();
 
-  const prompt = PROMPTS[step];
   const done = transcript !== null;
-
-  // Timing refs
   const promptReadyTimeRef = useRef<number>(Date.now());
   const recordPressTimeRef = useRef<number>(0);
 
-  // Start session on mount
+  // Init on mount
   useEffect(() => {
     startLevelTestSession(profile.comfortLevel);
+    const eng = initEngine(profile.comfortLevel);
+    const first = selectNextQuestion(eng, QUESTION_BANK);
+    setEngine(eng);
+    setQuestion(first);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-play the prompt when the step changes
+  // React to question changes: play audio if audio type, reset state
   useEffect(() => {
+    if (!question) return;
     promptReadyTimeRef.current = Date.now();
     setGradeResult(null);
     setIsGrading(false);
-    play(prompt.text);
     setShowText(false);
     reset();
+    if (question.audio_text) {
+      play(question.audio_text);
+    }
     return () => stopTTS();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step]);
+  }, [question]);
 
   // Auto-grade when transcript arrives
   useEffect(() => {
-    if (!transcript) return;
+    if (!transcript || !question) return;
     setIsGrading(true);
     fetch('/api/grade', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        promptText: prompt.text,
-        promptHint: prompt.hint,
-        promptDifficulty: prompt.difficulty,
+        promptText: question.audio_text ?? question.instruction_text,
+        promptHint: question.instruction_text,
+        promptDifficulty: question.difficulty_band,
+        promptType: question.prompt_type,
+        targetAnswer: question.target_answer,
+        acceptableExamples: question.acceptable_response_examples,
+        scoringNotes: question.scoring_notes,
         transcript,
         responseLatencyMs: recordPressTimeRef.current - promptReadyTimeRef.current,
         speechOnsetMs,
@@ -102,16 +121,18 @@ export default function LevelTestPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transcript]);
 
-  const buildMetric = (skipped: boolean): PromptMetric => ({
-    promptIndex: step,
-    promptText: prompt.text,
-    transcript: skipped ? null : transcript,
-    skipped,
+  const buildMetric = (): PromptMetric => ({
+    promptIndex: questionNumber - 1,
+    questionId: question?.prompt_id ?? '',
+    promptType: question?.prompt_type ?? 'listen_and_respond',
+    promptText: question?.audio_text ?? question?.instruction_text ?? '',
+    transcript,
+    skipped: false,
     responseLatencyMs: recordPressTimeRef.current - promptReadyTimeRef.current,
     speechOnsetMs,
     recordingDurationMs,
     wordsPerMinute: calcWPM(transcript, recordingDurationMs, speechOnsetMs),
-    grade: skipped ? null : gradeResult,
+    grade: gradeResult,
   });
 
   const handleMic = () => {
@@ -125,19 +146,43 @@ export default function LevelTestPage() {
   };
 
   const next = () => {
-    addPromptMetric(buildMetric(false));
-    reset();
-    setShowText(false);
-    if (step < PROMPTS.length - 1) {
-      setStep((s) => s + 1);
-    } else {
+    if (!engine || !question) return;
+    addPromptMetric(buildMetric());
+
+    if (questionNumber >= TOTAL_QUESTIONS) {
       completeLevelTestSession();
       router.push('/level-result');
+      return;
     }
+
+    const rec = gradeResult?.next_question_recommendation ?? 'same';
+    const score = gradeResult?.score ?? 3;
+    const newEngine = updateEngine(engine, rec, score, question);
+    const nextQ = selectNextQuestion(newEngine, QUESTION_BANK);
+
+    setEngine(newEngine);
+    setQuestion(nextQ);
+    setQuestionNumber((n) => n + 1);
+    reset();
+    setGradeResult(null);
+    setIsGrading(false);
+    setShowText(false);
   };
 
-  // Mic button scale: breathes with real audio volume while recording
   const micScale = isRecording ? 1 + volume * 0.5 : 1;
+  const isAudioType = question ? AUDIO_TYPES.has(question.prompt_type) : true;
+  const typeLabel = question ? TYPE_LABEL[question.prompt_type] : 'Listen & respond';
+
+  if (!question) {
+    return (
+      <>
+        <BrandBar label="02 Level test" />
+        <div className="page-narrow fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+          <span className="spinner" />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -147,47 +192,62 @@ export default function LevelTestPage() {
           <div className="col gap-2">
             <span className="eyebrow">Level Test</span>
             <span className="mono" style={{ fontSize: 13, color: 'var(--mute)' }}>
-              {String(step + 1).padStart(2, '0')} / {PROMPTS.length}
+              {String(questionNumber).padStart(2, '0')} / {TOTAL_QUESTIONS}
             </span>
           </div>
           <button className="btn btn-text small" onClick={() => router.push('/welcome')}>Exit test</button>
         </div>
 
         <div className="progress" style={{ marginBottom: 64 }}>
-          <div className="progress-fill" style={{ width: `${((step + 1) / PROMPTS.length) * 100}%` }} />
+          <div className="progress-fill" style={{ width: `${(questionNumber / TOTAL_QUESTIONS) * 100}%` }} />
         </div>
 
         <div className="col gap-8" style={{ alignItems: 'center', textAlign: 'center' }}>
-          <span className="eyebrow eyebrow-warm">Prompt · listen and respond</span>
-
-          {/* Audio playback row */}
-          <div className="col gap-6" style={{ alignItems: 'center' }}>
-            <div className="row gap-4" style={{ alignItems: 'center' }}>
-              <button
-                className="btn btn-icon btn-ghost"
-                style={{ width: 64, height: 64, borderRadius: '50%' }}
-                onClick={() => isPlaying ? stopTTS() : play(prompt.text)}
-                disabled={ttsLoading || isRecording}
-              >
-                {ttsLoading ? <span className="spinner" /> : isPlaying ? <Icons.pause /> : <Icons.play />}
-              </button>
-              <Wave count={48} height={44} playing={isPlaying} />
-              <span className="mono small" style={{ color: isPlaying ? 'var(--warm)' : 'var(--mute)', minWidth: 12 }}>
-                {isPlaying ? '●' : '○'}
-              </span>
-            </div>
-
-            {showText && (
-              <p className="serif" style={{ fontSize: 32, letterSpacing: '-.01em', maxWidth: 680, fontStyle: 'italic' }}>
-                &ldquo;{prompt.text}&rdquo;
-              </p>
+          {/* Eyebrow: scenario tag (for roleplay) or prompt type */}
+          <div className="col gap-2" style={{ alignItems: 'center' }}>
+            {question.scenario && (
+              <span className="eyebrow" style={{ color: 'var(--mute)' }}>{question.scenario}</span>
             )}
-            <button className="btn btn-text small" onClick={() => setShowText((s) => !s)}>
-              {showText ? 'Hide text' : 'Show text'}
-            </button>
+            <span className="eyebrow eyebrow-warm">Prompt · {typeLabel}</span>
           </div>
 
-          <p className="lede" style={{ maxWidth: 520 }}>{prompt.hint}</p>
+          {isAudioType ? (
+            /* Audio prompt: play button + waveform + optional show text */
+            <div className="col gap-6" style={{ alignItems: 'center' }}>
+              <div className="row gap-4" style={{ alignItems: 'center' }}>
+                <button
+                  className="btn btn-icon btn-ghost"
+                  style={{ width: 64, height: 64, borderRadius: '50%' }}
+                  onClick={() => isPlaying ? stopTTS() : play(question.audio_text!)}
+                  disabled={ttsLoading || isRecording}
+                >
+                  {ttsLoading ? <span className="spinner" /> : isPlaying ? <Icons.pause /> : <Icons.play />}
+                </button>
+                <Wave count={48} height={44} playing={isPlaying} />
+                <span className="mono small" style={{ color: isPlaying ? 'var(--warm)' : 'var(--mute)', minWidth: 12 }}>
+                  {isPlaying ? '●' : '○'}
+                </span>
+              </div>
+
+              <p className="lede" style={{ maxWidth: 520 }}>{question.instruction_text}</p>
+
+              {showText && (
+                <p className="serif" style={{ fontSize: 28, letterSpacing: '-.01em', maxWidth: 680, fontStyle: 'italic' }}>
+                  &ldquo;{question.audio_text}&rdquo;
+                </p>
+              )}
+              <button className="btn btn-text small" onClick={() => setShowText((s) => !s)}>
+                {showText ? 'Hide text' : 'Show text'}
+              </button>
+            </div>
+          ) : (
+            /* Text prompt: large display, no audio */
+            <div className="col gap-6" style={{ alignItems: 'center', maxWidth: 680 }}>
+              <p className="serif" style={{ fontSize: 32, letterSpacing: '-.01em', fontStyle: 'italic', lineHeight: 1.3 }}>
+                &ldquo;{question.instruction_text}&rdquo;
+              </p>
+            </div>
+          )}
 
           {/* Mic button */}
           <div className="col gap-4" style={{ alignItems: 'center', marginTop: 16 }}>

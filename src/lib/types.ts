@@ -120,6 +120,42 @@ export interface GradeResult {
   next_question_recommendation: 'much_easier' | 'easier' | 'same' | 'harder' | 'much_harder';
 }
 
+export type PromptType =
+  | 'listen_and_respond'
+  | 'say_it_in_spanish'
+  | 'listen_for_meaning'
+  | 'mini_dialogue_comprehension'
+  | 'monologue_comprehension'
+  | 'roleplay_response'
+  | 'open_speaking'
+  | 'practical_problem'
+  | 'grammar_in_context';
+
+export interface Question {
+  prompt_id: string;
+  prompt_type: PromptType;
+  difficulty_band: 'A1' | 'A2' | 'B1' | 'B2' | 'C1';
+  difficulty_score: number;
+  skill_targets: string[];
+  audio_text?: string;
+  instruction_text: string;
+  scenario?: string;
+  target_answer?: string;
+  acceptable_response_examples: string[];
+  expected_answer_behavior?: string;
+  scoring_notes?: string;
+}
+
+export interface TestEngineState {
+  currentDifficulty: number;
+  askedIds: string[];
+  recentTypes: PromptType[];
+  skillCoverage: Record<string, number>;
+  consecutiveHighScores: number;
+  consecutiveLowScores: number;
+  promptCount: number;
+}
+
 export interface ResponseToken {
   t: string;
   kind: 'ok' | 'wrong';
@@ -129,18 +165,15 @@ export interface ResponseToken {
 
 export interface PromptMetric {
   promptIndex: number;
+  questionId: string;
+  promptType: PromptType;
   promptText: string;
   transcript: string | null;
   skipped: boolean;
-  /** ms from prompt appearing to user pressing record */
   responseLatencyMs: number;
-  /** ms from pressing record to first speech detected (silence before talking) */
   speechOnsetMs: number | null;
-  /** total recording duration in ms */
   recordingDurationMs: number | null;
-  /** words per minute calculated from transcript length / speaking time */
   wordsPerMinute: number | null;
-  /** AI grading result, null if skipped or grading failed */
   grade: GradeResult | null;
 }
 

@@ -94,11 +94,24 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { promptText, promptHint, promptDifficulty, transcript, responseLatencyMs, speechOnsetMs, recordingDurationMs } = body;
+  const {
+    promptText, promptHint, promptDifficulty, transcript,
+    responseLatencyMs, speechOnsetMs, recordingDurationMs,
+    promptType, targetAnswer, acceptableExamples, scoringNotes,
+  } = body;
 
   if (!promptText || !transcript) {
     return Response.json({ score: null, error: 'missing_fields' });
   }
+
+  const extraContext = [
+    promptType ? `Prompt type: ${promptType}` : null,
+    acceptableExamples?.length
+      ? `Acceptable responses include: ${(acceptableExamples as string[]).join(' | ')}`
+      : null,
+    scoringNotes ? `Scoring notes: ${scoringNotes}` : null,
+    targetAnswer ? `Target answer: ${targetAnswer}` : null,
+  ].filter(Boolean).join('\n');
 
   const userMessage = `Prompt: "${promptText}"
 Context: ${promptHint}
@@ -106,7 +119,7 @@ Prompt difficulty: ${promptDifficulty}
 User's transcript: "${transcript}"
 Response latency: ${responseLatencyMs}ms
 Speech onset (silence before speaking): ${speechOnsetMs != null ? `${speechOnsetMs}ms` : 'unknown'}
-Recording duration: ${recordingDurationMs}ms`;
+Recording duration: ${recordingDurationMs}ms${extraContext ? `\n${extraContext}` : ''}`;
 
   try {
     const completion = await openai.chat.completions.create({
