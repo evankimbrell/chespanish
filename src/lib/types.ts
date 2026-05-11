@@ -91,9 +91,62 @@ export interface ProfileState {
   };
 }
 
+export interface GradeDimensions {
+  comprehension: number;
+  task_completion: number;
+  grammar: number;
+  vocabulary: number;
+  fluency: number;
+  pronunciation_intelligibility: number;
+  response_speed: number;
+  target_style_alignment: number;
+}
+
+export interface ObservedError {
+  category: string;
+  description: string;
+  severity: 1 | 2 | 3;
+  correction?: string;
+  review_later: boolean;
+}
+
+export interface GradeResult {
+  score: 0 | 1 | 2 | 3 | 4 | 5;
+  label: 'Ouch' | 'Bad' | 'Ok' | 'Good' | 'Excellent';
+  feedback: string;
+  dimensions: GradeDimensions;
+  observed_errors: ObservedError[];
+  cefr_signal: string;
+  next_question_recommendation: 'much_easier' | 'easier' | 'same' | 'harder' | 'much_harder';
+}
+
 export interface ResponseToken {
   t: string;
   kind: 'ok' | 'wrong';
   issue?: string;
   cat?: string;
+}
+
+export interface PromptMetric {
+  promptIndex: number;
+  promptText: string;
+  transcript: string | null;
+  skipped: boolean;
+  /** ms from prompt appearing to user pressing record */
+  responseLatencyMs: number;
+  /** ms from pressing record to first speech detected (silence before talking) */
+  speechOnsetMs: number | null;
+  /** total recording duration in ms */
+  recordingDurationMs: number | null;
+  /** words per minute calculated from transcript length / speaking time */
+  wordsPerMinute: number | null;
+  /** AI grading result, null if skipped or grading failed */
+  grade: GradeResult | null;
+}
+
+export interface LevelTestSession {
+  startedAt: string;
+  completedAt: string | null;
+  comfortLevel: ComfortLevel | null;
+  prompts: PromptMetric[];
 }

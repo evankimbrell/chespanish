@@ -2,16 +2,20 @@
 import { useState, useRef, useCallback } from 'react';
 
 export function useRecording() {
-  const [isRecording, setIsRecording]     = useState(false);
+  const [isRecording, setIsRecording]       = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [transcript, setTranscript]       = useState<string | null>(null);
-  const [volume, setVolume]               = useState(0); // 0–1, drives pulse scale
+  const [transcript, setTranscript]         = useState<string | null>(null);
+  const [volume, setVolume]                 = useState(0);
+  const [speechOnsetMs, setSpeechOnsetMs]   = useState<number | null>(null);
+  const [recordingDurationMs, setRecordingDurationMs] = useState<number | null>(null);
 
-  const mrRef     = useRef<MediaRecorder | null>(null);
-  const chunks    = useRef<Blob[]>([]);
-  const streamRef = useRef<MediaStream | null>(null);
-  const rafRef    = useRef<number | null>(null);
-  const timerRef  = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const mrRef          = useRef<MediaRecorder | null>(null);
+  const chunks         = useRef<Blob[]>([]);
+  const streamRef      = useRef<MediaStream | null>(null);
+  const rafRef         = useRef<number | null>(null);
+  const timerRef       = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startedAtRef   = useRef<number>(0);
+  const onsetDetected  = useRef(false);
 
   const stopVolume = useCallback(() => {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -22,7 +26,16 @@ export function useRecording() {
     const buf = new Uint8Array(analyser.frequencyBinCount);
     const tick = () => {
       analyser.getByteFrequencyData(buf);
-      setVolume(buf.reduce((a, b) => a + b, 0) / buf.length / 128);
+      const normalized = buf.reduce((a, b) => a + b, 0) / buf.length / 128;
+      setVolume(normalized);
+
+      // Detect first moment of speech (threshold: >6% of max)
+      if (!onsetDetected.current && normalized > 0.06) {
+        const onset = Date.now() - startedAtRef.current;
+        setSpeechOnsetMs(onset);
+        onsetDetected.current = true;
+      }
+
       rafRef.current = requestAnimationFrame(tick);
     };
     rafRef.current = requestAnimationFrame(tick);
@@ -34,6 +47,8 @@ export function useRecording() {
     if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
 
     mrRef.current.onstop = async () => {
+      const duration = Date.now() - startedAtRef.current;
+      setRecordingDurationMs(duration);
       setIsRecording(false);
       setIsTranscribing(true);
       streamRef.current?.getTracks().forEach((t) => t.stop());
@@ -61,12 +76,15 @@ export function useRecording() {
 
   const startRecording = useCallback(async () => {
     setTranscript(null);
+    setSpeechOnsetMs(null);
+    setRecordingDurationMs(null);
+    onsetDetected.current = false;
+    startedAtRef.current = Date.now();
     chunks.current = [];
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     streamRef.current = stream;
 
-    // Wire up volume tracking via Web Audio API
     const ctx = new AudioContext();
     const src = ctx.createMediaStreamSource(stream);
     const analyser = ctx.createAnalyser();
@@ -80,7 +98,6 @@ export function useRecording() {
     mr.start();
     setIsRecording(true);
 
-    // Safety auto-stop at 30 s
     timerRef.current = setTimeout(stopRecording, 30_000);
   }, [stopRecording, trackVolume]);
 
@@ -89,7 +106,15 @@ export function useRecording() {
     setIsRecording(false);
     setIsTranscribing(false);
     setVolume(0);
+    setSpeechOnsetMs(null);
+    setRecordingDurationMs(null);
+    onsetDetected.current = false;
   }, []);
 
-  return { startRecording, stopRecording, isRecording, isTranscribing, transcript, volume, reset };
+  return {
+    startRecording, stopRecording,
+    isRecording, isTranscribing, transcript, volume,
+    speechOnsetMs, recordingDurationMs,
+    reset,
+  };
 }
