@@ -10,13 +10,15 @@ const ARGENTINE_PROMPT =
 // If Whisper returns these, it misidentified the language.
 const SLAVIC_RE = /[ČčŠšŽžĚěŘřŮů]/;
 
-async function runTranscription(audio: File, forceLang?: string): Promise<string> {
+async function runTranscription(audio: File, forceLang?: string, noPrompt?: boolean): Promise<string> {
   const params: TranscriptionCreateParams = {
     file: audio,
     model: 'whisper-1',
     ...(forceLang
       ? { language: forceLang }
-      : { prompt: ARGENTINE_PROMPT }),
+      : noPrompt
+        ? {}
+        : { prompt: ARGENTINE_PROMPT }),
   };
   const result = await openai.audio.transcriptions.create(params);
   return result.text;
@@ -30,14 +32,15 @@ export async function POST(req: Request) {
 
   const fd = await req.formData();
   const audio = fd.get('audio') as File | null;
+  const allowEnglish = fd.get('allowEnglish') === '1';
 
   if (!audio) return new Response('audio required', { status: 400 });
 
   try {
-    let text = await runTranscription(audio);
+    let text = await runTranscription(audio, undefined, allowEnglish);
 
     // If Slavic characters appear, Whisper mis-detected the language — retry forced to Spanish
-    if (SLAVIC_RE.test(text)) {
+    if (!allowEnglish && SLAVIC_RE.test(text)) {
       console.warn('[transcribe] Slavic chars detected, retrying with language:es');
       text = await runTranscription(audio, 'es');
     }

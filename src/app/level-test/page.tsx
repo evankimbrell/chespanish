@@ -13,6 +13,13 @@ import type { GradeResult, PromptMetric, TestEngineState, Question, PromptType }
 
 const TOTAL_QUESTIONS = 12;
 
+// These prompt types explicitly allow English answers (comprehension checks)
+const ENGLISH_OK_TYPES = new Set<PromptType>([
+  'listen_for_meaning',
+  'mini_dialogue_comprehension',
+  'monologue_comprehension',
+]);
+
 const AUDIO_TYPES = new Set<PromptType>([
   'listen_and_respond',
   'listen_for_meaning',
@@ -141,7 +148,7 @@ export default function LevelTestPage() {
     } else {
       recordPressTimeRef.current = Date.now();
       stopTTS();
-      startRecording();
+      startRecording({ allowEnglish: question ? ENGLISH_OK_TYPES.has(question.prompt_type) : false });
     }
   };
 
