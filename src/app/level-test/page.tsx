@@ -144,21 +144,6 @@ export default function LevelTestPage() {
     }
   };
 
-  const skip = () => {
-    addPromptMetric(buildMetric(true));
-    stopRecording();
-    reset();
-    setGradeResult(null);
-    setIsGrading(false);
-    setShowText(false);
-    if (step < PROMPTS.length - 1) {
-      setStep((s) => s + 1);
-    } else {
-      completeLevelTestSession();
-      router.push('/level-result');
-    }
-  };
-
   // Mic button scale: breathes with real audio volume while recording
   const micScale = isRecording ? 1 + volume * 0.5 : 1;
 
@@ -270,7 +255,6 @@ export default function LevelTestPage() {
           )}
 
           <div className="row gap-3">
-            <button className="btn btn-ghost" onClick={skip}>Skip</button>
             <button className="btn btn-primary" disabled={!done} onClick={next}>
               Continue <Icons.arrow />
             </button>
