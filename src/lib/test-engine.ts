@@ -79,7 +79,7 @@ export function updateEngine(
 ): TestEngineState {
   let newDiff = state.currentDifficulty + (DELTA[rec ?? 'same'] ?? 0);
 
-  const isHigh = score >= 4;
+  const isHigh = score >= 3;
   const isLow = score <= 1;
   const newHigh = isHigh ? state.consecutiveHighScores + 1 : 0;
   const newLow = isLow ? state.consecutiveLowScores + 1 : 0;

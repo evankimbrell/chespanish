@@ -53,7 +53,7 @@ Values: below_A1, A1, A2, B1, B2, C1, C2
 NEXT QUESTION:
 - Score 0–1 → easier or much_easier
 - Score 2 → same or easier
-- Score 3 → same (harder if fast + complete)
+- Score 3 → harder (same only if response was notably slow or incomplete)
 - Score 4 → harder (same if slow or major error)
 - Score 5 → harder or much_harder
 
