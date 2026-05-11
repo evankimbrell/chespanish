@@ -7,6 +7,30 @@ const client = new ElevenLabsClient({
 
 // Facundo — Argentine Spanish male voice
 export const DEFAULT_VOICE_ID = 'qnvusyIjzlSoWYJ0C2Nm';
+const VOICE_B = '1WXz8v08ntDcSTeVXMN2';
+
+// Split "Persona A: foo Persona B: bar" into ordered speaker segments
+function parseDialogue(text: string): { speaker: 'A' | 'B'; text: string }[] | null {
+  if (!text.includes('Persona A:') && !text.includes('Persona B:')) return null;
+  const matches = [...text.matchAll(/Persona ([AB]):\s*(.*?)(?=Persona [AB]:|$)/g)];
+  const segments = matches
+    .map((m) => ({ speaker: m[1] as 'A' | 'B', text: m[2].trim() }))
+    .filter((s) => s.text.length > 0);
+  return segments.length > 1 ? segments : null;
+}
+
+async function segmentToBuffer(text: string, voiceId: string): Promise<Buffer> {
+  const result = await client.textToSpeech.convertAsStream(voiceId, {
+    text,
+    model_id: 'eleven_multilingual_v2',
+    output_format: 'mp3_44100_128',
+  });
+  const chunks: Buffer[] = [];
+  for await (const chunk of result as AsyncIterable<Buffer>) {
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
+}
 
 async function streamTTS(text: string, voiceId: string): Promise<ReadableStream<Uint8Array>> {
   const result = await client.textToSpeech.convertAsStream(voiceId, {
@@ -62,6 +86,19 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // Multi-speaker dialogue: stitch per-segment MP3 buffers into one response
+    const segments = parseDialogue(text);
+    if (segments) {
+      const buffers: Buffer[] = [];
+      for (const seg of segments) {
+        buffers.push(await segmentToBuffer(seg.text, seg.speaker === 'A' ? DEFAULT_VOICE_ID : VOICE_B));
+      }
+      const combined = Buffer.concat(buffers);
+      return new Response(combined, {
+        headers: { 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-cache' },
+      });
+    }
+
     const stream = await streamTTS(text, voiceId);
     return new Response(stream, {
       headers: {
