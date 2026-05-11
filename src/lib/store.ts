@@ -31,6 +31,7 @@ export const useAppStore = create<AppStore>((set) => ({
 
   profile: {
     name: 'Mateo',
+    comfortLevel: null,
     level: 'B1',
     lessonsCompleted: 12,
     streak: 5,

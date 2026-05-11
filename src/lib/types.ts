@@ -70,8 +70,11 @@ export interface BuilderState {
   custom: string;
 }
 
+export type ComfortLevel = 0 | 1 | 2 | 3 | 4 | 5;
+
 export interface ProfileState {
   name: string;
+  comfortLevel: ComfortLevel | null;
   level: string;
   lessonsCompleted: number;
   streak: number;
