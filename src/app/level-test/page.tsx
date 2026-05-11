@@ -48,12 +48,10 @@ export default function LevelTestPage() {
   const [isGrading, setIsGrading] = useState(false);
   const router = useRouter();
 
-  const { startLevelTestSession, addPromptMetric, completeLevelTestSession, profile } = useAppStore((s) => ({
-    startLevelTestSession: s.startLevelTestSession,
-    addPromptMetric: s.addPromptMetric,
-    completeLevelTestSession: s.completeLevelTestSession,
-    profile: s.profile,
-  }));
+  const startLevelTestSession = useAppStore((s) => s.startLevelTestSession);
+  const addPromptMetric = useAppStore((s) => s.addPromptMetric);
+  const completeLevelTestSession = useAppStore((s) => s.completeLevelTestSession);
+  const profile = useAppStore((s) => s.profile);
 
   const { play, stop: stopTTS, isLoading: ttsLoading, isPlaying } = useTTS();
   const {
