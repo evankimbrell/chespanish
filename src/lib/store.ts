@@ -10,6 +10,7 @@ interface AppStore {
   setPlayerVariant: (v: PlayerVariant) => void;
 
   profile: ProfileState;
+  setProfile: (updates: Partial<ProfileState>) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -45,4 +46,6 @@ export const useAppStore = create<AppStore>((set) => ({
       playbackSpeed: 1.0,
     },
   },
+  setProfile: (updates) =>
+    set((s) => ({ profile: { ...s.profile, ...updates } })),
 }));

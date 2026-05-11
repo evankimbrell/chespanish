@@ -30,7 +30,7 @@ export default function WelcomePage() {
           </div>
 
           <div className="row gap-3">
-            <button className="btn btn-primary btn-lg" onClick={() => router.push('/level-test')}>
+            <button className="btn btn-primary btn-lg" onClick={() => router.push('/onboarding')}>
               Test my level <Icons.arrow />
             </button>
             <button className="btn btn-ghost btn-lg" onClick={() => router.push('/dashboard')}>

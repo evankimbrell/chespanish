@@ -1,5 +1,6 @@
 'use client';
 import { usePathname, useRouter } from 'next/navigation';
+import { useAppStore } from '@/lib/store';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Home',     match: ['/dashboard', '/builder', '/preview', '/player', '/report'] },
@@ -11,6 +12,8 @@ const NAV_ITEMS = [
 export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { name, level, lessonsCompleted } = useAppStore((s) => s.profile);
+  const initial = name.charAt(0).toUpperCase();
 
   return (
     <nav className="topnav">
@@ -38,10 +41,10 @@ export function TopNav() {
         </div>
 
         <div className="row gap-3" style={{ justifyContent: 'flex-end', alignItems: 'center' }}>
-          <span className="small mono" style={{ color: 'var(--mute-2)' }}>B1 · 12 lessons</span>
+          <span className="small mono" style={{ color: 'var(--mute-2)' }}>{level} · {lessonsCompleted} lessons</span>
           <div className="profile-chip" onClick={() => router.push('/settings')}>
-            <span className="avatar">M</span>
-            <span className="small">Mateo</span>
+            <span className="avatar">{initial}</span>
+            <span className="small">{name}</span>
           </div>
         </div>
       </div>

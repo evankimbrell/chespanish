@@ -6,6 +6,7 @@ import { Tag } from '@/components/ui/tag';
 import { Icons } from '@/components/ui/icons';
 import { DashboardCustomPrompt } from '@/components/builder/dashboard-custom-prompt';
 import { SCENARIOS, RECENT_LESSONS } from '@/lib/data';
+import { useAppStore } from '@/lib/store';
 
 const STATS = [
   { k: 'Level',    v: 'B1',     s: '+0.2 since Apr 14' },
@@ -16,6 +17,7 @@ const STATS = [
 
 export default function DashboardPage() {
   const router = useRouter();
+  const name = useAppStore((s) => s.profile.name);
 
   return (
     <>
@@ -33,7 +35,7 @@ export default function DashboardPage() {
                 </div>
               ))}
             </div>
-            <span className="eyebrow">Buenos días, Mateo · martes, 9 de mayo</span>
+            <span className="eyebrow">Buenos días, {name} · {new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
             <h1 className="ty-h1" style={{ marginTop: 8 }}>
               Pick up where you left off, or{' '}
               <em style={{ fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic', color: 'var(--warm)' }}>
