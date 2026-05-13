@@ -1,4 +1,6 @@
-import type { Lesson, ResponseToken } from './types';
+import type { Lesson } from './types';
+
+type ResponseToken = { t: string; kind: 'ok' | 'wrong' | 'missing'; issue?: string; cat?: string };
 
 export const SCENARIOS = [
   { id: 'restaurant', label: 'Restaurant',         hint: 'parrilla, bodegón, pedido' },

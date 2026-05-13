@@ -7,13 +7,14 @@ import { Icons } from '@/components/ui/icons';
 import { useTTS } from '@/hooks/use-tts';
 import { useRecording } from '@/hooks/use-recording';
 import { useAppStore } from '@/lib/store';
-import { initEngine, selectNextQuestion, updateEngine } from '@/lib/test-engine';
+import {
+  initEngine, selectNextQuestion, updateEngine,
+  shouldStopTest, generateFinalReport, mapScoreToDisplayLevel,
+  calculateEvidenceScore,
+} from '@/lib/test-engine';
 import { QUESTION_BANK } from '@/lib/question-bank';
-import type { GradeResult, PromptMetric, TestEngineState, Question, PromptType } from '@/lib/types';
+import type { GradeResult, PromptResult, TestEngineState, Question, PromptType } from '@/lib/types';
 
-const TOTAL_QUESTIONS = 12;
-
-// These prompt types explicitly allow English answers (comprehension checks)
 const ENGLISH_OK_TYPES = new Set<PromptType>([
   'listen_for_meaning',
   'mini_dialogue_comprehension',
@@ -49,6 +50,54 @@ function calcWPM(text: string | null, durationMs: number | null, onsetMs: number
   return Math.round(words / (speechMs / 60000));
 }
 
+// ── Debug Panel ───────────────────────────────────────────────────────────────
+
+function DebugPanel({
+  engine,
+  question,
+  gradeResult,
+  lastEvidenceScore,
+  questionNumber,
+}: {
+  engine: TestEngineState | null;
+  question: Question | null;
+  gradeResult: GradeResult | null;
+  lastEvidenceScore: number | null;
+  questionNumber: number;
+}) {
+  const [open, setOpen] = useState(false);
+  if (!engine) return null;
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 16, right: 16, zIndex: 100,
+      background: '#111', color: '#e0e0e0', borderRadius: 6,
+      fontSize: 11, fontFamily: 'monospace', minWidth: 220,
+      border: '1px solid #333', boxShadow: '0 4px 16px rgba(0,0,0,.5)',
+    }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        style={{ width: '100%', padding: '6px 12px', background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', textAlign: 'left' }}
+      >
+        {open ? '▾' : '▸'} debug
+      </button>
+      {open && (
+        <div style={{ padding: '0 12px 10px', display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <span>Estimate: <b>{engine.abilityEstimate.toFixed(2)}</b> → <b>{mapScoreToDisplayLevel(engine.abilityEstimate)}</b></span>
+          <span>Target next: {engine.nextTargetDifficulty.toFixed(2)}</span>
+          <span>Confidence: {engine.confidence} [{engine.confidenceRange[0].toFixed(1)}–{engine.confidenceRange[1].toFixed(1)}]</span>
+          <span>Prompt #{questionNumber}: {question?.prompt_id ?? '—'} ({question?.difficulty_bucket ?? '—'} {question?.difficulty_score.toFixed(1) ?? ''})</span>
+          <span>Last score: {gradeResult?.overall_score ?? '—'} · evidence: {lastEvidenceScore?.toFixed(2) ?? '—'}</span>
+          <span>High streak: {engine.consecutiveHighScores} · Low: {engine.consecutiveLowScores}</span>
+          <span>Coverage — L:{engine.skillCoverage.listening} SP:{engine.skillCoverage.speaking_production} OS:{engine.skillCoverage.open_speaking} RP:{engine.skillCoverage.roleplay_practical} GS:{engine.skillCoverage.grammar_structured} DM:{engine.skillCoverage.dialogue_monologue}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default function LevelTestPage() {
   const [engine, setEngine] = useState<TestEngineState | null>(null);
   const [question, setQuestion] = useState<Question | null>(null);
@@ -56,10 +105,13 @@ export default function LevelTestPage() {
   const [showText, setShowText] = useState(false);
   const [gradeResult, setGradeResult] = useState<GradeResult | null>(null);
   const [isGrading, setIsGrading] = useState(false);
+  const [usedTranscriptHelp, setUsedTranscriptHelp] = useState(false);
+  const [lastEvidenceScore, setLastEvidenceScore] = useState<number | null>(null);
+  const [promptResults, setPromptResults] = useState<PromptResult[]>([]);
   const router = useRouter();
 
   const startLevelTestSession = useAppStore((s) => s.startLevelTestSession);
-  const addPromptMetric = useAppStore((s) => s.addPromptMetric);
+  const addPromptResult = useAppStore((s) => s.addPromptResult);
   const completeLevelTestSession = useAppStore((s) => s.completeLevelTestSession);
   const profile = useAppStore((s) => s.profile);
 
@@ -85,13 +137,14 @@ export default function LevelTestPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // React to question changes: play audio if audio type, reset state
+  // React to question changes
   useEffect(() => {
     if (!question) return;
     promptReadyTimeRef.current = Date.now();
     setGradeResult(null);
     setIsGrading(false);
     setShowText(false);
+    setUsedTranscriptHelp(false);
     reset();
     if (question.audio_text) {
       play(question.audio_text);
@@ -104,43 +157,67 @@ export default function LevelTestPage() {
   useEffect(() => {
     if (!transcript || !question) return;
     setIsGrading(true);
+    const responseTimeSec = (recordPressTimeRef.current - promptReadyTimeRef.current) / 1000;
+    const speakDurationSec = (recordingDurationMs ?? 0) / 1000;
+
     fetch('/api/grade', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        promptText: question.audio_text ?? question.instruction_text,
-        promptHint: question.instruction_text,
-        promptDifficulty: question.difficulty_band,
-        promptType: question.prompt_type,
-        targetAnswer: question.target_answer,
-        acceptableExamples: question.acceptable_response_examples,
-        scoringNotes: question.scoring_notes,
-        transcript,
-        responseLatencyMs: recordPressTimeRef.current - promptReadyTimeRef.current,
-        speechOnsetMs,
-        recordingDurationMs: recordingDurationMs ?? 0,
+        prompt_object: question,
+        user_response: {
+          transcript,
+          response_time_seconds: responseTimeSec,
+          speaking_duration_seconds: speakDurationSec,
+          used_transcript_help: usedTranscriptHelp,
+          skipped: false,
+        },
       }),
     })
       .then((r) => r.json())
-      .then((data) => { if (data.score != null) setGradeResult(data as GradeResult); })
+      .then((data) => {
+        if (data.overall_score != null) {
+          setGradeResult(data as GradeResult);
+          setLastEvidenceScore(calculateEvidenceScore(question.difficulty_score, data.overall_score));
+        }
+      })
       .catch(() => {})
       .finally(() => setIsGrading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transcript]);
 
-  const buildMetric = (): PromptMetric => ({
-    promptIndex: questionNumber - 1,
-    questionId: question?.prompt_id ?? '',
-    promptType: question?.prompt_type ?? 'listen_and_respond',
-    promptText: question?.audio_text ?? question?.instruction_text ?? '',
-    transcript,
-    skipped: false,
-    responseLatencyMs: recordPressTimeRef.current - promptReadyTimeRef.current,
-    speechOnsetMs,
-    recordingDurationMs,
-    wordsPerMinute: calcWPM(transcript, recordingDurationMs, speechOnsetMs),
-    grade: gradeResult,
-  });
+  const buildResult = (): PromptResult => {
+    const responseTimeSec = (recordPressTimeRef.current - promptReadyTimeRef.current) / 1000;
+    const abilityBefore = engine?.abilityEstimate ?? 0;
+    const score = gradeResult?.overall_score ?? null;
+    const evidenceScore = score != null && question
+      ? calculateEvidenceScore(question.difficulty_score, score)
+      : null;
+    const abilityAfter = evidenceScore != null
+      ? Math.max(0, Math.min(10, abilityBefore * 0.7 + evidenceScore * 0.3))
+      : abilityBefore;
+
+    return {
+      promptIndex: questionNumber - 1,
+      questionId: question?.prompt_id ?? '',
+      promptType: question?.prompt_type ?? 'listen_and_respond',
+      promptDifficulty: question?.difficulty_score ?? 0,
+      promptBucket: question?.difficulty_bucket ?? '',
+      promptText: question?.audio_text ?? question?.instruction_text ?? '',
+      transcript,
+      usedTranscriptHelp,
+      skipped: false,
+      responseTimeSeconds: responseTimeSec,
+      speakingDurationSeconds: recordingDurationMs != null ? recordingDurationMs / 1000 : null,
+      wordsPerMinute: calcWPM(transcript, recordingDurationMs, speechOnsetMs),
+      overallScore: score,
+      evidenceScore,
+      abilityEstimateBefore: abilityBefore,
+      abilityEstimateAfter: abilityAfter,
+      grade: gradeResult,
+      briefFeedback: gradeResult?.brief_feedback ?? '',
+    };
+  };
 
   const handleMic = () => {
     if (isRecording) {
@@ -152,19 +229,30 @@ export default function LevelTestPage() {
     }
   };
 
+  const handleShowText = () => {
+    if (!showText) setUsedTranscriptHelp(true);
+    setShowText((s) => !s);
+  };
+
   const next = () => {
     if (!engine || !question) return;
-    addPromptMetric(buildMetric());
 
-    if (questionNumber >= TOTAL_QUESTIONS) {
-      completeLevelTestSession();
+    const result = buildResult();
+    const newPromptResults = [...promptResults, result];
+
+    addPromptResult(result);
+    setPromptResults(newPromptResults);
+
+    const score = gradeResult?.overall_score ?? 3;
+    const newEngine = updateEngine(engine, score, result, question);
+
+    if (shouldStopTest(newEngine, newPromptResults)) {
+      const report = generateFinalReport(newEngine, newPromptResults);
+      completeLevelTestSession(report);
       router.push('/level-result');
       return;
     }
 
-    const rec = gradeResult?.next_question_recommendation ?? 'same';
-    const score = gradeResult?.score ?? 3;
-    const newEngine = updateEngine(engine, rec, score, question);
     const nextQ = selectNextQuestion(newEngine, QUESTION_BANK);
 
     setEngine(newEngine);
@@ -173,7 +261,7 @@ export default function LevelTestPage() {
     reset();
     setGradeResult(null);
     setIsGrading(false);
-    setShowText(false);
+    setLastEvidenceScore(null);
   };
 
   const micScale = isRecording ? 1 + volume * 0.5 : 1;
@@ -199,18 +287,18 @@ export default function LevelTestPage() {
           <div className="col gap-2">
             <span className="eyebrow">Level Test</span>
             <span className="mono" style={{ fontSize: 13, color: 'var(--mute)' }}>
-              {String(questionNumber).padStart(2, '0')} / {TOTAL_QUESTIONS}
+              {String(questionNumber).padStart(2, '0')} / 8–15
             </span>
           </div>
           <button className="btn btn-text small" onClick={() => router.push('/welcome')}>Exit test</button>
         </div>
 
         <div className="progress" style={{ marginBottom: 64 }}>
-          <div className="progress-fill" style={{ width: `${(questionNumber / TOTAL_QUESTIONS) * 100}%` }} />
+          <div className="progress-fill" style={{ width: `${Math.min(100, (questionNumber / 12) * 100)}%` }} />
         </div>
 
         <div className="col gap-8" style={{ alignItems: 'center', textAlign: 'center' }}>
-          {/* Eyebrow: scenario tag (for roleplay) or prompt type */}
+          {/* Eyebrow */}
           <div className="col gap-2" style={{ alignItems: 'center' }}>
             {question.scenario && (
               <span className="eyebrow" style={{ color: 'var(--mute)' }}>{question.scenario}</span>
@@ -219,7 +307,6 @@ export default function LevelTestPage() {
           </div>
 
           {isAudioType ? (
-            /* Audio prompt: play button + waveform + optional show text */
             <div className="col gap-6" style={{ alignItems: 'center' }}>
               <div className="row gap-4" style={{ alignItems: 'center' }}>
                 <button
@@ -243,12 +330,11 @@ export default function LevelTestPage() {
                   &ldquo;{question.audio_text}&rdquo;
                 </p>
               )}
-              <button className="btn btn-text small" onClick={() => setShowText((s) => !s)}>
+              <button className="btn btn-text small" onClick={handleShowText}>
                 {showText ? 'Hide text' : 'Show text'}
               </button>
             </div>
           ) : (
-            /* Text prompt: large display, no audio */
             <div className="col gap-6" style={{ alignItems: 'center', maxWidth: 680 }}>
               <p className="serif" style={{ fontSize: 32, letterSpacing: '-.01em', fontStyle: 'italic', lineHeight: 1.3 }}>
                 &ldquo;{question.instruction_text}&rdquo;
@@ -298,10 +384,15 @@ export default function LevelTestPage() {
                     <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
                     <span className="small" style={{ color: 'var(--mute)' }}>Grading…</span>
                   </span>
+                ) : gradeResult?.brief_feedback ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <span className="mono small" style={{ color: 'var(--leaf)' }}>✓</span>
+                    <span className="small" style={{ color: 'var(--mute)' }}>{gradeResult.brief_feedback}</span>
+                  </span>
                 ) : (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                     <span className="mono small" style={{ color: 'var(--leaf)' }}>✓</span>
-                    <span className="small" style={{ color: 'var(--mute)' }}>Graded · proceed to the next question.</span>
+                    <span className="small" style={{ color: 'var(--mute)' }}>Saved for your profile.</span>
                   </span>
                 )}
               </div>
@@ -322,6 +413,14 @@ export default function LevelTestPage() {
           </div>
         </div>
       </div>
+
+      <DebugPanel
+        engine={engine}
+        question={question}
+        gradeResult={gradeResult}
+        lastEvidenceScore={lastEvidenceScore}
+        questionNumber={questionNumber}
+      />
     </>
   );
 }

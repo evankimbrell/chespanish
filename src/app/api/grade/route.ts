@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import type { Question } from '@/lib/types';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
@@ -14,21 +15,17 @@ The most important question is: did the user actually answer what was asked?
 
 OVERALL SCORE (0–5):
 0 = No meaningful response OR response that doesn't engage with the prompt at all
-    Examples: silence, "I don't know", "yo no comprendo" (I don't understand) as a response to a practical question, unrelated words
 1 = Attempted but meaning is mostly missing, wrong, or fails to address the prompt
 2 = Partial — addresses the prompt in some way but with major gaps or errors
 3 = Understandable and on-topic with noticeable errors
 4 = Correct or mostly correct, complete, and natural enough
 5 = Natural, fluent, complete — flexible phrasing
 
-CALIBRATION EXAMPLES:
-- Prompt: "¿Querés tomar algo antes de ir?" | Response: "yo no comprendo" → score: 0 (doesn't answer)
-- Prompt: "¿Querés tomar algo antes de ir?" | Response: "sí quiero agua" → score: 3 (answers, minor errors)
-- Prompt: "¿Querés tomar algo antes de ir?" | Response: "sí, me gustaría un café antes de salir" → score: 5
-
 LABEL MAPPING: 0→"Ouch", 1→"Bad", 2→"Ok", 3→"Good", 4→"Excellent", 5→"Excellent"
 
-FEEDBACK: Exactly one sentence in plain English (max 15 words) on the key strength or main issue.
+BRIEF FEEDBACK: Exactly one sentence in plain English (max 15 words) on the key strength or main issue.
+
+NOTES FOR PROFILE: 1–3 short strings (10–20 words each) noting what this response revealed about the learner's abilities or gaps. Written as objective observations, not as feedback to the learner.
 
 DIMENSIONS (each 0–5):
 - comprehension: Did the user understand the prompt?
@@ -50,19 +47,13 @@ target_style_pronunciation, too_much_english, hallucinated_or_unrelated_answer
 CEFR SIGNAL: Estimate the level this response suggests given prompt difficulty + quality.
 Values: below_A1, A1, A2, B1, B2, C1, C2
 
-NEXT QUESTION:
-- Score 0–1 → easier or much_easier
-- Score 2 → same or easier
-- Score 3 → harder (same only if response was notably slow or incomplete)
-- Score 4 → harder (same if slow or major error)
-- Score 5 → harder or much_harder
-
 Return ONLY valid JSON matching this exact schema:
 {
-  "score": 0,
+  "prompt_id": "string",
+  "overall_score": 0,
   "label": "Ouch",
-  "feedback": "one sentence max 15 words",
-  "dimensions": {
+  "brief_feedback": "one sentence max 15 words",
+  "dimension_scores": {
     "comprehension": 0,
     "task_completion": 0,
     "grammar": 0,
@@ -82,7 +73,7 @@ Return ONLY valid JSON matching this exact schema:
     }
   ],
   "cefr_signal": "A2",
-  "next_question_recommendation": "same"
+  "notes_for_profile": ["observation 1", "observation 2"]
 }`;
 
 const LABELS = ['Ouch', 'Bad', 'Ok', 'Good', 'Excellent', 'Excellent'] as const;
@@ -95,38 +86,73 @@ export async function POST(req: Request) {
 
   const body = await req.json();
   const {
-    promptText, promptHint, promptDifficulty, transcript,
-    responseLatencyMs, speechOnsetMs, recordingDurationMs,
-    promptType, targetAnswer, acceptableExamples, scoringNotes,
+    prompt_object,
+    user_response,
+  }: {
+    prompt_object: Question;
+    user_response: {
+      transcript: string;
+      response_time_seconds: number;
+      speaking_duration_seconds: number;
+      used_transcript_help: boolean;
+      skipped: boolean;
+    };
   } = body;
 
-  if (!promptText || !transcript) {
-    return Response.json({ score: null, error: 'missing_fields' });
+  if (!prompt_object || !user_response?.transcript) {
+    return Response.json({ overall_score: null, error: 'missing_fields' });
   }
 
-  const extraContext = [
-    promptType ? `Prompt type: ${promptType}` : null,
-    acceptableExamples?.length
-      ? `Acceptable responses include: ${(acceptableExamples as string[]).join(' | ')}`
+  const q = prompt_object;
+  const ur = user_response;
+  const responseLatencyMs = ur.response_time_seconds * 1000;
+
+  const contextLines = [
+    `Prompt type: ${q.prompt_type}`,
+    `Difficulty: ${q.difficulty_score.toFixed(1)} (${q.difficulty_bucket})`,
+    `CEFR band: ${q.cefr_band}`,
+    q.audio_text ? `Audio prompt: "${q.audio_text}"` : null,
+    `Instruction: "${q.instruction_text}"`,
+    q.target_answer ? `Target answer: "${q.target_answer}"` : null,
+    q.acceptable_response_examples?.length
+      ? `Acceptable responses: ${q.acceptable_response_examples.join(' | ')}`
       : null,
-    scoringNotes ? `Scoring notes: ${scoringNotes}` : null,
-    targetAnswer ? `Target answer: ${targetAnswer}` : null,
+    q.strong_response_examples?.length
+      ? `Strong responses: ${q.strong_response_examples.join(' | ')}`
+      : null,
+    q.partial_response_examples?.length
+      ? `Partial credit responses: ${q.partial_response_examples.join(' | ')}`
+      : null,
+    q.failed_response_examples?.length
+      ? `Failed responses: ${q.failed_response_examples.join(' | ')}`
+      : null,
+    q.prompt_specific_grading_notes?.length
+      ? `Grading notes: ${q.prompt_specific_grading_notes.join('; ')}`
+      : null,
+    q.scoring_guidance
+      ? `Scoring guidance — 5: ${q.scoring_guidance.score_5} | 3: ${q.scoring_guidance.score_3} | 1: ${q.scoring_guidance.score_1}`
+      : null,
+    q.dimension_weighting
+      ? `Weighted dimensions: ${Object.entries(q.dimension_weighting).map(([k, v]) => `${k}=${v}`).join(', ')}`
+      : null,
   ].filter(Boolean).join('\n');
 
-  const userMessage = `Prompt: "${promptText}"
-Context: ${promptHint}
-Prompt difficulty: ${promptDifficulty}
-User's transcript: "${transcript}"
-Response latency: ${responseLatencyMs}ms
-Speech onset (silence before speaking): ${speechOnsetMs != null ? `${speechOnsetMs}ms` : 'unknown'}
-Recording duration: ${recordingDurationMs}ms${extraContext ? `\n${extraContext}` : ''}`;
+  const userMessage = `${contextLines}
+
+User transcript: "${ur.transcript}"
+Response latency: ${responseLatencyMs.toFixed(0)}ms
+Speaking duration: ${(ur.speaking_duration_seconds * 1000).toFixed(0)}ms
+Used transcript help: ${ur.used_transcript_help}
+Skipped: ${ur.skipped}
+
+Prompt ID to echo back: ${q.prompt_id}`;
 
   try {
     const completion = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       response_format: { type: 'json_object' },
       temperature: 0.2,
-      max_tokens: 800,
+      max_tokens: 900,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userMessage },
@@ -136,14 +162,14 @@ Recording duration: ${recordingDurationMs}ms${extraContext ? `\n${extraContext}`
     const raw = completion.choices[0]?.message?.content ?? '{}';
     const parsed = JSON.parse(raw);
 
-    // Safety: enforce label matches score
-    const score = Math.max(0, Math.min(5, Number(parsed.score) || 0)) as 0 | 1 | 2 | 3 | 4 | 5;
-    parsed.score = score;
+    const score = Math.max(0, Math.min(5, Number(parsed.overall_score) || 0)) as 0 | 1 | 2 | 3 | 4 | 5;
+    parsed.overall_score = score;
     parsed.label = LABELS[score];
+    parsed.prompt_id = q.prompt_id;
 
     return Response.json(parsed);
   } catch (e) {
     console.error('[grade] error:', e);
-    return Response.json({ score: null, error: 'grading_failed' });
+    return Response.json({ overall_score: null, error: 'grading_failed' });
   }
 }

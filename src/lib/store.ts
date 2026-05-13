@@ -1,6 +1,6 @@
 'use client';
 import { create } from 'zustand';
-import type { BuilderState, ComfortLevel, LevelTestSession, PlayerVariant, ProfileState, PromptMetric } from './types';
+import type { BuilderState, ComfortLevel, LevelTestSession, PlayerVariant, ProfileState, PromptResult, TestReport } from './types';
 
 interface AppStore {
   builder: BuilderState;
@@ -14,8 +14,8 @@ interface AppStore {
 
   levelTestSession: LevelTestSession | null;
   startLevelTestSession: (comfortLevel?: ComfortLevel | null) => void;
-  addPromptMetric: (metric: PromptMetric) => void;
-  completeLevelTestSession: () => void;
+  addPromptResult: (result: PromptResult) => void;
+  completeLevelTestSession: (report: TestReport | null) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -64,22 +64,24 @@ export const useAppStore = create<AppStore>((set) => ({
         completedAt: null,
         comfortLevel,
         prompts: [],
+        report: null,
       },
     }),
 
-  addPromptMetric: (metric) =>
+  addPromptResult: (result) =>
     set((s) => ({
       levelTestSession: s.levelTestSession
-        ? { ...s.levelTestSession, prompts: [...s.levelTestSession.prompts, metric] }
+        ? { ...s.levelTestSession, prompts: [...s.levelTestSession.prompts, result] }
         : s.levelTestSession,
     })),
 
-  completeLevelTestSession: () =>
+  completeLevelTestSession: (report) =>
     set((s) => {
       if (!s.levelTestSession) return s;
       const completed: LevelTestSession = {
         ...s.levelTestSession,
         completedAt: new Date().toISOString(),
+        report,
       };
       try {
         localStorage.setItem('che_spanish_level_test', JSON.stringify(completed, null, 2));
