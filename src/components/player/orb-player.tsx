@@ -73,20 +73,24 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, l
             onRecord={p.record}
           />
 
-          {/* Section description */}
-          <div style={{ minHeight: 64, maxWidth: 560, textAlign: 'center', marginTop: 18, transition: 'opacity .2s', opacity: displaySection ? 1 : 0 }}>
-            <span className="eyebrow eyebrow-warm">
-              SECTION {String(displaySection?.id).padStart(2, '0')} · {displaySection?.label}
-            </span>
-            <p className="body" style={{ marginTop: 8, fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic', fontSize: 18, color: 'var(--ink-2)' }}>
-              {displaySection?.blurb}
-            </p>
-          </div>
+          {/* Section description — only when text is shown */}
+          {showText && displaySection && (
+            <div style={{ maxWidth: 560, textAlign: 'center', marginTop: 18 }}>
+              <span className="eyebrow eyebrow-warm">
+                SECTION {String(displaySection.id).padStart(2, '0')} · {displaySection.label}
+              </span>
+              <p className="body" style={{ marginTop: 8, fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic', fontSize: 18, color: 'var(--ink-2)' }}>
+                {displaySection.blurb}
+              </p>
+            </div>
+          )}
 
-          {/* Show text toggle */}
-          <button className="btn btn-ghost btn-sm" style={{ marginTop: 12 }} onClick={() => setShowText((s) => !s)}>
-            {showText ? 'Hide text' : 'Show text'}
-          </button>
+          {/* Show text toggle — only after lesson has started */}
+          {!(p.state === 'idle' && p.progress === 0) && (
+            <button className="btn btn-ghost btn-sm" style={{ marginTop: 12 }} onClick={() => setShowText((s) => !s)}>
+              {showText ? 'Hide text' : 'Show text'}
+            </button>
+          )}
 
           {/* Subtitle card */}
           {showText && p.state !== 'prompting' && p.state !== 'feedback' && (
