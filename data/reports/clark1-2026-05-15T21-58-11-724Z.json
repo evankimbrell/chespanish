@@ -1,0 +1,585 @@
+{
+  "userName": "Clark1",
+  "generatedAt": "2026-05-15T21:58:50.538Z",
+  "educatorReport": "**Student Report for Lesson Planning: Clark1**\n\n**Strengths:**\n- **Listening Comprehension (4.9/10):** Strong understanding of basic requests and dialogue structure.\n- **Practical Communication (4.4/10):** Can engage in simple conversations and respond appropriately to greetings.\n- **Pronunciation (2.9/10):** Generally clear and intelligible pronunciation.\n- **Grammar Control (3.3/10):** Demonstrates understanding of basic sentence structure and verb usage, though with some errors.\n- **Vocabulary Range (3.3/10):** Basic vocabulary is adequate for simple expressions and requests.\n\n**Weaknesses:**\n- **Response Speed (2.0/10):** Needs improvement in quick recall and response formulation.\n- **Argentine Style Alignment (1.6/10):** Limited alignment with Argentine Spanish style and politeness in requests.\n- **Speaking Fluency (2.6/10):** Struggles with fluidity in speech, particularly in more complex sentences.\n\n**Knowledge Gaps:**\n- **Grammar and Verb Conjugation:** Errors in verb forms and conjugation need addressing, particularly in more complex sentences.\n- **Task Completion:** Difficulty in fully addressing prompts, especially in open-ended questions.\n- **Target Style Vocabulary:** Limited vocabulary for specific contexts, such as routine descriptions and problem-solving.\n\n**Immediate Areas to Address:**\n- **Formulating Short Questions and Answers:** Focus on constructing basic conversational exchanges to bridge the gap to A2.\n- **Improving Response Speed:** Practice quick recall exercises to enhance response times in conversation.\n- **Politeness and Style in Requests:** Introduce Argentine Spanish politeness norms and style for more culturally aligned communication.\n\n**Logical Next Steps:**\n- **Roleplay Exercises:** Implement roleplay scenarios to practice real-life conversations, focusing on politeness and style.\n- **Vocabulary Expansion:** Introduce vocabulary related to daily routines, common requests, and problem-solving scenarios.\n- **Pronunciation Drills:** Continue to refine pronunciation with targeted exercises to boost intelligibility and confidence.\n- **Grammar Workshops:** Conduct focused sessions on verb conjugation and sentence structure to reduce errors.\n- **Listening and Speaking Practice:** Use audio-based lessons to reinforce listening comprehension and speaking fluency.\n\nThis report should guide the lesson designer in creating a tailored learning plan that addresses Clark1's specific strengths and weaknesses, ensuring a comprehensive approach to advancing his Spanish proficiency.",
+  "testReport": {
+    "overall_score": 2.5067112897899997,
+    "display_level": "A1+",
+    "cefr_band": "A1",
+    "confidence": "high",
+    "confidence_range": [
+      2.1067112897899998,
+      2.9067112897899996
+    ],
+    "summary": "You have solid beginner foundations and are growing into A2 territory.",
+    "skill_scores": {
+      "listening_comprehension": 4.851472608280534,
+      "speaking_fluency": 2.5736699799460316,
+      "grammar_control": 3.2899360869912013,
+      "vocabulary_range": 3.2504083928282124,
+      "pronunciation_intelligibility": 2.916801182329895,
+      "response_speed": 1.9583847703980846,
+      "target_style_alignment": 1.639184159925,
+      "practical_communication": 4.438804232648781
+    },
+    "strengths": [
+      "Listening comprehension",
+      "Grammar control",
+      "Vocabulary range",
+      "Pronunciation / intelligibility",
+      "Practical communication"
+    ],
+    "weaknesses": [
+      "Response speed",
+      "Argentine style alignment"
+    ],
+    "most_common_error_categories": [
+      "grammar",
+      "task_completion",
+      "target_style_vocabulary"
+    ],
+    "next_level_gap": "To reach A2, focus on forming short questions and answers in conversation.",
+    "recommended_first_lesson": {
+      "title": "Getting around the city",
+      "scenario": "transport",
+      "focus_points": [
+        "simple requests",
+        "vos recognition",
+        "basic questions"
+      ],
+      "why": "Bridge beginner to A2 with practical scenarios."
+    },
+    "next_three_lessons": [
+      {
+        "title": "Getting around the city",
+        "target_difficulty": 3.4,
+        "focus": "simple requests"
+      },
+      {
+        "title": "Expand vocabulary in context",
+        "target_difficulty": 3.6999999999999997,
+        "focus": "vocabulary and natural phrasing"
+      },
+      {
+        "title": "Listening at natural speed",
+        "target_difficulty": 3.9,
+        "focus": "comprehension at full pace"
+      }
+    ]
+  },
+  "lessonTranscript": "<English voice> \nWelcome to your first Spanish lesson. Today, we'll focus on enhancing your conversational skills, improving your response speed, and aligning your style with Argentine Spanish. We'll practice formulating short questions and answers, work on politeness in requests, and expand your vocabulary for daily routines. Remember, the key is to actively participate by responding out loud when prompted. Let's begin!\n\n<Spanish voice>\nEmpezaremos con una conversación simple. Escucha y responde en voz alta.\n\n<English voice>\nListen to the question and respond in Spanish. How would you say, \"Do you want coffee?\"\n\n<Spanish voice>\n¿Querés café?\n\n<prompt>\n\n<Spanish voice>\nQuiero café.\n\n<English voice>\nNow, let's practice a polite request. How would you ask, \"Could you bring me water, please?\" in a polite Argentine style?\n\n<Spanish voice>\n¿Podrías traerme agua, por favor?\n\n<prompt>\n\n<Spanish voice>\nPodrías traerme agua, por favor.\n\n<English voice>\nGreat! Let's move on to talking about daily routines. How would you say, \"In the morning, I drink coffee\"?\n\n<Spanish voice>\nPor la mañana, tomo café.\n\n<prompt>\n\n<Spanish voice>\nPor la mañana, tomo café.\n\n<English voice>\nNow, try saying, \"I usually read emails in the morning.\"\n\n<Spanish voice>\nNormalmente leo correos electrónicos por la mañana.\n\n<prompt>\n\n<Spanish voice>\nNormalmente leo correos electrónicos por la mañana.\n\n<English voice>\nExcellent! Let's practice a short dialogue. Listen and respond.\n\n<Spanish voice>\nHola, ¿cómo estás? \n\n<prompt>\n\n<Spanish voice>\nBien, ¿y vos?\n\n<English voice>\nGood job! Now, let's practice a more complex sentence. How do you say, \"I am working, can we meet later?\"\n\n<Spanish voice>\nEstoy trabajando, ¿podemos vernos más tarde?\n\n<prompt>\n\n<Spanish voice>\nEstoy trabajando, ¿podemos vernos más tarde?\n\n<English voice>\nNow, let's focus on improving your response speed. I'll ask a question, and you respond as quickly as possible. How do you say, \"I don't understand\"?\n\n<Spanish voice>\nNo entiendo.\n\n<prompt>\n\n<Spanish voice>\nNo entiendo.\n\n<English voice>\nGreat speed! Let's try another one. How would you say, \"The shower doesn't work well\"?\n\n<Spanish voice>\nLa ducha no funciona bien.\n\n<prompt>\n\n<Spanish voice>\nLa ducha no funciona bien.\n\n<English voice>\nNow, let's add a request for help. How would you say, \"Can someone come today?\"\n\n<Spanish voice>\n¿Puede venir alguien hoy?\n\n<prompt>\n\n<Spanish voice>\n¿Puede venir alguien hoy?\n\n<English voice>\nPerfect! Let's practice combining these into a full sentence. Say, \"The shower doesn't work well. Can someone come today?\"\n\n<Spanish voice>\nLa ducha no funciona bien. ¿Puede venir alguien hoy?\n\n<prompt>\n\n<Spanish voice>\nLa ducha no funciona bien. ¿Puede venir alguien hoy?\n\n<English voice>\nExcellent! Let's practice another polite request. How would you say, \"Could you help me with this, please?\"\n\n<Spanish voice>\n¿Podrías ayudarme con esto, por favor?\n\n<prompt>\n\n<Spanish voice>\n¿Podrías ayudarme con esto, por favor?\n\n<English voice>\nNow, let's practice using the verb \"estar\" in different contexts. How would you say, \"I am tired\"?\n\n<Spanish voice>\nEstoy cansado.\n\n<prompt>\n\n<Spanish voice>\nEstoy cansado.\n\n<English voice>\nNow try, \"She is happy.\"\n\n<Spanish voice>\nElla está feliz.\n\n<prompt>\n\n<Spanish voice>\nElla está feliz.\n\n<English voice>\nLet's practice a roleplay. Imagine you're in a café. How would you say, \"I want a tea, please\"?\n\n<Spanish voice>\nQuiero un té, por favor.\n\n<prompt>\n\n<Spanish voice>\nQuiero un té, por favor.\n\n<English voice>\nGreat! Now, let's practice another scenario. How would you ask, \"What time is it?\"\n\n<Spanish voice>\n¿Qué hora es?\n\n<prompt>\n\n<Spanish voice>\n¿Qué hora es?\n\n<English voice>\nNow, let's practice responding. If someone asks you, \"¿Qué hora es?\" and it's 3 PM, how would you respond?\n\n<Spanish voice>\nSon las tres de la tarde.\n\n<prompt>\n\n<Spanish voice>\nSon las tres de la tarde.\n\n<English voice>\nExcellent! Let's practice one more dialogue. How would you say, \"See you at eight\"?\n\n<Spanish voice>\nNos vemos a las ocho.\n\n<prompt>\n\n<Spanish voice>\nNos vemos a las ocho.\n\n<English voice>\nNow, let's practice asking a question. How would you say, \"Should we meet at eight?\"\n\n<Spanish voice>\n¿Nos vemos a las ocho?\n\n<prompt>\n\n<Spanish voice>\n¿Nos vemos a las ocho?\n\n<English voice>\nGreat work! Let's do a quick review. How do you say, \"I don't understand\"?\n\n<Spanish voice>\nNo entiendo.\n\n<prompt>\n\n<Spanish voice>\nNo entiendo.\n\n<English voice>\nHow about, \"Could you bring me water, please?\"\n\n<Spanish voice>\n¿Podrías traerme agua, por favor?\n\n<prompt>\n\n<Spanish voice>\n¿Podrías traerme agua, por favor?\n\n<English voice>\nAnd finally, \"The shower doesn't work well. Can someone come today?\"\n\n<Spanish voice>\nLa ducha no funciona bien. ¿Puede venir alguien hoy?\n\n<prompt>\n\n<Spanish voice>\nLa ducha no funciona bien. ¿Puede venir alguien hoy?\n\n<English voice>\nWell done! You've completed the lesson. Remember to practice regularly to improve your fluency and response speed. Keep up the great work, and soon you'll be speaking Spanish with confidence. Hasta luego!",
+  "session": {
+    "startedAt": "2026-05-15T21:53:56.769Z",
+    "completedAt": "2026-05-15T21:58:11.724Z",
+    "comfortLevel": 1,
+    "prompts": [
+      {
+        "promptIndex": 0,
+        "questionId": "GRAM_PRE_A1_001",
+        "promptType": "grammar_in_context",
+        "promptDifficulty": 0.5,
+        "promptBucket": "PRE_A1_A1_START",
+        "promptText": "Complete the sentence in Spanish: Yo ___ cansado.",
+        "transcript": "Yo estoy cansado.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 2.058,
+        "speakingDurationSeconds": 3.154,
+        "wordsPerMinute": 80,
+        "overallScore": 5,
+        "evidenceScore": 1.4,
+        "abilityEstimateBefore": 1.5,
+        "abilityEstimateAfter": 1.4699999999999998,
+        "grade": {
+          "prompt_id": "GRAM_PRE_A1_001",
+          "overall_score": 5,
+          "label": "Excellent",
+          "brief_feedback": "Perfectly completed the sentence in Spanish.",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 5,
+            "grammar": 5,
+            "vocabulary": 5,
+            "fluency": 5,
+            "pronunciation_intelligibility": 5,
+            "response_speed": 4,
+            "target_style_alignment": 5
+          },
+          "observed_errors": [],
+          "cefr_signal": "A1",
+          "notes_for_profile": [
+            "User demonstrates strong understanding of basic sentence structure.",
+            "Fluent use of the verb 'estar' in context."
+          ]
+        },
+        "briefFeedback": "Perfectly completed the sentence in Spanish."
+      },
+      {
+        "promptIndex": 1,
+        "questionId": "LFM_PRE_A1_001",
+        "promptType": "listen_for_meaning",
+        "promptDifficulty": 0.5,
+        "promptBucket": "PRE_A1_A1_START",
+        "promptText": "Quiero agua.",
+        "transcript": "He wants water?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 2.844,
+        "speakingDurationSeconds": 2.519,
+        "wordsPerMinute": 121,
+        "overallScore": 3,
+        "evidenceScore": 0.5,
+        "abilityEstimateBefore": 1.4699999999999998,
+        "abilityEstimateAfter": 1.1789999999999996,
+        "grade": {
+          "prompt_id": "LFM_PRE_A1_001",
+          "overall_score": 3,
+          "label": "Good",
+          "brief_feedback": "You understood the main idea but missed the first person.",
+          "dimension_scores": {
+            "comprehension": 4,
+            "task_completion": 3,
+            "grammar": 2,
+            "vocabulary": 3,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 4,
+            "target_style_alignment": 2
+          },
+          "observed_errors": [],
+          "cefr_signal": "A1",
+          "notes_for_profile": [
+            "User understands basic requests in Spanish.",
+            "Grammar control is developing but not perfect."
+          ]
+        },
+        "briefFeedback": "You understood the main idea but missed the first person."
+      },
+      {
+        "promptIndex": 2,
+        "questionId": "SIS_PRE_A1_001",
+        "promptType": "say_it_in_spanish",
+        "promptDifficulty": 0.5,
+        "promptBucket": "PRE_A1_A1_START",
+        "promptText": "Say in Spanish: My name is Evan.",
+        "transcript": "Me llamo Evan.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 4.132,
+        "speakingDurationSeconds": 2.899,
+        "wordsPerMinute": 98,
+        "overallScore": 5,
+        "evidenceScore": 1.4,
+        "abilityEstimateBefore": 1.1789999999999996,
+        "abilityEstimateAfter": 1.2452999999999996,
+        "grade": {
+          "prompt_id": "SIS_PRE_A1_001",
+          "overall_score": 5,
+          "label": "Excellent",
+          "brief_feedback": "Natural and complete self-introduction in Spanish.",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 5,
+            "grammar": 5,
+            "vocabulary": 5,
+            "fluency": 5,
+            "pronunciation_intelligibility": 5,
+            "response_speed": 4,
+            "target_style_alignment": 5
+          },
+          "observed_errors": [],
+          "cefr_signal": "A1",
+          "notes_for_profile": [
+            "Strong grasp of basic self-introduction.",
+            "Pronunciation is clear and intelligible."
+          ]
+        },
+        "briefFeedback": "Natural and complete self-introduction in Spanish."
+      },
+      {
+        "promptIndex": 3,
+        "questionId": "LAR_PRE_A1_001",
+        "promptType": "listen_and_respond",
+        "promptDifficulty": 0.5,
+        "promptBucket": "PRE_A1_A1_START",
+        "promptText": "Hola, ¿cómo estás?",
+        "transcript": "Bien, ¿y vos?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 2.127,
+        "speakingDurationSeconds": 2.536,
+        "wordsPerMinute": 85,
+        "overallScore": 5,
+        "evidenceScore": 1.4,
+        "abilityEstimateBefore": 1.2452999999999996,
+        "abilityEstimateAfter": 1.2917099999999997,
+        "grade": {
+          "prompt_id": "LAR_PRE_A1_001",
+          "overall_score": 5,
+          "label": "Excellent",
+          "brief_feedback": "Natural response with a good follow-up question.",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 5,
+            "grammar": 5,
+            "vocabulary": 5,
+            "fluency": 5,
+            "pronunciation_intelligibility": 5,
+            "response_speed": 4,
+            "target_style_alignment": 5
+          },
+          "observed_errors": [],
+          "cefr_signal": "A1",
+          "notes_for_profile": [
+            "Learner can respond appropriately to basic greetings.",
+            "Shows ability to engage in simple conversation."
+          ]
+        },
+        "briefFeedback": "Natural response with a good follow-up question."
+      },
+      {
+        "promptIndex": 4,
+        "questionId": "ROLE_A1_PLUS_001",
+        "promptType": "roleplay_response",
+        "promptDifficulty": 2.6,
+        "promptBucket": "A1_PLUS",
+        "promptText": "Tenemos café, té o agua. ¿Qué querés?",
+        "transcript": "Quiero un agua.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 7.449,
+        "speakingDurationSeconds": 3.635,
+        "wordsPerMinute": 78,
+        "overallScore": 2,
+        "evidenceScore": 1.9000000000000001,
+        "abilityEstimateBefore": 1.2917099999999997,
+        "abilityEstimateAfter": 1.4741969999999998,
+        "grade": {
+          "prompt_id": "ROLE_A1_PLUS_001",
+          "overall_score": 2,
+          "label": "Ok",
+          "brief_feedback": "The response partially addresses the prompt but lacks politeness.",
+          "dimension_scores": {
+            "comprehension": 3,
+            "task_completion": 2,
+            "grammar": 3,
+            "vocabulary": 3,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 2,
+            "target_style_alignment": 3
+          },
+          "observed_errors": [],
+          "cefr_signal": "A1",
+          "notes_for_profile": [
+            "User understands basic requests.",
+            "Politeness in requests needs improvement."
+          ]
+        },
+        "briefFeedback": "The response partially addresses the prompt but lacks politeness."
+      },
+      {
+        "promptIndex": 5,
+        "questionId": "OPEN_A1_PLUS_001",
+        "promptType": "open_speaking",
+        "promptDifficulty": 2.6,
+        "promptBucket": "A1_PLUS",
+        "promptText": "Tell me in Spanish: What do you usually do in the morning?",
+        "transcript": "Típicamente yo bebo agua y leo mis e-mails.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 15.228,
+        "speakingDurationSeconds": 8.686,
+        "wordsPerMinute": 65,
+        "overallScore": 1,
+        "evidenceScore": 1.1,
+        "abilityEstimateBefore": 1.4741969999999998,
+        "abilityEstimateAfter": 1.3619378999999998,
+        "grade": {
+          "prompt_id": "OPEN_A1_PLUS_001",
+          "overall_score": 1,
+          "label": "Bad",
+          "brief_feedback": "The response does not address the morning routine prompt.",
+          "dimension_scores": {
+            "comprehension": 1,
+            "task_completion": 1,
+            "grammar": 2,
+            "vocabulary": 2,
+            "fluency": 2,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 1,
+            "target_style_alignment": 1
+          },
+          "observed_errors": [
+            {
+              "category": "task_completion",
+              "description": "Response does not relate to usual morning activities.",
+              "severity": 2,
+              "correction": "Answer should include typical morning activities.",
+              "review_later": true
+            }
+          ],
+          "cefr_signal": "A1",
+          "notes_for_profile": [
+            "Struggles with understanding prompt requirements.",
+            "Limited vocabulary for describing routines."
+          ]
+        },
+        "briefFeedback": "The response does not address the morning routine prompt."
+      },
+      {
+        "promptIndex": 6,
+        "questionId": "SAY_A1_002",
+        "promptType": "say_it_in_spanish",
+        "promptDifficulty": 2,
+        "promptBucket": "A1",
+        "promptText": "Say in Spanish: I don't understand.",
+        "transcript": "No entiendo.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 11.331,
+        "speakingDurationSeconds": 4.703,
+        "wordsPerMinute": 31,
+        "overallScore": 5,
+        "evidenceScore": 2.9,
+        "abilityEstimateBefore": 1.3619378999999998,
+        "abilityEstimateAfter": 1.8233565299999999,
+        "grade": {
+          "prompt_id": "SAY_A1_002",
+          "overall_score": 5,
+          "label": "Excellent",
+          "brief_feedback": "Perfect response, clear and correct.",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 5,
+            "grammar": 5,
+            "vocabulary": 5,
+            "fluency": 5,
+            "pronunciation_intelligibility": 5,
+            "response_speed": 2,
+            "target_style_alignment": 5
+          },
+          "observed_errors": [],
+          "cefr_signal": "A1",
+          "notes_for_profile": [
+            "Learner understands basic expressions.",
+            "Response is clear and accurate."
+          ]
+        },
+        "briefFeedback": "Perfect response, clear and correct."
+      },
+      {
+        "promptIndex": 7,
+        "questionId": "GRAM_A1_PLUS_001",
+        "promptType": "grammar_in_context",
+        "promptDifficulty": 2.6,
+        "promptBucket": "A1_PLUS",
+        "promptText": "Complete the sentence in Spanish: Yo ___ en Roma.",
+        "transcript": "Chauvivo en Roma.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 4.182,
+        "speakingDurationSeconds": 3.419,
+        "wordsPerMinute": 86,
+        "overallScore": 2,
+        "evidenceScore": 1.9000000000000001,
+        "abilityEstimateBefore": 1.8233565299999999,
+        "abilityEstimateAfter": 1.846349571,
+        "grade": {
+          "prompt_id": "GRAM_A1_PLUS_001",
+          "overall_score": 2,
+          "label": "Ok",
+          "brief_feedback": "The response shows partial control of the verb form.",
+          "dimension_scores": {
+            "comprehension": 2,
+            "task_completion": 2,
+            "grammar": 2,
+            "vocabulary": 2,
+            "fluency": 2,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 3,
+            "target_style_alignment": 2
+          },
+          "observed_errors": [
+            {
+              "category": "grammar",
+              "description": "Incorrect verb form due to the prefix 'Chau'",
+              "severity": 2,
+              "correction": "vivo",
+              "review_later": true
+            }
+          ],
+          "cefr_signal": "A1",
+          "notes_for_profile": [
+            "Shows some understanding of verb conjugation.",
+            "Needs improvement in fluency and grammar control."
+          ]
+        },
+        "briefFeedback": "The response shows partial control of the verb form."
+      },
+      {
+        "promptIndex": 8,
+        "questionId": "MINI_A2_MINUS_001",
+        "promptType": "mini_dialogue_comprehension",
+        "promptDifficulty": 3.2,
+        "promptBucket": "A2_MINUS",
+        "promptText": "Persona A: ¿Nos vemos a las ocho? Persona B: Mejor a las ocho y media. Todavía estoy trabajando.",
+        "transcript": "He says, should they meet at 8? She says it'd be better at 8.30 because I'm still working.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 7.27,
+        "speakingDurationSeconds": 9.055,
+        "wordsPerMinute": 139,
+        "overallScore": 3,
+        "evidenceScore": 3.2,
+        "abilityEstimateBefore": 1.846349571,
+        "abilityEstimateAfter": 2.2524446997,
+        "grade": {
+          "prompt_id": "MINI_A2_MINUS_001",
+          "overall_score": 3,
+          "label": "Good",
+          "brief_feedback": "You understood the time change and the reason for it.",
+          "dimension_scores": {
+            "comprehension": 4,
+            "task_completion": 3,
+            "grammar": 2,
+            "vocabulary": 3,
+            "fluency": 3,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 2,
+            "target_style_alignment": 2
+          },
+          "observed_errors": [],
+          "cefr_signal": "A2",
+          "notes_for_profile": [
+            "User understands basic dialogue structure.",
+            "Can identify key details in conversations.",
+            "Grammar and vocabulary need improvement."
+          ]
+        },
+        "briefFeedback": "You understood the time change and the reason for it."
+      },
+      {
+        "promptIndex": 9,
+        "questionId": "PROB_A2_002",
+        "promptType": "practical_problem",
+        "promptDifficulty": 3.8,
+        "promptBucket": "A2",
+        "promptText": "You are staying in an apartment. Tell the owner in Spanish: The shower doesn't work well. Can someone come today?",
+        "transcript": "Los duches no se funcionan. ¿Podés ayudarme hoy?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 5.127,
+        "speakingDurationSeconds": 11.902,
+        "wordsPerMinute": 48,
+        "overallScore": 2,
+        "evidenceScore": 3.0999999999999996,
+        "abilityEstimateBefore": 2.2524446997,
+        "abilityEstimateAfter": 2.5067112897899997,
+        "grade": {
+          "prompt_id": "PROB_A2_002",
+          "overall_score": 2,
+          "label": "Ok",
+          "brief_feedback": "The response partially addresses the problem but has grammatical errors.",
+          "dimension_scores": {
+            "comprehension": 3,
+            "task_completion": 2,
+            "grammar": 2,
+            "vocabulary": 3,
+            "fluency": 3,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 3,
+            "target_style_alignment": 2
+          },
+          "observed_errors": [
+            {
+              "category": "grammar",
+              "description": "Incorrect verb conjugation and noun form.",
+              "severity": 2,
+              "correction": "La ducha no funciona.",
+              "review_later": true
+            },
+            {
+              "category": "target_style_vocabulary",
+              "description": "Use of 'duches' instead of 'ducha'.",
+              "severity": 1,
+              "correction": "La ducha no se funciona.",
+              "review_later": true
+            }
+          ],
+          "cefr_signal": "A2",
+          "notes_for_profile": [
+            "User struggles with verb conjugation.",
+            "Vocabulary usage is limited but relevant."
+          ]
+        },
+        "briefFeedback": "The response partially addresses the problem but has grammatical errors."
+      }
+    ],
+    "report": {
+      "overall_score": 2.5067112897899997,
+      "display_level": "A1+",
+      "cefr_band": "A1",
+      "confidence": "high",
+      "confidence_range": [
+        2.1067112897899998,
+        2.9067112897899996
+      ],
+      "summary": "You have solid beginner foundations and are growing into A2 territory.",
+      "skill_scores": {
+        "listening_comprehension": 4.851472608280534,
+        "speaking_fluency": 2.5736699799460316,
+        "grammar_control": 3.2899360869912013,
+        "vocabulary_range": 3.2504083928282124,
+        "pronunciation_intelligibility": 2.916801182329895,
+        "response_speed": 1.9583847703980846,
+        "target_style_alignment": 1.639184159925,
+        "practical_communication": 4.438804232648781
+      },
+      "strengths": [
+        "Listening comprehension",
+        "Grammar control",
+        "Vocabulary range",
+        "Pronunciation / intelligibility",
+        "Practical communication"
+      ],
+      "weaknesses": [
+        "Response speed",
+        "Argentine style alignment"
+      ],
+      "most_common_error_categories": [
+        "grammar",
+        "task_completion",
+        "target_style_vocabulary"
+      ],
+      "next_level_gap": "To reach A2, focus on forming short questions and answers in conversation.",
+      "recommended_first_lesson": {
+        "title": "Getting around the city",
+        "scenario": "transport",
+        "focus_points": [
+          "simple requests",
+          "vos recognition",
+          "basic questions"
+        ],
+        "why": "Bridge beginner to A2 with practical scenarios."
+      },
+      "next_three_lessons": [
+        {
+          "title": "Getting around the city",
+          "target_difficulty": 3.4,
+          "focus": "simple requests"
+        },
+        {
+          "title": "Expand vocabulary in context",
+          "target_difficulty": 3.6999999999999997,
+          "focus": "vocabulary and natural phrasing"
+        },
+        {
+          "title": "Listening at natural speed",
+          "target_difficulty": 3.9,
+          "focus": "comprehension at full pace"
+        }
+      ]
+    }
+  }
+}

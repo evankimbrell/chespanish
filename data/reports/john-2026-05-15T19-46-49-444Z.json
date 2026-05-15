@@ -1,0 +1,497 @@
+{
+  "userName": "John",
+  "generatedAt": "2026-05-15T20:17:37.899Z",
+  "educatorReport": "**Student Report: John**\n\n**Overall Assessment:**\n- Level: A2+ (approaching B1)\n- Confidence: High\n- Strengths: Practical communication\n- Weaknesses: Speaking fluency, Pronunciation/intelligibility, Response speed, Argentine style alignment\n- Areas to Focus: Connected past/future narration, practical problem-solving, faster spontaneous responses\n\n**Strengths:**\n- Practical communication skills are strong, indicating a good ability to convey basic ideas and engage in simple conversations.\n- Good understanding and use of basic sentence structures, particularly with common phrases.\n- Strong command of basic conversational phrases and Argentine Spanish forms, as demonstrated in Q7.\n\n**Weaknesses:**\n- Speaking Fluency: Needs improvement in speaking smoothly without unnecessary pauses.\n- Pronunciation/Intelligibility: Some responses are clear but could be more natural, particularly in Argentine Spanish.\n- Response Speed: Generally slow, indicating a need for quicker recall and spontaneous speech.\n- Argentine Style Alignment: Some responses lack the natural phrasing typical of Argentine Spanish.\n\n**Knowledge Gaps:**\n- Grammar: Needs work on more complex structures, particularly in forming questions and using future tense.\n- Vocabulary: While basic vocabulary is strong, there is room for expansion to include more varied and complex terms.\n- Response Speed: Requires practice to decrease response time and increase confidence in spontaneous speaking.\n\n**Immediate Areas to Address:**\n- Improve fluency through regular speaking practice and roleplay exercises focused on everyday scenarios.\n- Enhance pronunciation and intonation to better align with Argentine Spanish.\n- Increase response speed with timed speaking drills and quick-response exercises.\n\n**Logical Next Steps:**\n- Introduce exercises that focus on narrating past and future events to build connected speech.\n- Incorporate practical problem-solving scenarios to apply language skills in real-world contexts.\n- Use audio lessons to improve listening comprehension and mimic natural speech patterns.\n- Implement vocabulary testing to broaden lexical range and improve word recall.\n- Develop roleplay activities to practice spontaneous dialogue and improve response speed.\n\n**Conclusion:**\nJohn is a motivated learner with a solid foundation in practical communication. By focusing on fluency, pronunciation, and response speed, he can quickly progress to a B1 level. Tailored lessons should incorporate a mix of audio practice, vocabulary expansion, and roleplay to address current weaknesses and build on his strengths.",
+  "session": {
+    "startedAt": "2026-05-15T19:37:54.699Z",
+    "completedAt": "2026-05-15T19:46:49.444Z",
+    "comfortLevel": 2,
+    "prompts": [
+      {
+        "promptIndex": 0,
+        "questionId": "LFM_A2_002",
+        "promptType": "listen_for_meaning",
+        "promptDifficulty": 3.8,
+        "promptBucket": "A2",
+        "promptText": "No puedo salir esta noche porque tengo que trabajar temprano mañana.",
+        "transcript": "I can't go out tonight because I have to work tomorrow early.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 31.367,
+        "speakingDurationSeconds": 7.021,
+        "wordsPerMinute": 112,
+        "overallScore": 3,
+        "evidenceScore": 3.8,
+        "abilityEstimateBefore": 2.8,
+        "abilityEstimateAfter": 3.0999999999999996,
+        "grade": {
+          "prompt_id": "LFM_A2_002",
+          "overall_score": 3,
+          "label": "Good",
+          "brief_feedback": "The response is understandable but uses English instead of Spanish.",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 4,
+            "grammar": 4,
+            "vocabulary": 4,
+            "fluency": 4,
+            "pronunciation_intelligibility": 5,
+            "response_speed": 1,
+            "target_style_alignment": 0
+          },
+          "observed_errors": [],
+          "cefr_signal": "A2",
+          "notes_for_profile": [
+            "Understands key details from spoken prompts.",
+            "Can express understanding in English but not in Spanish."
+          ]
+        },
+        "briefFeedback": "The response is understandable but uses English instead of Spanish."
+      },
+      {
+        "promptIndex": 1,
+        "questionId": "SAY_A2_001",
+        "promptType": "say_it_in_spanish",
+        "promptDifficulty": 3.2,
+        "promptBucket": "A2_MINUS",
+        "promptText": "Say in Spanish: I'm from the United States, but now I live in Argentina.",
+        "transcript": "Soy de Estados Unidos, pero vivo en Argentina.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 4.196,
+        "speakingDurationSeconds": 11.606,
+        "wordsPerMinute": 46,
+        "overallScore": 4,
+        "evidenceScore": 3.7,
+        "abilityEstimateBefore": 3.0999999999999996,
+        "abilityEstimateAfter": 3.2799999999999994,
+        "grade": {
+          "prompt_id": "SAY_A2_001",
+          "overall_score": 4,
+          "label": "Excellent",
+          "brief_feedback": "Natural and complete response with minor fluency issues.",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 4,
+            "grammar": 4,
+            "vocabulary": 4,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 3,
+            "target_style_alignment": 5
+          },
+          "observed_errors": [],
+          "cefr_signal": "A2",
+          "notes_for_profile": [
+            "Good understanding of basic sentence structure.",
+            "Fluency could improve with practice."
+          ]
+        },
+        "briefFeedback": "Natural and complete response with minor fluency issues."
+      },
+      {
+        "promptIndex": 2,
+        "questionId": "PROB_A2_001",
+        "promptType": "practical_problem",
+        "promptDifficulty": 3.8,
+        "promptBucket": "A2",
+        "promptText": "You're lost. Ask someone in Spanish: Excuse me, where is the nearest pharmacy?",
+        "transcript": "Perdón, ¿sabes dónde está la farmacia que es lo más cerca de aquí?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 32.269,
+        "speakingDurationSeconds": 11.332,
+        "wordsPerMinute": 72,
+        "overallScore": 3,
+        "evidenceScore": 3.8,
+        "abilityEstimateBefore": 3.2799999999999994,
+        "abilityEstimateAfter": 3.435999999999999,
+        "grade": {
+          "prompt_id": "PROB_A2_001",
+          "overall_score": 3,
+          "label": "Good",
+          "brief_feedback": "The response is clear but slightly awkward in phrasing.",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 4,
+            "grammar": 3,
+            "vocabulary": 4,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 1,
+            "target_style_alignment": 3
+          },
+          "observed_errors": [
+            {
+              "category": "unnatural_wording",
+              "description": "The phrase 'que es lo más cerca' is awkward.",
+              "severity": 2,
+              "correction": "la farmacia más cercana",
+              "review_later": true
+            }
+          ],
+          "cefr_signal": "A2",
+          "notes_for_profile": [
+            "User understands basic requests.",
+            "Response shows some vocabulary knowledge.",
+            "Grammar needs improvement for natural phrasing."
+          ]
+        },
+        "briefFeedback": "The response is clear but slightly awkward in phrasing."
+      },
+      {
+        "promptIndex": 3,
+        "questionId": "OPEN_A2_001",
+        "promptType": "open_speaking",
+        "promptDifficulty": 3.2,
+        "promptBucket": "A2_MINUS",
+        "promptText": "Answer in Spanish: What do you usually do on weekends?",
+        "transcript": "Depende, típicamente yo intento relajarme y leo libros.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 79.495,
+        "speakingDurationSeconds": 10.233,
+        "wordsPerMinute": 56,
+        "overallScore": 3,
+        "evidenceScore": 3.2,
+        "abilityEstimateBefore": 3.435999999999999,
+        "abilityEstimateAfter": 3.3651999999999993,
+        "grade": {
+          "prompt_id": "OPEN_A2_001",
+          "overall_score": 3,
+          "label": "Good",
+          "brief_feedback": "The response is understandable but slightly off in phrasing.",
+          "dimension_scores": {
+            "comprehension": 4,
+            "task_completion": 3,
+            "grammar": 3,
+            "vocabulary": 4,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 2,
+            "target_style_alignment": 2
+          },
+          "observed_errors": [
+            {
+              "category": "unnatural_wording",
+              "description": "The phrase 'intento relajarme' is less natural.",
+              "severity": 2,
+              "correction": "normalmente me relajo",
+              "review_later": false
+            }
+          ],
+          "cefr_signal": "A2",
+          "notes_for_profile": [
+            "User can express weekend activities.",
+            "Some phrasing is not typical for Argentine Spanish."
+          ]
+        },
+        "briefFeedback": "The response is understandable but slightly off in phrasing."
+      },
+      {
+        "promptIndex": 4,
+        "questionId": "GRAM_A2_001",
+        "promptType": "grammar_in_context",
+        "promptDifficulty": 3.8,
+        "promptBucket": "A2",
+        "promptText": "Say in Spanish: I really like Argentine food.",
+        "transcript": "Me encanta la comida de Argentina.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 17.379,
+        "speakingDurationSeconds": 4.619,
+        "wordsPerMinute": 98,
+        "overallScore": 4,
+        "evidenceScore": 4.3,
+        "abilityEstimateBefore": 3.3651999999999993,
+        "abilityEstimateAfter": 3.6456399999999993,
+        "grade": {
+          "prompt_id": "GRAM_A2_001",
+          "overall_score": 4,
+          "label": "Excellent",
+          "brief_feedback": "Natural response with correct structure and vocabulary.",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 4,
+            "grammar": 4,
+            "vocabulary": 4,
+            "fluency": 4,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 1,
+            "target_style_alignment": 5
+          },
+          "observed_errors": [],
+          "cefr_signal": "A2",
+          "notes_for_profile": [
+            "Good understanding of 'gustar' structure.",
+            "Uses enthusiastic vocabulary appropriately."
+          ]
+        },
+        "briefFeedback": "Natural response with correct structure and vocabulary."
+      },
+      {
+        "promptIndex": 5,
+        "questionId": "ROLE_A2_002",
+        "promptType": "roleplay_response",
+        "promptDifficulty": 3.8,
+        "promptBucket": "A2",
+        "promptText": "Perdón, ¿sabés cómo llegar a la estación de subte?",
+        "transcript": "Ah, perdóname, no sé dónde está la estación.",
+        "usedTranscriptHelp": true,
+        "skipped": false,
+        "responseTimeSeconds": 39.072,
+        "speakingDurationSeconds": 8.456,
+        "wordsPerMinute": 93,
+        "overallScore": 3,
+        "evidenceScore": 3.8,
+        "abilityEstimateBefore": 3.6456399999999993,
+        "abilityEstimateAfter": 3.691947999999999,
+        "grade": {
+          "prompt_id": "ROLE_A2_002",
+          "overall_score": 3,
+          "label": "Good",
+          "brief_feedback": "The response is appropriate but slightly delayed.",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 3,
+            "grammar": 4,
+            "vocabulary": 4,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 2,
+            "target_style_alignment": 4
+          },
+          "observed_errors": [],
+          "cefr_signal": "A2",
+          "notes_for_profile": [
+            "Understands prompts well.",
+            "Can respond appropriately but with some hesitation."
+          ]
+        },
+        "briefFeedback": "The response is appropriate but slightly delayed."
+      },
+      {
+        "promptIndex": 6,
+        "questionId": "SAY_A2_003",
+        "promptType": "say_it_in_spanish",
+        "promptDifficulty": 3.8,
+        "promptBucket": "A2",
+        "promptText": "Say in Spanish: Can you help me?",
+        "transcript": "¿Podés ayudarme?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 6.74,
+        "speakingDurationSeconds": 3.821,
+        "wordsPerMinute": 45,
+        "overallScore": 5,
+        "evidenceScore": 4.7,
+        "abilityEstimateBefore": 3.691947999999999,
+        "abilityEstimateAfter": 3.994363599999999,
+        "grade": {
+          "prompt_id": "SAY_A2_003",
+          "overall_score": 5,
+          "label": "Excellent",
+          "brief_feedback": "Natural and fluent response with correct phrasing.",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 5,
+            "grammar": 5,
+            "vocabulary": 5,
+            "fluency": 5,
+            "pronunciation_intelligibility": 5,
+            "response_speed": 3,
+            "target_style_alignment": 5
+          },
+          "observed_errors": [],
+          "cefr_signal": "A2",
+          "notes_for_profile": [
+            "Strong command of basic conversational phrases.",
+            "Uses appropriate Argentine Spanish forms."
+          ]
+        },
+        "briefFeedback": "Natural and fluent response with correct phrasing."
+      },
+      {
+        "promptIndex": 7,
+        "questionId": "MDC_B1_001",
+        "promptType": "mini_dialogue_comprehension",
+        "promptDifficulty": 5.2,
+        "promptBucket": "B1_MINUS",
+        "promptText": "Persona A: Che, ¿querés ir a cenar después? Persona B: Hoy no puedo, tengo que terminar algo del laburo. ¿Mañana te va? Persona A: Sí, mañana perfecto.",
+        "transcript": "They decided to get dinner tomorrow instead of tonight.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 13.812,
+        "speakingDurationSeconds": 4.671,
+        "wordsPerMinute": 155,
+        "overallScore": null,
+        "evidenceScore": null,
+        "abilityEstimateBefore": 3.994363599999999,
+        "abilityEstimateAfter": 3.994363599999999,
+        "grade": null,
+        "briefFeedback": ""
+      },
+      {
+        "promptIndex": 8,
+        "questionId": "LFM_B1_001",
+        "promptType": "listen_for_meaning",
+        "promptDifficulty": 5.2,
+        "promptBucket": "B1_MINUS",
+        "promptText": "Che, perdón, llego un poco tarde porque hay mucho tráfico. ¿Podés esperarme diez minutos?",
+        "transcript": "He's just apologizing because he's going to arrive late, and he's asking if they can wait ten minutes.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 8.169,
+        "speakingDurationSeconds": 7.61,
+        "wordsPerMinute": 167,
+        "overallScore": 3,
+        "evidenceScore": 5.2,
+        "abilityEstimateBefore": 4.356054519999999,
+        "abilityEstimateAfter": 4.609238163999999,
+        "grade": {
+          "prompt_id": "LFM_B1_001",
+          "overall_score": 3,
+          "label": "Good",
+          "brief_feedback": "The response is clear but lacks specific details about traffic.",
+          "dimension_scores": {
+            "comprehension": 4,
+            "task_completion": 3,
+            "grammar": 4,
+            "vocabulary": 4,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 2,
+            "target_style_alignment": 0
+          },
+          "observed_errors": [],
+          "cefr_signal": "B1",
+          "notes_for_profile": [
+            "Good understanding of the prompt",
+            "Clear but slightly incomplete response",
+            "Grammar and vocabulary are strong"
+          ]
+        },
+        "briefFeedback": "The response is clear but lacks specific details about traffic."
+      },
+      {
+        "promptIndex": 9,
+        "questionId": "OPEN_B1_003",
+        "promptType": "open_speaking",
+        "promptDifficulty": 5.8,
+        "promptBucket": "B1",
+        "promptText": "Answer in Spanish: What are your plans for the next few months?",
+        "transcript": "¿Cuáles tus planes por los meses próximos?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 11.479,
+        "speakingDurationSeconds": 9.403,
+        "wordsPerMinute": 48,
+        "overallScore": 2,
+        "evidenceScore": 5.1,
+        "abilityEstimateBefore": 4.609238163999999,
+        "abilityEstimateAfter": 4.756466714799998,
+        "grade": {
+          "prompt_id": "OPEN_B1_003",
+          "overall_score": 2,
+          "label": "Ok",
+          "brief_feedback": "The response partially addresses the prompt but lacks detail.",
+          "dimension_scores": {
+            "comprehension": 3,
+            "task_completion": 2,
+            "grammar": 2,
+            "vocabulary": 3,
+            "fluency": 2,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 2,
+            "target_style_alignment": 2
+          },
+          "observed_errors": [
+            {
+              "category": "grammar",
+              "description": "Incorrect structure in the question.",
+              "severity": 2,
+              "correction": "¿Cuáles son tus planes para los próximos meses?",
+              "review_later": true
+            },
+            {
+              "category": "response_speed",
+              "description": "Response latency was over 12 seconds.",
+              "severity": 1,
+              "correction": "Aim for quicker responses.",
+              "review_later": false
+            }
+          ],
+          "cefr_signal": "A2",
+          "notes_for_profile": [
+            "Needs improvement in future tense usage.",
+            "Response speed is slow."
+          ]
+        },
+        "briefFeedback": "The response partially addresses the prompt but lacks detail."
+      }
+    ],
+    "report": {
+      "overall_score": 4.756466714799998,
+      "display_level": "A2+",
+      "cefr_band": "A2",
+      "confidence": "high",
+      "confidence_range": [
+        4.356466714799998,
+        5.156466714799999
+      ],
+      "summary": "You are a strong A2 speaker approaching B1. Some B1 tasks are within reach.",
+      "skill_scores": {
+        "listening_comprehension": 4.498,
+        "speaking_fluency": 3.90462468915123,
+        "grammar_control": 4.569371301242049,
+        "vocabulary_range": 4.512238156647327,
+        "pronunciation_intelligibility": 3.731717390753661,
+        "response_speed": 2.8483384,
+        "target_style_alignment": 2.91229405,
+        "practical_communication": 5.336156962165041
+      },
+      "strengths": [
+        "Practical communication"
+      ],
+      "weaknesses": [
+        "Speaking fluency",
+        "Pronunciation / intelligibility",
+        "Response speed",
+        "Argentine style alignment"
+      ],
+      "most_common_error_categories": [
+        "unnatural_wording",
+        "grammar",
+        "response_speed"
+      ],
+      "next_level_gap": "To reach B1, focus on connected past/future narration, practical problem-solving, and faster spontaneous responses.",
+      "recommended_first_lesson": {
+        "title": "Making plans with a friend",
+        "scenario": "social",
+        "focus_points": [
+          "near future with voy a",
+          "vos conjugation",
+          "casual responses"
+        ],
+        "why": "Target the specific patterns needed to reach B1."
+      },
+      "next_three_lessons": [
+        {
+          "title": "Making plans with a friend",
+          "target_difficulty": 5.199999999999999,
+          "focus": "near future with voy a"
+        },
+        {
+          "title": "Expand vocabulary in context",
+          "target_difficulty": 5.499999999999999,
+          "focus": "vocabulary and natural phrasing"
+        },
+        {
+          "title": "Listening at natural speed",
+          "target_difficulty": 5.699999999999999,
+          "focus": "comprehension at full pace"
+        }
+      ]
+    }
+  }
+}

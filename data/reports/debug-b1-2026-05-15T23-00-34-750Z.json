@@ -1,0 +1,577 @@
+{
+  "userName": "debug-b1",
+  "generatedAt": "2026-05-15T23:00:34.752Z",
+  "educatorReport": "**Student Report: debug-b1**\n\n**Overall Level: B1 (CEFR: B1)**\n- **Confidence:** Medium (3.9–5.5)\n- **Summary:** Can handle everyday conversations at a moderate pace. Some grammar gaps remain and spontaneous speech is still effortful.\n\n**Strengths:**\n- **Everyday Vocabulary:** Demonstrates a good range of basic vocabulary suitable for everyday conversations.\n- **Listening Comprehension:** Shows a moderate ability to understand spoken Spanish, particularly in basic and practical contexts.\n- **Pronunciation:** Generally intelligible, though with some minor errors.\n\n**Weaknesses:**\n- **Complex Tense Usage:** Struggles with consistent use of tenses, particularly in more complex sentences.\n- **Argentine Idioms and Vos Conjugations:** Limited familiarity with regional idioms and the use of \"vos\" instead of \"tú.\"\n- **Extended Open Speaking:** Difficulty in maintaining fluency and coherence during extended speaking tasks.\n\n**Knowledge Gaps:**\n- **Grammar Control:** Needs improvement in controlling grammar, especially in spontaneous speech.\n- **Response Speed:** Responses are often delayed, indicating a need for more practice in rapid retrieval of language.\n- **Argentine Style Alignment:** Requires more exposure to Argentine Spanish to better align with regional language use.\n\n**Immediate Focus Areas:**\n- **Grammar Practice:** Emphasize exercises that focus on tense usage and sentence structure to improve grammatical accuracy.\n- **Argentine Spanish Exposure:** Incorporate listening and speaking exercises that include Argentine idioms and \"vos\" conjugations.\n- **Speaking Fluency:** Engage in roleplay and open speaking activities to build confidence and reduce reliance on filler words.\n\n**Next Steps:**\n- **Listening and Speaking Exercises:** Daily audio lessons should focus on practical communication, with an emphasis on understanding and using Argentine Spanish.\n- **Vocabulary Expansion:** Introduce thematic vocabulary sessions to broaden the student's range and improve response speed.\n- **Pronunciation Drills:** Include targeted pronunciation practice to refine clarity and address any persistent errors.\n\n**Long-term Goals:**\n- **Consistent Grammar Control:** Achieve more consistent use of grammar in both written and spoken Spanish.\n- **Cultural Familiarity:** Develop a deeper understanding of Argentine culture and language nuances to enhance communication skills.\n- **Fluency and Confidence:** Aim to increase speaking fluency and confidence through regular practice and exposure to varied conversational scenarios.",
+  "testReport": {
+    "overall_score": 4.69173600877,
+    "display_level": "B1",
+    "cefr_band": "B1",
+    "confidence": "medium",
+    "confidence_range": [
+      3.8917360087700006,
+      5.49173600877
+    ],
+    "summary": "Can handle everyday conversations at a moderate pace. Some grammar gaps remain and spontaneous speech is still effortful.",
+    "skill_scores": {
+      "listening_comprehension": 5.003082080447113,
+      "speaking_fluency": 4.753314355563175,
+      "grammar_control": 5.8864175840224835,
+      "vocabulary_range": 5.325665228729436,
+      "pronunciation_intelligibility": 5.944684833471099,
+      "response_speed": 4.771345365789136,
+      "target_style_alignment": 4.9684115961599,
+      "practical_communication": 5.913135928735632
+    },
+    "strengths": [
+      "Everyday vocabulary",
+      "Listening comprehension",
+      "Basic roleplay"
+    ],
+    "weaknesses": [
+      "Complex tense usage",
+      "Argentine idioms",
+      "Extended open speaking"
+    ],
+    "most_common_error_categories": [
+      "verb_conjugation",
+      "target_style_vos",
+      "vocabulary_gap"
+    ],
+    "next_level_gap": "Student needs more consistent grammar control and exposure to Argentine idioms to advance.",
+    "recommended_first_lesson": {
+      "title": "Café & Daily Greetings",
+      "scenario": "Ordering at a Buenos Aires café",
+      "focus_points": [
+        "Vos conjugation",
+        "Basic ordering phrases",
+        "Polite requests"
+      ],
+      "why": "High-frequency scenario that builds confidence immediately."
+    },
+    "next_three_lessons": [
+      {
+        "title": "Getting Around",
+        "target_difficulty": 5.19173600877,
+        "focus": "Directions and transport"
+      },
+      {
+        "title": "Shopping & Bargaining",
+        "target_difficulty": 5.49173600877,
+        "focus": "Prices and negotiation"
+      },
+      {
+        "title": "Making Plans",
+        "target_difficulty": 5.891736008770001,
+        "focus": "Future tense and invitations"
+      }
+    ]
+  },
+  "lessonTranscript": "<English voice> Welcome to your first Spanish lesson! Today, we're going to focus on improving your grammar control, getting familiar with Argentine Spanish, and enhancing your speaking fluency. Remember, the goal is to actively recall and respond, not just to listen. I'll guide you through the exercises, and you'll have the chance to practice speaking out loud. Let's get started!\n\n<English voice> First, let's practice some basic phrases using the \"vos\" form, which is commonly used in Argentine Spanish. Listen and repeat after the native speaker. <prompt>\n\n<Spanish voice> ¿Vos querés un café? \n\n<English voice> Now, respond using \"sí\" or \"no.\" <prompt>\n\n<Spanish voice> Sí, quiero un café.\n\n<English voice> Great! Now, let's try another one. How would you ask someone if they want to go to the movies? <prompt>\n\n<Spanish voice> ¿Vos querés ir al cine?\n\n<English voice> Excellent! Let's move on to practicing some Argentine idioms. I'll say the idiom in English, and you try to say it in Spanish. Ready? \"To be in a hurry.\" <prompt>\n\n<Spanish voice> Estar apurado.\n\n<English voice> Good job! Now let's use it in a sentence. \"I'm in a hurry because I have a meeting.\" <prompt>\n\n<Spanish voice> Estoy apurado porque tengo una reunión.\n\n<English voice> Well done! Let's practice using some complex tenses now. I'll give you a sentence in English, and you say it in Spanish. \"I would have gone to the party if I had known.\" <prompt>\n\n<Spanish voice> Habría ido a la fiesta si hubiera sabido.\n\n<English voice> Great effort! Let's try another one. \"I will have finished the report by tomorrow.\" <prompt>\n\n<Spanish voice> Habré terminado el informe para mañana.\n\n<English voice> Excellent! Now, let's focus on improving your response speed. I'll ask you a question in Spanish, and you try to answer as quickly as possible. Ready? \"¿De dónde sos?\" <prompt>\n\n<Spanish voice> Soy de [your city].\n\n<English voice> Good! Let's try another. \"¿Qué te gusta hacer en tu tiempo libre?\" <prompt>\n\n<Spanish voice> Me gusta [your hobby].\n\n<English voice> Great! Remember, the key is to respond quickly and confidently. Now, let's practice some roleplay. Imagine you're asking for directions in a city. How would you say, \"Excuse me, where is the nearest pharmacy?\" <prompt>\n\n<Spanish voice> Disculpá, ¿dónde está la farmacia más cercana?\n\n<English voice> Excellent! Let's try a different scenario. You're at a restaurant, and you want to ask for the check. How would you say, \"Can I have the check, please?\" <prompt>\n\n<Spanish voice> ¿Me traés la cuenta, por favor?\n\n<English voice> Well done! Let's practice some more complex sentences. I'll give you a sentence in English, and you translate it into Spanish. \"If I had more time, I would travel to Argentina.\" <prompt>\n\n<Spanish voice> Si tuviera más tiempo, viajaría a Argentina.\n\n<English voice> Great job! Let's try another one. \"I wish I could speak Spanish fluently.\" <prompt>\n\n<Spanish voice> Ojalá pudiera hablar español con fluidez.\n\n<English voice> Excellent work! Finally, let's practice some pronunciation drills. Listen and repeat each word after the native speaker. \"Coche.\" <prompt>\n\n<Spanish voice> Coche.\n\n<English voice> \"Llegar.\" <prompt>\n\n<Spanish voice> Llegar.\n\n<English voice> \"Estación.\" <prompt>\n\n<Spanish voice> Estación.\n\n<English voice> Great! Let's put it all together in a short conversation. I'll say it in English, and you respond in Spanish. \"Hello! How are you today?\" <prompt>\n\n<Spanish voice> ¡Hola! ¿Cómo estás hoy?\n\n<English voice> \"I'm good, thank you. What are you doing later?\" <prompt>\n\n<Spanish voice> Estoy bien, gracias. ¿Qué vas a hacer más tarde?\n\n<English voice> \"I'm going to the park. Do you want to come?\" <prompt>\n\n<Spanish voice> Voy al parque. ¿Querés venir?\n\n<English voice> Well done! You've completed the lesson. Remember to practice regularly to improve your fluency and confidence. Keep up the great work, and you'll be speaking Spanish like a pro in no time. ¡Hasta luego!",
+  "session": {
+    "startedAt": "2026-05-15T23:00:05.394Z",
+    "completedAt": "2026-05-15T23:00:05.394Z",
+    "comfortLevel": 3,
+    "prompts": [
+      {
+        "promptIndex": 0,
+        "questionId": "ROLE_B2_MINUS_001",
+        "promptType": "roleplay_response",
+        "promptDifficulty": 7.2,
+        "promptBucket": "B2_MINUS",
+        "promptText": "La verdad, me encantaría ir, pero este mes estoy tratando de cuidar un poco los gastos.",
+        "transcript": "Perdón, ¿me podés decir cómo llegar al centro?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 3.2,
+        "speakingDurationSeconds": 4.3,
+        "wordsPerMinute": 134,
+        "overallScore": 3,
+        "evidenceScore": 7.2,
+        "abilityEstimateBefore": 5.5,
+        "abilityEstimateAfter": 6.01,
+        "grade": {
+          "prompt_id": "ROLE_B2_MINUS_001",
+          "overall_score": 3,
+          "label": "Good",
+          "dimension_scores": {
+            "comprehension": 3,
+            "task_completion": 3,
+            "grammar": 2,
+            "vocabulary": 2,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 4,
+            "target_style_alignment": 2
+          },
+          "cefr_signal": "B2",
+          "observed_errors": [],
+          "brief_feedback": "Understood and responded correctly with some errors.",
+          "notes_for_profile": [
+            "Tense usage is inconsistent.",
+            "Uses filler words frequently when searching for vocabulary."
+          ]
+        },
+        "briefFeedback": "Understood and responded correctly with some errors."
+      },
+      {
+        "promptIndex": 1,
+        "questionId": "LAR_A1_003",
+        "promptType": "listen_and_respond",
+        "promptDifficulty": 2.6,
+        "promptBucket": "A1_PLUS",
+        "promptText": "¿De dónde sos?",
+        "transcript": "Bueno, dale. ¿Y vos qué tal?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 4.8,
+        "speakingDurationSeconds": 2.2,
+        "wordsPerMinute": 145,
+        "overallScore": 2,
+        "evidenceScore": 1.9000000000000001,
+        "abilityEstimateBefore": 6.01,
+        "abilityEstimateAfter": 4.777,
+        "grade": {
+          "prompt_id": "LAR_A1_003",
+          "overall_score": 2,
+          "label": "Ok",
+          "dimension_scores": {
+            "comprehension": 2,
+            "task_completion": 2,
+            "grammar": 1,
+            "vocabulary": 1,
+            "fluency": 1,
+            "pronunciation_intelligibility": 2,
+            "response_speed": 4,
+            "target_style_alignment": 1
+          },
+          "cefr_signal": "A1",
+          "observed_errors": [
+            {
+              "category": "word_order",
+              "description": "Non-standard word order",
+              "severity": 1,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Partial response — addressed the question but with notable gaps.",
+          "notes_for_profile": [
+            "Shows basic comprehension of simple prompts.",
+            "Uses filler words frequently when searching for vocabulary."
+          ]
+        },
+        "briefFeedback": "Partial response — addressed the question but with notable gaps."
+      },
+      {
+        "promptIndex": 2,
+        "questionId": "LAR_A1_002",
+        "promptType": "listen_and_respond",
+        "promptDifficulty": 2,
+        "promptBucket": "A1",
+        "promptText": "¿Querés tomar un café?",
+        "transcript": "No sé cómo decirlo... bien, supongo.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 5.4,
+        "speakingDurationSeconds": 5.5,
+        "wordsPerMinute": 97,
+        "overallScore": 4,
+        "evidenceScore": 2.5,
+        "abilityEstimateBefore": 4.777,
+        "abilityEstimateAfter": 4.0939,
+        "grade": {
+          "prompt_id": "LAR_A1_002",
+          "overall_score": 4,
+          "label": "Excellent",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 4,
+            "grammar": 4,
+            "vocabulary": 4,
+            "fluency": 4,
+            "pronunciation_intelligibility": 5,
+            "response_speed": 2,
+            "target_style_alignment": 2
+          },
+          "cefr_signal": "A1",
+          "observed_errors": [],
+          "brief_feedback": "Clear and mostly natural response with minor issues.",
+          "notes_for_profile": [
+            "Pronunciation is intelligible despite some errors.",
+            "Tense usage is inconsistent."
+          ]
+        },
+        "briefFeedback": "Clear and mostly natural response with minor issues."
+      },
+      {
+        "promptIndex": 3,
+        "questionId": "LAR_B1_001",
+        "promptType": "listen_and_respond",
+        "promptDifficulty": 5.2,
+        "promptBucket": "B1_MINUS",
+        "promptText": "Mirá, lo que te digo es importante. Tenés que tomar una decisión antes del lunes.",
+        "transcript": "No sé cómo decirlo... bien, supongo.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 5,
+        "speakingDurationSeconds": 2.1,
+        "wordsPerMinute": 146,
+        "overallScore": 3,
+        "evidenceScore": 5.2,
+        "abilityEstimateBefore": 4.0939,
+        "abilityEstimateAfter": 4.42573,
+        "grade": {
+          "prompt_id": "LAR_B1_001",
+          "overall_score": 3,
+          "label": "Good",
+          "dimension_scores": {
+            "comprehension": 4,
+            "task_completion": 3,
+            "grammar": 3,
+            "vocabulary": 2,
+            "fluency": 3,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 2,
+            "target_style_alignment": 2
+          },
+          "cefr_signal": "B1",
+          "observed_errors": [],
+          "brief_feedback": "Understood and responded correctly with some errors.",
+          "notes_for_profile": [
+            "Demonstrated good listening comprehension.",
+            "Struggles with vos conjugations."
+          ]
+        },
+        "briefFeedback": "Understood and responded correctly with some errors."
+      },
+      {
+        "promptIndex": 4,
+        "questionId": "PROB_A2_001",
+        "promptType": "practical_problem",
+        "promptDifficulty": 3.8,
+        "promptBucket": "A2",
+        "promptText": "You're lost. Ask someone in Spanish: Excuse me, where is the nearest pharmacy?",
+        "transcript": "Necesito cambiar mi reserva. ¿Es posible?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 3.4,
+        "speakingDurationSeconds": 3.8,
+        "wordsPerMinute": 157,
+        "overallScore": 4,
+        "evidenceScore": 4.3,
+        "abilityEstimateBefore": 4.42573,
+        "abilityEstimateAfter": 4.388011,
+        "grade": {
+          "prompt_id": "PROB_A2_001",
+          "overall_score": 4,
+          "label": "Excellent",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 4,
+            "grammar": 4,
+            "vocabulary": 4,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 2,
+            "target_style_alignment": 3
+          },
+          "cefr_signal": "A2",
+          "observed_errors": [],
+          "brief_feedback": "Clear and mostly natural response with minor issues.",
+          "notes_for_profile": [
+            "Uses filler words frequently when searching for vocabulary."
+          ]
+        },
+        "briefFeedback": "Clear and mostly natural response with minor issues."
+      },
+      {
+        "promptIndex": 5,
+        "questionId": "GRAM_A2_001",
+        "promptType": "grammar_in_context",
+        "promptDifficulty": 3.8,
+        "promptBucket": "A2",
+        "promptText": "Say in Spanish: I really like Argentine food.",
+        "transcript": "Ella tiene que trabajar mañana.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 5.4,
+        "speakingDurationSeconds": 4.1,
+        "wordsPerMinute": 84,
+        "overallScore": 2,
+        "evidenceScore": 3.0999999999999996,
+        "abilityEstimateBefore": 4.388011,
+        "abilityEstimateAfter": 4.001607699999999,
+        "grade": {
+          "prompt_id": "GRAM_A2_001",
+          "overall_score": 2,
+          "label": "Ok",
+          "dimension_scores": {
+            "comprehension": 2,
+            "task_completion": 2,
+            "grammar": 1,
+            "vocabulary": 2,
+            "fluency": 2,
+            "pronunciation_intelligibility": 2,
+            "response_speed": 2,
+            "target_style_alignment": 0
+          },
+          "cefr_signal": "A2",
+          "observed_errors": [
+            {
+              "category": "too_much_english",
+              "description": "Switched to English mid-response",
+              "severity": 3,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Partial response — addressed the question but with notable gaps.",
+          "notes_for_profile": [
+            "Shows basic comprehension of simple prompts."
+          ]
+        },
+        "briefFeedback": "Partial response — addressed the question but with notable gaps."
+      },
+      {
+        "promptIndex": 6,
+        "questionId": "MDC_B2_001",
+        "promptType": "mini_dialogue_comprehension",
+        "promptDifficulty": 7.2,
+        "promptBucket": "B2_MINUS",
+        "promptText": "Persona A: ¿Entonces vas a hablar con él? Persona B: Sí, pero no sé cómo va a reaccionar. La última vez no fue muy bien. Persona A: Bueno, es mejor que no decirle nada.",
+        "transcript": "She is asking him to call her later tonight.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 3.8,
+        "speakingDurationSeconds": 6.9,
+        "wordsPerMinute": 126,
+        "overallScore": 2,
+        "evidenceScore": 6.5,
+        "abilityEstimateBefore": 4.001607699999999,
+        "abilityEstimateAfter": 4.7511253899999994,
+        "grade": {
+          "prompt_id": "MDC_B2_001",
+          "overall_score": 2,
+          "label": "Ok",
+          "dimension_scores": {
+            "comprehension": 3,
+            "task_completion": 2,
+            "grammar": 1,
+            "vocabulary": 1,
+            "fluency": 1,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 2,
+            "target_style_alignment": 1
+          },
+          "cefr_signal": "B2",
+          "observed_errors": [
+            {
+              "category": "missing_pronoun",
+              "description": "Omitted required pronoun",
+              "severity": 2,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Partial response — addressed the question but with notable gaps.",
+          "notes_for_profile": [
+            "Struggles with vos conjugations.",
+            "Tense usage is inconsistent."
+          ]
+        },
+        "briefFeedback": "Partial response — addressed the question but with notable gaps."
+      },
+      {
+        "promptIndex": 7,
+        "questionId": "OPEN_B2_001",
+        "promptType": "open_speaking",
+        "promptDifficulty": 7.8,
+        "promptBucket": "B2",
+        "promptText": "Tell me in Spanish about a time when something went wrong, but the situation turned out better than expected. What happened, and why did it work out?",
+        "transcript": "La verdad es que no sé... me gusta mucho la comida argentina.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 1.8,
+        "speakingDurationSeconds": 3.5,
+        "wordsPerMinute": 126,
+        "overallScore": 4,
+        "evidenceScore": 8.3,
+        "abilityEstimateBefore": 4.7511253899999994,
+        "abilityEstimateAfter": 5.815787773,
+        "grade": {
+          "prompt_id": "OPEN_B2_001",
+          "overall_score": 4,
+          "label": "Excellent",
+          "dimension_scores": {
+            "comprehension": 5,
+            "task_completion": 4,
+            "grammar": 4,
+            "vocabulary": 3,
+            "fluency": 3,
+            "pronunciation_intelligibility": 5,
+            "response_speed": 2,
+            "target_style_alignment": 2
+          },
+          "cefr_signal": "B2",
+          "observed_errors": [],
+          "brief_feedback": "Clear and mostly natural response with minor issues.",
+          "notes_for_profile": [
+            "Good vocabulary range for the level.",
+            "Struggles with vos conjugations."
+          ]
+        },
+        "briefFeedback": "Clear and mostly natural response with minor issues."
+      },
+      {
+        "promptIndex": 8,
+        "questionId": "ROLE_B1_001",
+        "promptType": "roleplay_response",
+        "promptDifficulty": 5.2,
+        "promptBucket": "B1_MINUS",
+        "promptText": "Necesito que me entregués el informe antes del viernes. ¿Podés?",
+        "transcript": "Disculpá, creo que hay un error en la cuenta.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 4.8,
+        "speakingDurationSeconds": 5.9,
+        "wordsPerMinute": 133,
+        "overallScore": 3,
+        "evidenceScore": 5.2,
+        "abilityEstimateBefore": 5.815787773,
+        "abilityEstimateAfter": 5.6310514411,
+        "grade": {
+          "prompt_id": "ROLE_B1_001",
+          "overall_score": 3,
+          "label": "Good",
+          "dimension_scores": {
+            "comprehension": 3,
+            "task_completion": 3,
+            "grammar": 3,
+            "vocabulary": 3,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 4,
+            "target_style_alignment": 1
+          },
+          "cefr_signal": "B1",
+          "observed_errors": [
+            {
+              "category": "target_style_vos",
+              "description": "Used \"tú\" instead of \"vos\"",
+              "severity": 1,
+              "review_later": false
+            }
+          ],
+          "brief_feedback": "Understood and responded correctly with some errors.",
+          "notes_for_profile": [
+            "Pronunciation is intelligible despite some errors.",
+            "Tense usage is inconsistent."
+          ]
+        },
+        "briefFeedback": "Understood and responded correctly with some errors."
+      },
+      {
+        "promptIndex": 9,
+        "questionId": "SAY_A1_002",
+        "promptType": "say_it_in_spanish",
+        "promptDifficulty": 2,
+        "promptBucket": "A1",
+        "promptText": "Say in Spanish: I don't understand.",
+        "transcript": "Quiero un café, por favor.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 4.9,
+        "speakingDurationSeconds": 4,
+        "wordsPerMinute": 83,
+        "overallScore": 4,
+        "evidenceScore": 2.5,
+        "abilityEstimateBefore": 5.6310514411,
+        "abilityEstimateAfter": 4.69173600877,
+        "grade": {
+          "prompt_id": "SAY_A1_002",
+          "overall_score": 4,
+          "label": "Excellent",
+          "dimension_scores": {
+            "comprehension": 4,
+            "task_completion": 4,
+            "grammar": 3,
+            "vocabulary": 4,
+            "fluency": 4,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 4,
+            "target_style_alignment": 2
+          },
+          "cefr_signal": "A1",
+          "observed_errors": [],
+          "brief_feedback": "Clear and mostly natural response with minor issues.",
+          "notes_for_profile": [
+            "Good vocabulary range for the level.",
+            "Response latency suggests active retrieval, not memorized phrases."
+          ]
+        },
+        "briefFeedback": "Clear and mostly natural response with minor issues."
+      }
+    ],
+    "report": {
+      "overall_score": 4.69173600877,
+      "display_level": "B1",
+      "cefr_band": "B1",
+      "confidence": "medium",
+      "confidence_range": [
+        3.8917360087700006,
+        5.49173600877
+      ],
+      "summary": "Can handle everyday conversations at a moderate pace. Some grammar gaps remain and spontaneous speech is still effortful.",
+      "skill_scores": {
+        "listening_comprehension": 5.003082080447113,
+        "speaking_fluency": 4.753314355563175,
+        "grammar_control": 5.8864175840224835,
+        "vocabulary_range": 5.325665228729436,
+        "pronunciation_intelligibility": 5.944684833471099,
+        "response_speed": 4.771345365789136,
+        "target_style_alignment": 4.9684115961599,
+        "practical_communication": 5.913135928735632
+      },
+      "strengths": [
+        "Everyday vocabulary",
+        "Listening comprehension",
+        "Basic roleplay"
+      ],
+      "weaknesses": [
+        "Complex tense usage",
+        "Argentine idioms",
+        "Extended open speaking"
+      ],
+      "most_common_error_categories": [
+        "verb_conjugation",
+        "target_style_vos",
+        "vocabulary_gap"
+      ],
+      "next_level_gap": "Student needs more consistent grammar control and exposure to Argentine idioms to advance.",
+      "recommended_first_lesson": {
+        "title": "Café & Daily Greetings",
+        "scenario": "Ordering at a Buenos Aires café",
+        "focus_points": [
+          "Vos conjugation",
+          "Basic ordering phrases",
+          "Polite requests"
+        ],
+        "why": "High-frequency scenario that builds confidence immediately."
+      },
+      "next_three_lessons": [
+        {
+          "title": "Getting Around",
+          "target_difficulty": 5.19173600877,
+          "focus": "Directions and transport"
+        },
+        {
+          "title": "Shopping & Bargaining",
+          "target_difficulty": 5.49173600877,
+          "focus": "Prices and negotiation"
+        },
+        {
+          "title": "Making Plans",
+          "target_difficulty": 5.891736008770001,
+          "focus": "Future tense and invitations"
+        }
+      ]
+    }
+  }
+}

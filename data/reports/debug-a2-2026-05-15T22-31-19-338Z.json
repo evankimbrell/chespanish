@@ -1,0 +1,611 @@
+{
+  "userName": "debug-a2",
+  "generatedAt": "2026-05-15T22:31:19.340Z",
+  "educatorReport": "**Student Report: debug-a2**\n\n**Overall Level: A2 (CEFR: A2)**\n- **Confidence:** Medium (3.7–5.3)\n- **Summary:** Can handle simple, familiar topics and short exchanges. Grammar is inconsistent, and vocabulary is limited.\n\n**Strengths:**\n- Basic greetings and simple listening comprehension.\n- Demonstrates good listening comprehension in some instances.\n- Pronunciation is generally intelligible despite errors.\n\n**Weaknesses:**\n- Verb conjugation, particularly with the Argentine \"vos\" form.\n- Limited vocabulary range, affecting ability to respond to prompts accurately.\n- Inconsistent grammar control, especially with gender agreement and tense usage.\n- Struggles with extended speaking and maintaining topic relevance.\n\n**Knowledge Gaps:**\n- Lack of familiarity with Argentine idioms and style.\n- Difficulty in understanding and using complex sentence structures.\n- Tendency to switch to English mid-response, indicating gaps in vocabulary and confidence.\n- Frequent use of filler words when searching for vocabulary.\n\n**Immediate Areas to Address:**\n- **Verb Conjugation:** Focus on practicing regular and irregular verb forms, especially in the \"vos\" form.\n- **Vocabulary Expansion:** Introduce thematic vocabulary sets to improve range and context usage.\n- **Grammar Control:** Emphasize gender agreement and correct tense usage in simple sentences.\n- **Listening Comprehension:** Incorporate exercises that focus on understanding and responding to Argentine Spanish.\n\n**Logical Next Steps:**\n- **Pronunciation Practice:** Integrate pronunciation exercises focusing on common errors and Argentine accent nuances.\n- **Roleplay Exercises:** Use situational roleplays to improve practical communication and response speed.\n- **Cultural Exposure:** Introduce Argentine cultural elements and idioms to align better with the Argentine style.\n- **Confidence Building:** Use positive reinforcement and gradual increase in difficulty to boost confidence in speaking and comprehension.\n\n**Recommendations for Lesson Planning:**\n- Start with foundational grammar and vocabulary lessons, gradually incorporating more complex structures.\n- Use audio materials that include Argentine accents and common expressions to enhance listening skills.\n- Include interactive activities like roleplays and dialogues to improve fluency and practical communication.\n- Regularly assess progress and adjust lesson difficulty to maintain engagement and motivation.",
+  "testReport": {
+    "overall_score": 4.543626043099999,
+    "display_level": "A2",
+    "cefr_band": "A2",
+    "confidence": "medium",
+    "confidence_range": [
+      3.743626043099999,
+      5.343626043099999
+    ],
+    "summary": "Can handle simple, familiar topics and short exchanges. Grammar is inconsistent and vocabulary is limited.",
+    "skill_scores": {
+      "listening_comprehension": 3.286483159584237,
+      "speaking_fluency": 4.451810202603434,
+      "grammar_control": 4.392237766918784,
+      "vocabulary_range": 2.730356952744409,
+      "pronunciation_intelligibility": 2.67768483144525,
+      "response_speed": 2.9669207257970767,
+      "target_style_alignment": 3.216879716815339,
+      "practical_communication": 3.247025787452037
+    },
+    "strengths": [
+      "Basic greetings",
+      "Simple listening comprehension"
+    ],
+    "weaknesses": [
+      "Verb conjugation",
+      "Argentine vos form",
+      "Extended speaking"
+    ],
+    "most_common_error_categories": [
+      "verb_conjugation",
+      "target_style_vos",
+      "vocabulary_gap"
+    ],
+    "next_level_gap": "Student needs more consistent grammar control and exposure to Argentine idioms to advance.",
+    "recommended_first_lesson": {
+      "title": "Café & Daily Greetings",
+      "scenario": "Ordering at a Buenos Aires café",
+      "focus_points": [
+        "Vos conjugation",
+        "Basic ordering phrases",
+        "Polite requests"
+      ],
+      "why": "High-frequency scenario that builds confidence immediately."
+    },
+    "next_three_lessons": [
+      {
+        "title": "Getting Around",
+        "target_difficulty": 5.043626043099999,
+        "focus": "Directions and transport"
+      },
+      {
+        "title": "Shopping & Bargaining",
+        "target_difficulty": 5.343626043099999,
+        "focus": "Prices and negotiation"
+      },
+      {
+        "title": "Making Plans",
+        "target_difficulty": 5.743626043099999,
+        "focus": "Future tense and invitations"
+      }
+    ]
+  },
+  "lessonTranscript": "<English voice>  \nHello and welcome to your first Spanish lesson! Today, we'll focus on building your confidence in speaking and understanding Argentine Spanish. We'll work on verb conjugations, especially the \"vos\" form, expand your vocabulary, and practice listening comprehension with a focus on Argentine idioms and style. Remember, the goal is to actively recall the language under light pressure, so be ready to speak out loud when prompted. Let's get started!\n\n<Spanish voice>  \nHola, ¿cómo estás?  \n<prompt>  \nEstoy bien, gracias. ¿Y tú?  \n<prompt>  \nBien, gracias. Ahora vamos a practicar algunos saludos básicos. Repite después de mí: Hola, ¿cómo estás?  \n<prompt>  \nMuy bien. Ahora, intenta responder: Estoy bien, gracias.  \n<prompt>  \nExcelente. Ahora vamos a practicar una conversación sencilla. Escucha y responde: ¿Tenés tiempo mañana o estás ocupado?  \n<prompt>  \nSí, tengo tiempo mañana.  \n<prompt>  \nPerfecto. Vamos a practicar la conjugación del verbo \"tener\" con \"vos\". Repite: Vos tenés.  \n<prompt>  \nAhora, usa \"vos tenés\" en una oración: Vos tenés un libro.  \n<prompt>  \nMuy bien. Vamos a practicar con otro verbo. Escucha: Vos podés.  \n<prompt>  \nIntenta usar \"vos podés\" en una oración: Vos podés venir mañana.  \n<prompt>  \nExcelente. Ahora vamos a practicar con el verbo \"hacer\". Repite: Vos hacés.  \n<prompt>  \nUsa \"vos hacés\" en una oración: Vos hacés la tarea.  \n<prompt>  \nMuy bien. Ahora, vamos a trabajar en el vocabulario. Escucha y repite: La casa.  \n<prompt>  \nEl auto.  \n<prompt>  \nLa escuela.  \n<prompt>  \nEl trabajo.  \n<prompt>  \nAhora, intenta usar estas palabras en oraciones. Por ejemplo: La casa es grande.  \n<prompt>  \nEl auto es rápido.  \n<prompt>  \nLa escuela es nueva.  \n<prompt>  \nEl trabajo es interesante.  \n<prompt>  \nExcelente. Ahora vamos a practicar la comprensión auditiva. Escucha: \"No puedo salir esta noche porque tengo que trabajar temprano mañana.\"  \n<prompt>  \nIntenta responder: Está ocupada mañana.  \n<prompt>  \nMuy bien. Ahora otro ejemplo. Escucha: \"Che, perdón, llego un poco tarde porque hay mucho tráfico. ¿Podés esperarme diez minutos?\"  \n<prompt>  \nIntenta responder: Sí, puedo esperarte.  \n<prompt>  \nPerfecto. Ahora vamos a practicar algunos modismos argentinos. Escucha y repite: \"¡Qué quilombo!\"  \n<prompt>  \nSignifica \"¡Qué desastre!\" Ahora, intenta usarlo en una oración: La fiesta fue un quilombo.  \n<prompt>  \nMuy bien. Otro modismo: \"Estar en pedo\". Significa \"estar borracho\". Usa \"estar en pedo\" en una oración: Estaba en pedo anoche.  \n<prompt>  \nExcelente. Ahora, vamos a practicar una pequeña conversación. Escucha y responde: ¿Cómo vas con el proyecto?  \n<prompt>  \nVa bien, gracias.  \n<prompt>  \n¿Seguro?  \n<prompt>  \nSí, no te preocupes.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar una situación diferente. Escucha: \"Necesito que me entregués el informe antes del viernes. ¿Podés?\"  \n<prompt>  \nSí, puedo entregarlo antes del viernes.  \n<prompt>  \nPerfecto. Ahora vamos a practicar cómo decir de dónde eres. Escucha: \"Soy de los Estados Unidos.\"  \n<prompt>  \nRepite: Soy de los Estados Unidos.  \n<prompt>  \nMuy bien. Ahora intenta decirlo tú: Soy de los Estados Unidos.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo pedir ayuda. Escucha: \"¿Podés ayudarme?\"  \n<prompt>  \nRepite: ¿Podés ayudarme?  \n<prompt>  \nIntenta usarlo en una oración: ¿Podés ayudarme con esto?  \n<prompt>  \nPerfecto. Ahora, escucha un diálogo y trata de comprenderlo. Persona A: \"¿Cómo vas con el proyecto?\" Persona B: \"Bien, bien. Va a salir.\" Persona A: \"¿Seguro?\" Persona B: \"Sí, no te preocupes.\"  \n<prompt>  \n¿Qué está pasando en el diálogo?  \n<prompt>  \nPersona B está diciendo que el proyecto va bien.  \n<prompt>  \nMuy bien. Ahora vamos a practicar cómo expresar preferencias. Escucha: \"¿Preferís vivir en una ciudad grande o pequeña?\"  \n<prompt>  \nIntenta responder: Prefiero vivir en una ciudad grande.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir algo en español. Escucha: \"Can you help me?\"  \n<prompt>  \nIntenta decirlo en español: ¿Podés ayudarme?  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que necesitas algo. Escucha: \"Necesito ayuda con mi pedido.\"  \n<prompt>  \nRepite: Necesito ayuda con mi pedido.  \n<prompt>  \nIntenta usarlo en una oración: Necesito ayuda con mi pedido de comida.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar cómo expresar que no puedes hacer algo. Escucha: \"No puedo salir esta noche porque tengo que trabajar temprano mañana.\"  \n<prompt>  \nIntenta decirlo en español: No puedo salir esta noche porque tengo que trabajar temprano mañana.  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que algo es nuevo. Escucha: \"La escuela es nueva.\"  \n<prompt>  \nRepite: La escuela es nueva.  \n<prompt>  \nIntenta usarlo en una oración: La escuela es nueva y grande.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir que algo es interesante. Escucha: \"El trabajo es interesante.\"  \n<prompt>  \nRepite: El trabajo es interesante.  \n<prompt>  \nIntenta usarlo en una oración: El trabajo es interesante y desafiante.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar cómo decir que algo es rápido. Escucha: \"El auto es rápido.\"  \n<prompt>  \nRepite: El auto es rápido.  \n<prompt>  \nIntenta usarlo en una oración: El auto es rápido y moderno.  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que algo es grande. Escucha: \"La casa es grande.\"  \n<prompt>  \nRepite: La casa es grande.  \n<prompt>  \nIntenta usarlo en una oración: La casa es grande y cómoda.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir que algo es pequeño. Escucha: \"El cuarto es pequeño.\"  \n<prompt>  \nRepite: El cuarto es pequeño.  \n<prompt>  \nIntenta usarlo en una oración: El cuarto es pequeño pero acogedor.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar cómo decir que algo es importante. Escucha: \"El proyecto es importante.\"  \n<prompt>  \nRepite: El proyecto es importante.  \n<prompt>  \nIntenta usarlo en una oración: El proyecto es importante para la empresa.  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que algo es necesario. Escucha: \"Es necesario estudiar.\"  \n<prompt>  \nRepite: Es necesario estudiar.  \n<prompt>  \nIntenta usarlo en una oración: Es necesario estudiar para el examen.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir que algo es fácil. Escucha: \"El ejercicio es fácil.\"  \n<prompt>  \nRepite: El ejercicio es fácil.  \n<prompt>  \nIntenta usarlo en una oración: El ejercicio es fácil de entender.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar cómo decir que algo es difícil. Escucha: \"El problema es difícil.\"  \n<prompt>  \nRepite: El problema es difícil.  \n<prompt>  \nIntenta usarlo en una oración: El problema es difícil de resolver.  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que algo es divertido. Escucha: \"El juego es divertido.\"  \n<prompt>  \nRepite: El juego es divertido.  \n<prompt>  \nIntenta usarlo en una oración: El juego es divertido y emocionante.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir que algo es aburrido. Escucha: \"La película es aburrida.\"  \n<prompt>  \nRepite: La película es aburrida.  \n<prompt>  \nIntenta usarlo en una oración: La película es aburrida y larga.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar cómo decir que algo es caro. Escucha: \"El coche es caro.\"  \n<prompt>  \nRepite: El coche es caro.  \n<prompt>  \nIntenta usarlo en una oración: El coche es caro pero bonito.  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que algo es barato. Escucha: \"El libro es barato.\"  \n<prompt>  \nRepite: El libro es barato.  \n<prompt>  \nIntenta usarlo en una oración: El libro es barato y útil.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir que algo es necesario. Escucha: \"Es necesario trabajar.\"  \n<prompt>  \nRepite: Es necesario trabajar.  \n<prompt>  \nIntenta usarlo en una oración: Es necesario trabajar para vivir.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar cómo decir que algo es importante. Escucha: \"La familia es importante.\"  \n<prompt>  \nRepite: La familia es importante.  \n<prompt>  \nIntenta usarlo en una oración: La familia es importante para mí.  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que algo es nuevo. Escucha: \"El teléfono es nuevo.\"  \n<prompt>  \nRepite: El teléfono es nuevo.  \n<prompt>  \nIntenta usarlo en una oración: El teléfono es nuevo y moderno.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir que algo es viejo. Escucha: \"El coche es viejo.\"  \n<prompt>  \nRepite: El coche es viejo.  \n<prompt>  \nIntenta usarlo en una oración: El coche es viejo pero funcional.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar cómo decir que algo es rápido. Escucha: \"El tren es rápido.\"  \n<prompt>  \nRepite: El tren es rápido.  \n<prompt>  \nIntenta usarlo en una oración: El tren es rápido y eficiente.  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que algo es lento. Escucha: \"El internet es lento.\"  \n<prompt>  \nRepite: El internet es lento.  \n<prompt>  \nIntenta usarlo en una oración: El internet es lento y frustrante.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir que algo es fácil. Escucha: \"El examen es fácil.\"  \n<prompt>  \nRepite: El examen es fácil.  \n<prompt>  \nIntenta usarlo en una oración: El examen es fácil de aprobar.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar cómo decir que algo es difícil. Escucha: \"La tarea es difícil.\"  \n<prompt>  \nRepite: La tarea es difícil.  \n<prompt>  \nIntenta usarlo en una oración: La tarea es difícil pero interesante.  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que algo es interesante. Escucha: \"El libro es interesante.\"  \n<prompt>  \nRepite: El libro es interesante.  \n<prompt>  \nIntenta usarlo en una oración: El libro es interesante y educativo.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir que algo es aburrido. Escucha: \"La clase es aburrida.\"  \n<prompt>  \nRepite: La clase es aburrida.  \n<prompt>  \nIntenta usarlo en una oración: La clase es aburrida y larga.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar cómo decir que algo es caro. Escucha: \"El hotel es caro.\"  \n<prompt>  \nRepite: El hotel es caro.  \n<prompt>  \nIntenta usarlo en una oración: El hotel es caro pero lujoso.  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que algo es barato. Escucha: \"El restaurante es barato.\"  \n<prompt>  \nRepite: El restaurante es barato.  \n<prompt>  \nIntenta usarlo en una oración: El restaurante es barato y bueno.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir que algo es necesario. Escucha: \"Es necesario descansar.\"  \n<prompt>  \nRepite: Es necesario descansar.  \n<prompt>  \nIntenta usarlo en una oración: Es necesario descansar después de trabajar.  \n<prompt>  \nMuy bien. Ahora, vamos a practicar cómo decir que algo es importante. Escucha: \"El trabajo es importante.\"  \n<prompt>  \nRepite: El trabajo es importante.  \n<prompt>  \nIntenta usarlo en una oración: El trabajo es importante para mí.  \n<prompt>  \nPerfecto. Ahora, vamos a practicar cómo decir que algo es nuevo. Escucha: \"El coche es nuevo.\"  \n<prompt>  \nRepite: El coche es nuevo.  \n<prompt>  \nIntenta usarlo en una oración: El coche es nuevo y rápido.  \n<prompt>  \nExcelente. Ahora, vamos a practicar cómo decir que algo es viejo. Escucha: \"La casa es vieja.\"  \n<prompt>  \nRepite: La casa es vieja.  \n<prompt>  \nIntenta usarlo en una oración: La casa es vieja pero bonita.  \n<prompt>  \nMuy bien. Ahora, vamos",
+  "session": {
+    "startedAt": "2026-05-15T22:30:21.330Z",
+    "completedAt": "2026-05-15T22:30:21.330Z",
+    "comfortLevel": 3,
+    "prompts": [
+      {
+        "promptIndex": 0,
+        "questionId": "ROLE_C1_001",
+        "promptType": "roleplay_response",
+        "promptDifficulty": 9.2,
+        "promptBucket": "C1_MINUS",
+        "promptText": "Mirá, la verdad es que esta semana estoy con mil cosas. Me encantaría juntarme, pero si puede ser, prefiero dejarlo para la semana que viene.",
+        "transcript": "Perdón, ¿me podés decir cómo llegar al centro?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 1.8,
+        "speakingDurationSeconds": 4.8,
+        "wordsPerMinute": 113,
+        "overallScore": 2,
+        "evidenceScore": 8.5,
+        "abilityEstimateBefore": 3.5,
+        "abilityEstimateAfter": 5,
+        "grade": {
+          "prompt_id": "ROLE_C1_001",
+          "overall_score": 2,
+          "label": "Ok",
+          "dimension_scores": {
+            "comprehension": 3,
+            "task_completion": 2,
+            "grammar": 2,
+            "vocabulary": 1,
+            "fluency": 2,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 4,
+            "target_style_alignment": 1
+          },
+          "cefr_signal": "C1",
+          "observed_errors": [
+            {
+              "category": "gender_agreement",
+              "description": "Article/adjective gender mismatch",
+              "severity": 1,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Partial response — addressed the question but with notable gaps.",
+          "notes_for_profile": [
+            "Shows basic comprehension of simple prompts.",
+            "Good vocabulary range for the level."
+          ]
+        },
+        "briefFeedback": "Partial response — addressed the question but with notable gaps."
+      },
+      {
+        "promptIndex": 1,
+        "questionId": "LAR_A2_001",
+        "promptType": "listen_and_respond",
+        "promptDifficulty": 3.2,
+        "promptBucket": "A2_MINUS",
+        "promptText": "¿Tenés tiempo mañana o estás ocupado?",
+        "transcript": "Sí, claro. Estoy bien, gracias.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 5.3,
+        "speakingDurationSeconds": 4.3,
+        "wordsPerMinute": 105,
+        "overallScore": 1,
+        "evidenceScore": 1.7000000000000002,
+        "abilityEstimateBefore": 5,
+        "abilityEstimateAfter": 4.01,
+        "grade": {
+          "prompt_id": "LAR_A2_001",
+          "overall_score": 1,
+          "label": "Bad",
+          "dimension_scores": {
+            "comprehension": 2,
+            "task_completion": 1,
+            "grammar": 1,
+            "vocabulary": 1,
+            "fluency": 1,
+            "pronunciation_intelligibility": 1,
+            "response_speed": 3,
+            "target_style_alignment": 0
+          },
+          "cefr_signal": "A2",
+          "observed_errors": [
+            {
+              "category": "too_much_english",
+              "description": "Switched to English mid-response",
+              "severity": 3,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Attempted but missed the core meaning of the prompt.",
+          "notes_for_profile": [
+            "Shows basic comprehension of simple prompts.",
+            "Struggles with vos conjugations."
+          ]
+        },
+        "briefFeedback": "Attempted but missed the core meaning of the prompt."
+      },
+      {
+        "promptIndex": 2,
+        "questionId": "ROLE_B1_001",
+        "promptType": "roleplay_response",
+        "promptDifficulty": 5.2,
+        "promptBucket": "B1_MINUS",
+        "promptText": "Necesito que me entregués el informe antes del viernes. ¿Podés?",
+        "transcript": "Sí, necesito ayuda con mi pedido.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 4.1,
+        "speakingDurationSeconds": 4.7,
+        "wordsPerMinute": 86,
+        "overallScore": 1,
+        "evidenceScore": 3.7,
+        "abilityEstimateBefore": 4.01,
+        "abilityEstimateAfter": 3.917,
+        "grade": {
+          "prompt_id": "ROLE_B1_001",
+          "overall_score": 1,
+          "label": "Bad",
+          "dimension_scores": {
+            "comprehension": 2,
+            "task_completion": 1,
+            "grammar": 1,
+            "vocabulary": 1,
+            "fluency": 0,
+            "pronunciation_intelligibility": 2,
+            "response_speed": 2,
+            "target_style_alignment": 0
+          },
+          "cefr_signal": "B1",
+          "observed_errors": [
+            {
+              "category": "verb_conjugation",
+              "description": "Incorrect verb form used",
+              "severity": 2,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Attempted but missed the core meaning of the prompt.",
+          "notes_for_profile": [
+            "Struggles with vos conjugations.",
+            "Demonstrated good listening comprehension."
+          ]
+        },
+        "briefFeedback": "Attempted but missed the core meaning of the prompt."
+      },
+      {
+        "promptIndex": 3,
+        "questionId": "LFM_B1_001",
+        "promptType": "listen_for_meaning",
+        "promptDifficulty": 5.2,
+        "promptBucket": "B1_MINUS",
+        "promptText": "Che, perdón, llego un poco tarde porque hay mucho tráfico. ¿Podés esperarme diez minutos?",
+        "transcript": "I think she said she wants to go to the store.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 2.1,
+        "speakingDurationSeconds": 5.9,
+        "wordsPerMinute": 146,
+        "overallScore": 2,
+        "evidenceScore": 4.5,
+        "abilityEstimateBefore": 3.917,
+        "abilityEstimateAfter": 4.0919,
+        "grade": {
+          "prompt_id": "LFM_B1_001",
+          "overall_score": 2,
+          "label": "Ok",
+          "dimension_scores": {
+            "comprehension": 3,
+            "task_completion": 2,
+            "grammar": 1,
+            "vocabulary": 2,
+            "fluency": 1,
+            "pronunciation_intelligibility": 2,
+            "response_speed": 3,
+            "target_style_alignment": 0
+          },
+          "cefr_signal": "B1",
+          "observed_errors": [
+            {
+              "category": "word_order",
+              "description": "Non-standard word order",
+              "severity": 1,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Partial response — addressed the question but with notable gaps.",
+          "notes_for_profile": [
+            "Good vocabulary range for the level.",
+            "Pronunciation is intelligible despite some errors."
+          ]
+        },
+        "briefFeedback": "Partial response — addressed the question but with notable gaps."
+      },
+      {
+        "promptIndex": 4,
+        "questionId": "SAY_A2_003",
+        "promptType": "say_it_in_spanish",
+        "promptDifficulty": 3.8,
+        "promptBucket": "A2",
+        "promptText": "Say in Spanish: Can you help me?",
+        "transcript": "Necesito ayuda.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 4.7,
+        "speakingDurationSeconds": 6.2,
+        "wordsPerMinute": 125,
+        "overallScore": 2,
+        "evidenceScore": 3.0999999999999996,
+        "abilityEstimateBefore": 4.0919,
+        "abilityEstimateAfter": 3.7943299999999995,
+        "grade": {
+          "prompt_id": "SAY_A2_003",
+          "overall_score": 2,
+          "label": "Ok",
+          "dimension_scores": {
+            "comprehension": 2,
+            "task_completion": 2,
+            "grammar": 2,
+            "vocabulary": 1,
+            "fluency": 1,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 3,
+            "target_style_alignment": 0
+          },
+          "cefr_signal": "A2",
+          "observed_errors": [
+            {
+              "category": "word_order",
+              "description": "Non-standard word order",
+              "severity": 1,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Partial response — addressed the question but with notable gaps.",
+          "notes_for_profile": [
+            "Struggles with vos conjugations.",
+            "Demonstrated good listening comprehension."
+          ]
+        },
+        "briefFeedback": "Partial response — addressed the question but with notable gaps."
+      },
+      {
+        "promptIndex": 5,
+        "questionId": "LFM_A2_002",
+        "promptType": "listen_for_meaning",
+        "promptDifficulty": 3.8,
+        "promptBucket": "A2",
+        "promptText": "No puedo salir esta noche porque tengo que trabajar temprano mañana.",
+        "transcript": "I think she said she wants to go to the store.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 2.1,
+        "speakingDurationSeconds": 2.6,
+        "wordsPerMinute": 99,
+        "overallScore": 2,
+        "evidenceScore": 3.0999999999999996,
+        "abilityEstimateBefore": 3.7943299999999995,
+        "abilityEstimateAfter": 3.5860309999999993,
+        "grade": {
+          "prompt_id": "LFM_A2_002",
+          "overall_score": 2,
+          "label": "Ok",
+          "dimension_scores": {
+            "comprehension": 3,
+            "task_completion": 2,
+            "grammar": 1,
+            "vocabulary": 1,
+            "fluency": 1,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 3,
+            "target_style_alignment": 0
+          },
+          "cefr_signal": "A2",
+          "observed_errors": [
+            {
+              "category": "gender_agreement",
+              "description": "Article/adjective gender mismatch",
+              "severity": 1,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Partial response — addressed the question but with notable gaps.",
+          "notes_for_profile": [
+            "Uses filler words frequently when searching for vocabulary.",
+            "Shows basic comprehension of simple prompts."
+          ]
+        },
+        "briefFeedback": "Partial response — addressed the question but with notable gaps."
+      },
+      {
+        "promptIndex": 6,
+        "questionId": "MDC_B2_002",
+        "promptType": "mini_dialogue_comprehension",
+        "promptDifficulty": 7.8,
+        "promptBucket": "B2",
+        "promptText": "Persona A: ¿Cómo vas con el proyecto? Persona B: Bien, bien. Va a salir. Persona A: ¿Seguro? Persona B: Sí, no te preocupes. Persona A: Es que el cliente preguntó hoy.",
+        "transcript": "She is asking him to call her later tonight.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 5.1,
+        "speakingDurationSeconds": 5.8,
+        "wordsPerMinute": 103,
+        "overallScore": 3,
+        "evidenceScore": 7.8,
+        "abilityEstimateBefore": 3.5860309999999993,
+        "abilityEstimateAfter": 4.850221699999999,
+        "grade": {
+          "prompt_id": "MDC_B2_002",
+          "overall_score": 3,
+          "label": "Good",
+          "dimension_scores": {
+            "comprehension": 3,
+            "task_completion": 3,
+            "grammar": 3,
+            "vocabulary": 3,
+            "fluency": 3,
+            "pronunciation_intelligibility": 4,
+            "response_speed": 4,
+            "target_style_alignment": 1
+          },
+          "cefr_signal": "B2",
+          "observed_errors": [],
+          "brief_feedback": "Understood and responded correctly with some errors.",
+          "notes_for_profile": [
+            "Pronunciation is intelligible despite some errors.",
+            "Demonstrated good listening comprehension."
+          ]
+        },
+        "briefFeedback": "Understood and responded correctly with some errors."
+      },
+      {
+        "promptIndex": 7,
+        "questionId": "OPEN_C1_001",
+        "promptType": "open_speaking",
+        "promptDifficulty": 9.7,
+        "promptBucket": "C1_C1_PLUS",
+        "promptText": "Tell me in Spanish: When explaining a complex idea, how do you decide what to simplify and what not to simplify? Give a nuanced answer with examples.",
+        "transcript": "La verdad es que no sé... me gusta mucho la comida argentina.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 5.1,
+        "speakingDurationSeconds": 4.2,
+        "wordsPerMinute": 123,
+        "overallScore": 2,
+        "evidenceScore": 9,
+        "abilityEstimateBefore": 4.850221699999999,
+        "abilityEstimateAfter": 6.095155189999998,
+        "grade": {
+          "prompt_id": "OPEN_C1_001",
+          "overall_score": 2,
+          "label": "Ok",
+          "dimension_scores": {
+            "comprehension": 2,
+            "task_completion": 2,
+            "grammar": 1,
+            "vocabulary": 2,
+            "fluency": 1,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 3,
+            "target_style_alignment": 1
+          },
+          "cefr_signal": "C1 / C1+",
+          "observed_errors": [
+            {
+              "category": "target_style_vos",
+              "description": "Used \"tú\" instead of \"vos\"",
+              "severity": 1,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Partial response — addressed the question but with notable gaps.",
+          "notes_for_profile": [
+            "Shows basic comprehension of simple prompts.",
+            "Tense usage is inconsistent."
+          ]
+        },
+        "briefFeedback": "Partial response — addressed the question but with notable gaps."
+      },
+      {
+        "promptIndex": 8,
+        "questionId": "OPEN_B1_002",
+        "promptType": "open_speaking",
+        "promptDifficulty": 5.2,
+        "promptBucket": "B1_MINUS",
+        "promptText": "Answer in Spanish: Do you prefer living in a big city or a small city? Why?",
+        "transcript": "La verdad es que no sé... me gusta mucho la comida argentina.",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 3.3,
+        "speakingDurationSeconds": 2.4,
+        "wordsPerMinute": 134,
+        "overallScore": 1,
+        "evidenceScore": 3.7,
+        "abilityEstimateBefore": 6.095155189999998,
+        "abilityEstimateAfter": 5.376608632999998,
+        "grade": {
+          "prompt_id": "OPEN_B1_002",
+          "overall_score": 1,
+          "label": "Bad",
+          "dimension_scores": {
+            "comprehension": 2,
+            "task_completion": 1,
+            "grammar": 1,
+            "vocabulary": 0,
+            "fluency": 1,
+            "pronunciation_intelligibility": 1,
+            "response_speed": 3,
+            "target_style_alignment": 0
+          },
+          "cefr_signal": "B1",
+          "observed_errors": [
+            {
+              "category": "tense_error",
+              "description": "Wrong tense for the context",
+              "severity": 2,
+              "review_later": true
+            }
+          ],
+          "brief_feedback": "Attempted but missed the core meaning of the prompt.",
+          "notes_for_profile": [
+            "Response latency suggests active retrieval, not memorized phrases."
+          ]
+        },
+        "briefFeedback": "Attempted but missed the core meaning of the prompt."
+      },
+      {
+        "promptIndex": 9,
+        "questionId": "SAY_A1_003",
+        "promptType": "say_it_in_spanish",
+        "promptDifficulty": 2.6,
+        "promptBucket": "A1_PLUS",
+        "promptText": "Say in Spanish: I'm from the United States.",
+        "transcript": "Uh... ¿dónde está el baño?",
+        "usedTranscriptHelp": false,
+        "skipped": false,
+        "responseTimeSeconds": 2.5,
+        "speakingDurationSeconds": 6.2,
+        "wordsPerMinute": 144,
+        "overallScore": 3,
+        "evidenceScore": 2.6,
+        "abilityEstimateBefore": 5.376608632999998,
+        "abilityEstimateAfter": 4.543626043099999,
+        "grade": {
+          "prompt_id": "SAY_A1_003",
+          "overall_score": 3,
+          "label": "Good",
+          "dimension_scores": {
+            "comprehension": 4,
+            "task_completion": 3,
+            "grammar": 2,
+            "vocabulary": 2,
+            "fluency": 3,
+            "pronunciation_intelligibility": 3,
+            "response_speed": 3,
+            "target_style_alignment": 1
+          },
+          "cefr_signal": "A1",
+          "observed_errors": [
+            {
+              "category": "missing_pronoun",
+              "description": "Omitted required pronoun",
+              "severity": 2,
+              "review_later": false
+            }
+          ],
+          "brief_feedback": "Understood and responded correctly with some errors.",
+          "notes_for_profile": [
+            "Struggles with vos conjugations.",
+            "Shows basic comprehension of simple prompts."
+          ]
+        },
+        "briefFeedback": "Understood and responded correctly with some errors."
+      }
+    ],
+    "report": {
+      "overall_score": 4.543626043099999,
+      "display_level": "A2",
+      "cefr_band": "A2",
+      "confidence": "medium",
+      "confidence_range": [
+        3.743626043099999,
+        5.343626043099999
+      ],
+      "summary": "Can handle simple, familiar topics and short exchanges. Grammar is inconsistent and vocabulary is limited.",
+      "skill_scores": {
+        "listening_comprehension": 3.286483159584237,
+        "speaking_fluency": 4.451810202603434,
+        "grammar_control": 4.392237766918784,
+        "vocabulary_range": 2.730356952744409,
+        "pronunciation_intelligibility": 2.67768483144525,
+        "response_speed": 2.9669207257970767,
+        "target_style_alignment": 3.216879716815339,
+        "practical_communication": 3.247025787452037
+      },
+      "strengths": [
+        "Basic greetings",
+        "Simple listening comprehension"
+      ],
+      "weaknesses": [
+        "Verb conjugation",
+        "Argentine vos form",
+        "Extended speaking"
+      ],
+      "most_common_error_categories": [
+        "verb_conjugation",
+        "target_style_vos",
+        "vocabulary_gap"
+      ],
+      "next_level_gap": "Student needs more consistent grammar control and exposure to Argentine idioms to advance.",
+      "recommended_first_lesson": {
+        "title": "Café & Daily Greetings",
+        "scenario": "Ordering at a Buenos Aires café",
+        "focus_points": [
+          "Vos conjugation",
+          "Basic ordering phrases",
+          "Polite requests"
+        ],
+        "why": "High-frequency scenario that builds confidence immediately."
+      },
+      "next_three_lessons": [
+        {
+          "title": "Getting Around",
+          "target_difficulty": 5.043626043099999,
+          "focus": "Directions and transport"
+        },
+        {
+          "title": "Shopping & Bargaining",
+          "target_difficulty": 5.343626043099999,
+          "focus": "Prices and negotiation"
+        },
+        {
+          "title": "Making Plans",
+          "target_difficulty": 5.743626043099999,
+          "focus": "Future tense and invitations"
+        }
+      ]
+    }
+  }
+}
