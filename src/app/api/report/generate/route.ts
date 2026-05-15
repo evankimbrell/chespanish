@@ -157,8 +157,14 @@ export async function POST(req: Request) {
   fs.mkdirSync(reportsDir, { recursive: true });
   fs.writeFileSync(
     path.join(reportsDir, filename),
-    JSON.stringify({ userName, generatedAt: new Date().toISOString(), educatorReport, session }, null, 2),
+    JSON.stringify({
+      userName,
+      generatedAt: new Date().toISOString(),
+      educatorReport,
+      testReport: session.report ?? null,
+      session,
+    }, null, 2),
   );
 
-  return Response.json({ educatorReport, savedTo: `data/reports/${filename}` });
+  return Response.json({ educatorReport, testReport: session.report ?? null, savedTo: `data/reports/${filename}` });
 }
