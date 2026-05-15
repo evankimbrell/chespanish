@@ -13,6 +13,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const [subtitleIdx, setSubtitleIdx] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const subRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const loadedIdxRef = useRef(-1);
 
   const clearSub = () => { if (subRef.current) { clearInterval(subRef.current); subRef.current = null; } };
 
@@ -33,7 +34,13 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     const audio = audioRef.current;
     const currentIdx = playIdx;
 
-    audio.src = plays[currentIdx].audioUrl;
+    // Only reload src when switching to a different segment — not on resume
+    if (loadedIdxRef.current !== currentIdx) {
+      loadedIdxRef.current = currentIdx;
+      audio.src = plays[currentIdx].audioUrl;
+    }
+
+    // Always re-attach onended (cleared by cleanup on pause)
     audio.onended = () => {
       clearSub();
       if (plays[currentIdx]?.promptAfter) {
@@ -42,6 +49,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
         advanceOrComplete(currentIdx);
       }
     };
+
     audio.play().catch(() => {});
 
     clearSub();
