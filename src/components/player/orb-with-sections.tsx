@@ -197,7 +197,7 @@ export function OrbWithSections({
           </button>
         )}
         {state === 'recording' && (
-          <button className="mic-btn recording" style={{ pointerEvents: 'auto', width: 96, height: 96 }}>
+          <button className="mic-btn recording" style={{ pointerEvents: 'auto', width: 96, height: 96 }} onClick={onRecord}>
             <Icons.mic />
           </button>
         )}

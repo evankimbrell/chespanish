@@ -3,6 +3,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import type { GeneratedLesson } from '@/lib/types';
 import type { FakePlayer } from './use-fake-player';
 import type { PlayerState } from '@/lib/types';
+import { useRecording } from '@/hooks/use-recording';
 
 export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const plays = lesson.plays;
@@ -11,9 +12,16 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const [state, setState] = useState<PlayerState>('idle');
   const [playIdx, setPlayIdx] = useState(0);
   const [subtitleIdx, setSubtitleIdx] = useState(0);
+  const [transcript, setTranscript] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const subRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadedIdxRef = useRef(-1);
+
+  const {
+    startRecording, stopRecording,
+    reset: resetRecording,
+    transcript: recordTranscript,
+  } = useRecording();
 
   const clearSub = () => { if (subRef.current) { clearInterval(subRef.current); subRef.current = null; } };
 
@@ -26,7 +34,15 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     }
   }, [total]);
 
-  // Start audio whenever state becomes 'playing'
+  // When real transcript arrives, move to feedback
+  useEffect(() => {
+    if (recordTranscript !== null) {
+      setTranscript(recordTranscript);
+      setState('feedback');
+    }
+  }, [recordTranscript]);
+
+  // Start/resume audio whenever state becomes 'playing'
   useEffect(() => {
     if (state !== 'playing' || !plays[playIdx]) return;
 
@@ -72,25 +88,36 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     setState('idle');
   }, []);
 
+  // Toggle: first call starts recording, second call stops it (triggers transcription)
   const record = useCallback(() => {
-    setState('recording');
-    setTimeout(() => {
+    if (state === 'recording') {
+      stopRecording();
       setState('processing');
-      setTimeout(() => setState('feedback'), 900);
-    }, 2400);
-  }, []);
+    } else {
+      setTranscript(null);
+      resetRecording();
+      startRecording();
+      setState('recording');
+    }
+  }, [state, startRecording, stopRecording, resetRecording]);
 
   const next = useCallback(() => {
-    setState('playing');
+    setTranscript(null);
+    resetRecording();
     advanceOrComplete(playIdx);
-  }, [playIdx, advanceOrComplete]);
+  }, [playIdx, advanceOrComplete, resetRecording]);
 
-  const retry = useCallback(() => setState('prompting'), []);
+  const retry = useCallback(() => {
+    setTranscript(null);
+    resetRecording();
+    setState('prompting');
+  }, [resetRecording]);
+
   const seek = useCallback(() => {}, []);
   const ask = useCallback(() => setState('asking'), []);
   const submitQuestion = useCallback(() => setState('idle'), []);
 
   const progress = total > 0 ? playIdx / total : 0;
 
-  return { state, progress, promptIdx: playIdx, subtitleIdx, play, pause, record, next, retry, seek, ask, submitQuestion };
+  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, play, pause, record, next, retry, seek, ask, submitQuestion };
 }

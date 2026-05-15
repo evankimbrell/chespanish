@@ -8,6 +8,7 @@ export interface FakePlayer {
   progress: number;
   promptIdx: number;
   subtitleIdx: number;
+  transcript?: string | null;
   play: () => void;
   pause: () => void;
   record: () => void;

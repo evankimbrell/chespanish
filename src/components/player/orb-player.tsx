@@ -116,7 +116,25 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, l
           {/* Feedback */}
           {p.state === 'feedback' && (
             <div className="fade-in" style={{ marginTop: 24, maxWidth: 720, width: '100%' }}>
-              <UserResponseAnalysis target={(prompt as { es?: string })?.es ?? ''} />
+              {p.transcript != null ? (
+                <div className="card" style={{ padding: 24 }}>
+                  <span className="eyebrow">YOU SAID</span>
+                  <p className="serif" style={{ fontSize: 26, fontStyle: 'italic', lineHeight: 1.4, margin: '8px 0 0' }}>
+                    &ldquo;{p.transcript}&rdquo;
+                  </p>
+                  {(prompt as { es?: string })?.es && (
+                    <>
+                      <hr className="divider" style={{ margin: '18px 0' }} />
+                      <span className="eyebrow eyebrow-warm">TARGET</span>
+                      <p className="serif" style={{ fontSize: 24, fontStyle: 'italic', marginTop: 8, marginBottom: 0 }}>
+                        &ldquo;{(prompt as { es?: string }).es}&rdquo;
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <UserResponseAnalysis target={(prompt as { es?: string })?.es ?? ''} />
+              )}
               <div className="row gap-2" style={{ marginTop: 18, justifyContent: 'center' }}>
                 <button className="btn btn-ghost btn-sm" onClick={p.retry}><Icons.refresh /> Try again</button>
                 <button className="btn btn-ghost btn-sm"><Icons.play /> Hear correct version</button>
