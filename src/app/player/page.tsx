@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import { useAppStore } from '@/lib/store';
 import { useFakePlayer } from '@/components/player/use-fake-player';
 import { useGeneratedLessonPlayer } from '@/components/player/use-generated-lesson-player';
@@ -46,9 +47,16 @@ function FakeLessonPlayerPage() {
 }
 
 export default function PlayerPage() {
+  const [mounted, setMounted] = useState(false);
   const generatedLesson = useAppStore((s) => s.generatedLesson);
-  const hasAudio = (generatedLesson?.plays?.length ?? 0) > 0;
 
+  useEffect(() => { setMounted(true); }, []);
+
+  // Render fake player on server and first client paint to avoid hydration mismatch
+  // (generatedLesson comes from localStorage which is unavailable server-side)
+  if (!mounted) return <FakeLessonPlayerPage />;
+
+  const hasAudio = (generatedLesson?.plays?.length ?? 0) > 0;
   if (hasAudio) return <GeneratedLessonPlayerPage />;
   return <FakeLessonPlayerPage />;
 }
