@@ -380,9 +380,12 @@ export default function LevelResultPage() {
             </div>
             <h2 className="ty-h2" style={{ marginBottom: 10 }}>{lesson.title}</h2>
             {report?.recommended_first_lesson?.focus_points?.length && (
-              <ul style={{ margin: '0 0 12px', padding: '0 0 0 18px', color: 'var(--ink-2)' }}>
+              <ul style={{ margin: '0 0 16px', padding: 0, listStyle: 'none' }}>
                 {report.recommended_first_lesson.focus_points.map((fp, i) => (
-                  <li key={i} className="small">{fp}</li>
+                  <li key={i} className="row gap-2" style={{ alignItems: 'baseline', padding: '3px 0' }}>
+                    <span style={{ color: 'var(--warm)', flexShrink: 0 }}>·</span>
+                    <span className="small" style={{ color: 'var(--ink-2)' }}>{fp}</span>
+                  </li>
                 ))}
               </ul>
             )}
