@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { BrandBar } from '@/components/ui/top-nav';
 import { Wave } from '@/components/ui/wave';
@@ -115,10 +115,13 @@ export default function LevelTestPage() {
   const completeLevelTestSession = useAppStore((s) => s.completeLevelTestSession);
   const profile = useAppStore((s) => s.profile);
 
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+
   const { play, stop: stopTTS, isLoading: ttsLoading, isPlaying } = useTTS();
   const {
     startRecording, stopRecording,
-    isRecording, isTranscribing, transcript, volume,
+    isRecording, volume,
     speechOnsetMs, recordingDurationMs,
     reset,
   } = useRecording();
@@ -143,6 +146,8 @@ export default function LevelTestPage() {
     promptReadyTimeRef.current = Date.now();
     setGradeResult(null);
     setIsGrading(false);
+    setTranscript(null);
+    setIsTranscribing(false);
     setShowText(false);
     setUsedTranscriptHelp(false);
     reset();
@@ -153,38 +158,59 @@ export default function LevelTestPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question]);
 
-  // Auto-grade when transcript arrives
-  useEffect(() => {
-    if (!transcript || !question) return;
-    setIsGrading(true);
+  const handleBlobReady = useCallback(async (blob: Blob, q: Question) => {
+    setIsTranscribing(true);
     const responseTimeSec = (recordPressTimeRef.current - promptReadyTimeRef.current) / 1000;
     const speakDurationSec = (recordingDurationMs ?? 0) / 1000;
 
-    fetch('/api/grade', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        prompt_object: question,
-        user_response: {
-          transcript,
-          response_time_seconds: responseTimeSec,
-          speaking_duration_seconds: speakDurationSec,
-          used_transcript_help: usedTranscriptHelp,
-          skipped: false,
-        },
-      }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.overall_score != null) {
-          setGradeResult(data as GradeResult);
-          setLastEvidenceScore(calculateEvidenceScore(question.difficulty_score, data.overall_score));
+    try {
+      const fd = new FormData();
+      fd.append('audio', blob, 'recording.webm');
+      fd.append('question', JSON.stringify(q));
+      fd.append('response_time_seconds', String(responseTimeSec));
+      fd.append('speaking_duration_seconds', String(speakDurationSec));
+      fd.append('used_transcript_help', usedTranscriptHelp ? '1' : '0');
+      if (ENGLISH_OK_TYPES.has(q.prompt_type)) fd.append('allow_english', '1');
+
+      const res = await fetch('/api/transcribe-and-grade', { method: 'POST', body: fd });
+      if (!res.ok || !res.body) throw new Error(`Failed: ${res.status}`);
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '';
+
+      while (true) {
+        const { done: streamDone, value } = await reader.read();
+        if (streamDone) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop()!;
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const msg = JSON.parse(line);
+            if (msg.type === 'transcript') {
+              setTranscript(msg.transcript ?? null);
+              setIsTranscribing(false);
+              setIsGrading(true);
+            } else if (msg.type === 'grade') {
+              const data = msg.grade;
+              if (data?.overall_score != null) {
+                setGradeResult(data as GradeResult);
+                setLastEvidenceScore(calculateEvidenceScore(q.difficulty_score, data.overall_score));
+              }
+              setIsGrading(false);
+            }
+          } catch { /* ignore malformed lines */ }
         }
-      })
-      .catch(() => {})
-      .finally(() => setIsGrading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transcript]);
+      }
+    } catch (e) {
+      console.error('[level-test] transcribe-and-grade error:', e);
+      setIsTranscribing(false);
+      setIsGrading(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordingDurationMs, usedTranscriptHelp]);
 
   const buildResult = (): PromptResult => {
     const responseTimeSec = (recordPressTimeRef.current - promptReadyTimeRef.current) / 1000;
@@ -225,7 +251,11 @@ export default function LevelTestPage() {
     } else {
       recordPressTimeRef.current = Date.now();
       stopTTS();
-      startRecording({ allowEnglish: question ? ENGLISH_OK_TYPES.has(question.prompt_type) : false });
+      const q = question!;
+      startRecording({
+        allowEnglish: ENGLISH_OK_TYPES.has(q.prompt_type),
+        onBlobReady: (blob) => handleBlobReady(blob, q),
+      });
     }
   };
 
@@ -259,6 +289,8 @@ export default function LevelTestPage() {
     setQuestion(nextQ);
     setQuestionNumber((n) => n + 1);
     reset();
+    setTranscript(null);
+    setIsTranscribing(false);
     setGradeResult(null);
     setIsGrading(false);
     setLastEvidenceScore(null);

@@ -17,6 +17,7 @@ export function useRecording() {
   const startedAtRef   = useRef<number>(0);
   const onsetDetected  = useRef(false);
   const allowEnglishRef = useRef(false);
+  const onBlobReadyRef = useRef<((blob: Blob) => void) | undefined>(undefined);
 
   const stopVolume = useCallback(() => {
     if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -51,12 +52,18 @@ export function useRecording() {
       const duration = Date.now() - startedAtRef.current;
       setRecordingDurationMs(duration);
       setIsRecording(false);
-      setIsTranscribing(true);
       streamRef.current?.getTracks().forEach((t) => t.stop());
 
       const blob = new Blob(chunks.current, { type: 'audio/webm' });
       chunks.current = [];
 
+      // If caller supplied onBlobReady, hand off the blob and skip auto-transcription
+      if (onBlobReadyRef.current) {
+        onBlobReadyRef.current(blob);
+        return;
+      }
+
+      setIsTranscribing(true);
       try {
         const fd = new FormData();
         fd.append('audio', blob, 'recording.webm');
@@ -76,8 +83,9 @@ export function useRecording() {
     mrRef.current.stop();
   }, [stopVolume]);
 
-  const startRecording = useCallback(async (opts?: { allowEnglish?: boolean }) => {
+  const startRecording = useCallback(async (opts?: { allowEnglish?: boolean; onBlobReady?: (blob: Blob) => void }) => {
     allowEnglishRef.current = opts?.allowEnglish ?? false;
+    onBlobReadyRef.current = opts?.onBlobReady;
     setTranscript(null);
     setSpeechOnsetMs(null);
     setRecordingDurationMs(null);
