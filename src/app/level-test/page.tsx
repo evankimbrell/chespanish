@@ -123,7 +123,7 @@ export default function LevelTestPage() {
     reset,
   } = useRecording();
 
-  const done = transcript !== null;
+  const done = transcript !== null && !isGrading;
   const promptReadyTimeRef = useRef<number>(Date.now());
   const recordPressTimeRef = useRef<number>(0);
 
