@@ -1,7 +1,11 @@
 import OpenAI from 'openai';
 import type { Question } from '@/lib/types';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+let _openai: OpenAI | null = null;
+function getOpenAI(): OpenAI {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  return _openai;
+}
 
 const SYSTEM_PROMPT = `You are a grading assistant for an Argentine Spanish language level test. Grade each spoken response and return structured JSON.
 
@@ -148,7 +152,7 @@ Skipped: ${ur.skipped}
 Prompt ID to echo back: ${q.prompt_id}`;
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-4o-mini',
       response_format: { type: 'json_object' },
       temperature: 0.2,
