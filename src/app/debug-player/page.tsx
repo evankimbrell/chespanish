@@ -18,12 +18,15 @@ export default function DebugPlayerPage() {
   const setGeneratedLesson = useAppStore((s) => s.setGeneratedLesson);
   const generatedLesson = useAppStore((s) => s.generatedLesson);
 
+  const [mounted, setMounted] = useState(false);
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [transcript, setTranscript] = useState(SAMPLE_TRANSCRIPT);
   const [userName, setUserName] = useState('debug');
   const [status, setStatus] = useState<'idle' | 'generating' | 'randomizing' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [randomizeProfile, setRandomizeProfile] = useState<string | null>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     fetch('/api/debug/reports')
@@ -165,7 +168,7 @@ export default function DebugPlayerPage() {
       </div>
 
       {/* Cache status */}
-      {cachedPlays > 0 && (
+      {mounted && cachedPlays > 0 && (
         <div style={{
           marginBottom: 16, padding: '12px 16px',
           background: 'rgba(var(--leaf-rgb, 80, 140, 80), 0.1)',
