@@ -203,7 +203,7 @@ export default function LevelTestPage() {
       promptType: question?.prompt_type ?? 'listen_and_respond',
       promptDifficulty: question?.difficulty_score ?? 0,
       promptBucket: question?.difficulty_bucket ?? '',
-      promptText: question?.audio_text ?? question?.instruction_text ?? '',
+      promptText: question?.audio_text || question?.instruction_text || '',
       transcript,
       usedTranscriptHelp,
       skipped: false,
