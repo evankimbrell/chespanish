@@ -9,14 +9,29 @@ import { AskOverlay } from './ask-overlay';
 import { LESSON, SECTIONS, SUBTITLE_LINES } from '@/lib/data';
 import type { FakePlayer } from './use-fake-player';
 
-export function OrbPlayer({ p }: { p: FakePlayer }) {
+interface Section { id: number; label: string; pct: number; end: number; blurb?: string }
+interface PromptDot { id: number; t: number; cue?: string; es?: string }
+
+interface OrbPlayerProps {
+  p: FakePlayer;
+  customSections?: Section[];
+  customPrompts?: PromptDot[];
+  customSubtitles?: string[];
+  lessonTitle?: string;
+}
+
+export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, lessonTitle }: OrbPlayerProps) {
   const [hoverSection, setHoverSection] = useState<number | null>(null);
   const [showText, setShowText] = useState(false);
   const router = useRouter();
 
-  const prompt = LESSON.prompts[p.promptIdx];
-  const activeSection = SECTIONS.find((s) => p.progress >= s.pct && p.progress < s.end) || SECTIONS[0];
-  const displaySection = hoverSection != null ? SECTIONS.find((s) => s.id === hoverSection) : activeSection;
+  const sections = customSections ?? SECTIONS;
+  const prompts = customPrompts ?? LESSON.prompts;
+  const subtitleLines = customSubtitles ?? SUBTITLE_LINES;
+
+  const prompt = prompts[p.promptIdx];
+  const activeSection = sections.find((s) => p.progress >= s.pct && p.progress < s.end) || sections[0];
+  const displaySection = hoverSection != null ? sections.find((s) => s.id === hoverSection) : activeSection;
 
   const mins  = Math.floor(p.progress * 25);
   const secs  = String(Math.floor((p.progress * 25 % 1) * 60)).padStart(2, '0');
@@ -31,9 +46,9 @@ export function OrbPlayer({ p }: { p: FakePlayer }) {
             <Icons.arrowLeft /> Exit lesson
           </button>
           <div className="col gap-1" style={{ textAlign: 'center' }}>
-            <span className="kicker">{LESSON.title}</span>
+            <span className="kicker">{lessonTitle ?? LESSON.title}</span>
             <span className="mono" style={{ fontSize: 11, color: 'var(--mute-2)' }}>
-              {Math.round(p.progress * 100)}% · section {String(activeSection.id).padStart(2, '0')} of 06
+              {Math.round(p.progress * 100)}% · section {String(activeSection?.id ?? 1).padStart(2, '0')} of {String(sections.length).padStart(2, '0')}
             </span>
           </div>
           <button className="btn btn-text small" onClick={p.ask}>
@@ -45,8 +60,8 @@ export function OrbPlayer({ p }: { p: FakePlayer }) {
         <div className="col center" style={{ flex: 1, padding: '24px 0', position: 'relative' }}>
           <OrbWithSections
             progress={p.progress}
-            sections={SECTIONS}
-            prompts={LESSON.prompts}
+            sections={sections}
+            prompts={prompts}
             active={p.state === 'playing' || p.state === 'recording'}
             accent={p.state === 'recording'}
             hoverSection={hoverSection}
@@ -83,9 +98,9 @@ export function OrbPlayer({ p }: { p: FakePlayer }) {
                 border: '1px solid var(--line)', borderRadius: 4, maxWidth: 680, textAlign: 'center',
               }}
             >
-              <span className="kicker">CC · {p.subtitleIdx + 1} / {SUBTITLE_LINES.length}</span>
+              <span className="kicker">CC · {p.subtitleIdx + 1} / {subtitleLines.length}</span>
               <p className="serif" style={{ fontSize: 24, fontStyle: 'italic', margin: '8px 0 0', lineHeight: 1.35 }}>
-                &ldquo;{SUBTITLE_LINES[p.subtitleIdx]}&rdquo;
+                &ldquo;{subtitleLines[p.subtitleIdx % subtitleLines.length]}&rdquo;
               </p>
             </div>
           )}
@@ -94,14 +109,14 @@ export function OrbPlayer({ p }: { p: FakePlayer }) {
           {p.state === 'prompting' && (
             <div className="col gap-3 fade-in" style={{ alignItems: 'center', marginTop: 20, maxWidth: 600, textAlign: 'center' }}>
               <span className="eyebrow eyebrow-warm">Your turn · respond now</span>
-              <p className="serif" style={{ fontSize: 26, fontStyle: 'italic' }}>&ldquo;{prompt?.cue}&rdquo;</p>
+              {prompt?.cue && <p className="serif" style={{ fontSize: 26, fontStyle: 'italic' }}>&ldquo;{prompt.cue}&rdquo;</p>}
             </div>
           )}
 
           {/* Feedback */}
           {p.state === 'feedback' && (
             <div className="fade-in" style={{ marginTop: 24, maxWidth: 720, width: '100%' }}>
-              <UserResponseAnalysis target={prompt?.es ?? ''} />
+              <UserResponseAnalysis target={(prompt as { es?: string })?.es ?? ''} />
               <div className="row gap-2" style={{ marginTop: 18, justifyContent: 'center' }}>
                 <button className="btn btn-ghost btn-sm" onClick={p.retry}><Icons.refresh /> Try again</button>
                 <button className="btn btn-ghost btn-sm"><Icons.play /> Hear correct version</button>
@@ -130,7 +145,7 @@ export function OrbPlayer({ p }: { p: FakePlayer }) {
 
         {/* Bottom scrubber */}
         <div style={{ padding: '20px 0', borderTop: '1px solid var(--line)' }}>
-          <Scrubber progress={p.progress} markers={SECTIONS.map((s) => ({ t: s.pct }))} onSeek={p.seek} />
+          <Scrubber progress={p.progress} markers={sections.map((s) => ({ t: s.pct }))} onSeek={p.seek} />
           <div className="row between" style={{ marginTop: 8 }}>
             <span className="kicker tabular">{mins}:{secs}</span>
             <span className="kicker">25:00</span>
