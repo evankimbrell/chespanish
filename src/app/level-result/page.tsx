@@ -217,6 +217,7 @@ export default function LevelResultPage() {
   const router = useRouter();
   const storeSession = useAppStore((s) => s.levelTestSession);
   const profile = useAppStore((s) => s.profile);
+  const setGeneratedLesson = useAppStore((s) => s.setGeneratedLesson);
   const [localSession, setLocalSession] = useState<LevelTestSession | null>(null);
   const [reportSaved, setReportSaved] = useState(false);
 
@@ -239,7 +240,19 @@ export default function LevelResultPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ session, userName: profile.name }),
-    }).catch(() => {});
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.lessonTranscript) {
+          setGeneratedLesson({
+            transcript: data.lessonTranscript,
+            plays: [],
+            generatedAt: new Date().toISOString(),
+            title: data.testReport?.recommended_first_lesson?.title ?? 'Your first lesson',
+          });
+        }
+      })
+      .catch(() => {});
   }, [session, reportSaved, profile.name]);
   const report: TestReport | null = session?.report ?? null;
 
@@ -387,7 +400,7 @@ export default function LevelResultPage() {
               </div>
             )}
             <div className="row gap-3" style={{ marginTop: 24 }}>
-              <button className="btn btn-warm" onClick={() => router.push('/preview')}>
+              <button className="btn btn-warm" onClick={() => router.push('/lesson')}>
                 Start recommended lesson <Icons.arrow />
               </button>
               <button className="btn btn-ghost" onClick={() => router.push('/dashboard')}>Go to dashboard</button>

@@ -246,3 +246,16 @@ export interface LevelTestSession {
   prompts: PromptResult[];
   report: TestReport | null;
 }
+
+export interface LessonPlay {
+  audioUrl: string;
+  promptAfter: boolean;
+  text: string;
+}
+
+export interface GeneratedLesson {
+  transcript: string;
+  plays: LessonPlay[];
+  generatedAt: string;
+  title: string;
+}

@@ -18,6 +18,7 @@ const STATS = [
 export default function DashboardPage() {
   const router = useRouter();
   const name = useAppStore((s) => s.profile.name);
+  const generatedLesson = useAppStore((s) => s.generatedLesson);
 
   return (
     <>
@@ -50,22 +51,22 @@ export default function DashboardPage() {
               <div style={{ position: 'absolute', right: -40, top: -40, width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle,rgba(212,165,116,.12),transparent 70%)' }} />
               <span className="eyebrow eyebrow-warm">Recommended next · for you</span>
               <h2 className="ty-h2" style={{ marginTop: 14, marginBottom: 16, maxWidth: 480 }}>
-                Practice making plans and responding faster.
+                {generatedLesson?.title ?? 'Practice making plans and responding faster.'}
               </h2>
               <p className="body" style={{ maxWidth: 560 }}>
-                You&rsquo;re accurate with simple café and restaurant phrases, but you hesitate on open-ended responses and still slip into{' '}
-                <span style={{ fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic' }}>tú</span> forms.
-                This lesson drills <span style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 13 }}>querés / tenés / podés</span> with timed responses.
+                {generatedLesson
+                  ? generatedLesson.transcript.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160) + '…'
+                  : <>You&rsquo;re accurate with simple café and restaurant phrases, but you hesitate on open-ended responses and still slip into{' '}
+                    <span style={{ fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic' }}>tú</span> forms.
+                    This lesson drills <span style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 13 }}>querés / tenés / podés</span> with timed responses.</>
+                }
               </p>
               <div className="row gap-2" style={{ marginTop: 24, flexWrap: 'wrap' }}>
                 <Tag kind="warm">25 min</Tag>
-                <Tag kind="mute">B1</Tag>
-                <Tag kind="mute">Social plans</Tag>
-                <Tag kind="mute">Vos forms</Tag>
-                <Tag kind="mute">Speed drills</Tag>
+                <Tag kind="mute">Personalized</Tag>
               </div>
               <div className="row gap-3" style={{ marginTop: 32 }}>
-                <button className="btn btn-primary" onClick={() => router.push('/preview')}>Start lesson <Icons.arrow /></button>
+                <button className="btn btn-primary" onClick={() => router.push(generatedLesson ? '/lesson' : '/preview')}>Start lesson <Icons.arrow /></button>
                 <button className="btn btn-ghost" onClick={() => router.push('/builder')}>Customize first</button>
               </div>
             </div>
