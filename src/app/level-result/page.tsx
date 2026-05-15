@@ -216,7 +216,9 @@ const CONFIDENCE_COLOR: Record<string, string> = {
 export default function LevelResultPage() {
   const router = useRouter();
   const storeSession = useAppStore((s) => s.levelTestSession);
+  const profile = useAppStore((s) => s.profile);
   const [localSession, setLocalSession] = useState<LevelTestSession | null>(null);
+  const [reportSaved, setReportSaved] = useState(false);
 
   useEffect(() => {
     if (!storeSession) {
@@ -229,6 +231,16 @@ export default function LevelResultPage() {
 
   const session = storeSession ?? localSession;
   const prompts = session?.prompts ?? [];
+
+  useEffect(() => {
+    if (!session?.completedAt || reportSaved) return;
+    setReportSaved(true);
+    fetch('/api/report/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session, userName: profile.name }),
+    }).catch(() => {});
+  }, [session, reportSaved, profile.name]);
   const report: TestReport | null = session?.report ?? null;
 
   // Derived display values

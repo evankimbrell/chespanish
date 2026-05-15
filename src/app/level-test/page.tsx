@@ -325,14 +325,6 @@ export default function LevelTestPage() {
 
               <p className="lede" style={{ maxWidth: 520 }}>{question.instruction_text}</p>
 
-              {showText && (
-                <p className="serif" style={{ fontSize: 28, letterSpacing: '-.01em', maxWidth: 680, fontStyle: 'italic' }}>
-                  &ldquo;{question.audio_text}&rdquo;
-                </p>
-              )}
-              <button className="btn btn-text small" onClick={handleShowText}>
-                {showText ? 'Hide text' : 'Show text'}
-              </button>
             </div>
           ) : (
             <div className="col gap-6" style={{ alignItems: 'center', maxWidth: 680 }}>
@@ -383,11 +375,6 @@ export default function LevelTestPage() {
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                     <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
                     <span className="small" style={{ color: 'var(--mute)' }}>Grading…</span>
-                  </span>
-                ) : gradeResult?.brief_feedback ? (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    <span className="mono small" style={{ color: 'var(--leaf)' }}>✓</span>
-                    <span className="small" style={{ color: 'var(--mute)' }}>{gradeResult.brief_feedback}</span>
                   </span>
                 ) : (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
