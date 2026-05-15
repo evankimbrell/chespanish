@@ -21,8 +21,9 @@ export default function DebugPlayerPage() {
   const [reports, setReports] = useState<ReportSummary[]>([]);
   const [transcript, setTranscript] = useState(SAMPLE_TRANSCRIPT);
   const [userName, setUserName] = useState('debug');
-  const [status, setStatus] = useState<'idle' | 'generating' | 'error'>('idle');
+  const [status, setStatus] = useState<'idle' | 'generating' | 'randomizing' | 'error'>('idle');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [randomizeProfile, setRandomizeProfile] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/debug/reports')
@@ -51,6 +52,26 @@ export default function DebugPlayerPage() {
         title: 'Debug Lesson',
       });
       router.push('/player');
+    } catch (e) {
+      setErrorMsg(String(e));
+      setStatus('error');
+    }
+  };
+
+  const randomize = async () => {
+    setStatus('randomizing');
+    setErrorMsg(null);
+    setRandomizeProfile(null);
+    try {
+      const res = await fetch('/api/debug/randomize', { method: 'POST' });
+      if (!res.ok) throw new Error(`API returned ${res.status}`);
+      const data = await res.json();
+      if (!data.lessonTranscript) throw new Error('No transcript returned');
+      setTranscript(data.lessonTranscript);
+      setRandomizeProfile(data.profile ?? null);
+      setStatus('idle');
+      // Reload reports list so new saved report appears
+      fetch('/api/debug/reports').then((r) => r.json()).then((d) => setReports(d.reports ?? [])).catch(() => {});
     } catch (e) {
       setErrorMsg(String(e));
       setStatus('error');
@@ -161,11 +182,11 @@ export default function DebugPlayerPage() {
       )}
 
       {/* Actions */}
-      <div className="row gap-3" style={{ marginBottom: 16 }}>
+      <div className="row gap-3" style={{ marginBottom: 16, flexWrap: 'wrap' }}>
         <button
           className="btn btn-primary"
           onClick={generate}
-          disabled={status === 'generating' || !transcript.trim()}
+          disabled={status === 'generating' || status === 'randomizing' || !transcript.trim()}
         >
           {status === 'generating' ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -176,14 +197,40 @@ export default function DebugPlayerPage() {
             'Generate Audio & Play'
           )}
         </button>
-        <button className="btn btn-ghost" onClick={clearCache}>
+        <button
+          className="btn btn-ghost"
+          onClick={randomize}
+          disabled={status === 'generating' || status === 'randomizing'}
+        >
+          {status === 'randomizing' ? (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <span className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />
+              Generating transcript…
+            </span>
+          ) : (
+            '⚄ Randomize'
+          )}
+        </button>
+        <button className="btn btn-ghost" onClick={clearCache} disabled={status === 'generating' || status === 'randomizing'}>
           Clear Lesson Cache
         </button>
       </div>
 
+      {status === 'randomizing' && (
+        <p className="small" style={{ color: 'var(--mute)' }}>
+          Building a fake test session → asking GPT-4o for educator report → generating lesson transcript. Takes ~20-40 seconds.
+        </p>
+      )}
+
       {status === 'generating' && (
         <p className="small" style={{ color: 'var(--mute)' }}>
           Calling ElevenLabs for each voice segment — typically 30–60 seconds depending on transcript length.
+        </p>
+      )}
+
+      {status === 'idle' && randomizeProfile && (
+        <p className="small" style={{ color: 'var(--leaf)' }}>
+          ✓ Generated {randomizeProfile}-level lesson transcript — review it above, then click Generate Audio &amp; Play.
         </p>
       )}
 
