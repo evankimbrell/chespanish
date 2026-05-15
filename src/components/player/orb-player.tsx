@@ -73,18 +73,6 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, l
             onRecord={p.record}
           />
 
-          {/* Section description — only when text is shown */}
-          {showText && displaySection && (
-            <div style={{ maxWidth: 560, textAlign: 'center', marginTop: 18 }}>
-              <span className="eyebrow eyebrow-warm">
-                SECTION {String(displaySection.id).padStart(2, '0')} · {displaySection.label}
-              </span>
-              <p className="body" style={{ marginTop: 8, fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic', fontSize: 18, color: 'var(--ink-2)' }}>
-                {displaySection.blurb}
-              </p>
-            </div>
-          )}
-
           {/* Show text toggle — only after lesson has started */}
           {!(p.state === 'idle' && p.progress === 0) && (
             <button className="btn btn-ghost btn-sm" style={{ marginTop: 12 }} onClick={() => setShowText((s) => !s)}>
@@ -92,7 +80,7 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, l
             </button>
           )}
 
-          {/* Subtitle card */}
+          {/* Transcript / subtitle card */}
           {showText && p.state !== 'prompting' && p.state !== 'feedback' && (
             <div
               className="fade-in"
@@ -102,10 +90,20 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, l
                 border: '1px solid var(--line)', borderRadius: 4, maxWidth: 680, textAlign: 'center',
               }}
             >
-              <span className="kicker">CC · {p.subtitleIdx + 1} / {subtitleLines.length}</span>
-              <p className="serif" style={{ fontSize: 24, fontStyle: 'italic', margin: '8px 0 0', lineHeight: 1.35 }}>
-                &ldquo;{subtitleLines[p.subtitleIdx % subtitleLines.length]}&rdquo;
-              </p>
+              {customSubtitles ? (
+                // Generated lesson: show the current play's full text, indexed by playIdx
+                <p className="serif" style={{ fontSize: 20, fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>
+                  {subtitleLines[p.promptIdx] ?? ''}
+                </p>
+              ) : (
+                // Fake demo player: cycling CC display
+                <>
+                  <span className="kicker">CC · {p.subtitleIdx + 1} / {subtitleLines.length}</span>
+                  <p className="serif" style={{ fontSize: 24, fontStyle: 'italic', margin: '8px 0 0', lineHeight: 1.35 }}>
+                    &ldquo;{subtitleLines[p.subtitleIdx % subtitleLines.length]}&rdquo;
+                  </p>
+                </>
+              )}
             </div>
           )}
 
