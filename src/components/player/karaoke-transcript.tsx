@@ -56,7 +56,7 @@ export function KaraokeTranscript({ text, audioProgress, currentTime, wordTiming
     <div
       className="fade-in"
       style={{
-        marginTop: 16, padding: '24px 32px',
+        marginTop: 24, padding: '24px 32px',
         background: 'rgba(10,9,8,.85)', backdropFilter: 'blur(12px)',
         border: '1px solid var(--line)', borderRadius: 6,
         maxWidth: 700, textAlign: 'center',

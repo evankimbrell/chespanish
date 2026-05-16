@@ -78,7 +78,7 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
 
           {/* Show text toggle — only after lesson has started */}
           {!(p.state === 'idle' && p.progress === 0) && (
-            <button className="btn btn-ghost btn-sm" style={{ marginTop: 24 }} onClick={() => setShowText((s) => !s)}>
+            <button className="btn btn-ghost btn-sm" style={{ marginTop: 48 }} onClick={() => setShowText((s) => !s)}>
               {showText ? 'Hide text' : 'Show text'}
             </button>
           )}
