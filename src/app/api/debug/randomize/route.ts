@@ -362,14 +362,15 @@ export async function POST() {
 
   const educatorCompletion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
-    max_completion_tokens: 800,
+    max_completion_tokens: 8000,
     messages: [{ role: 'user', content: EDUCATOR_PROMPT + '\n\n' + formattedReport }],
   });
   const educatorReport = educatorCompletion.choices[0]?.message?.content ?? '';
+  console.log('[debug/randomize] educator finish_reason:', educatorCompletion.choices[0]?.finish_reason, 'length:', educatorReport.length);
 
   const lessonCompletion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
-    max_completion_tokens: 3000,
+    max_completion_tokens: 16000,
     messages: [{
       role: 'user',
       content: `${LESSON_PROMPT}\n\n--- EDUCATOR RECOMMENDATIONS ---\n${educatorReport}\n\n--- LEVEL TEST REPORT ---\n${formattedReport}`,
