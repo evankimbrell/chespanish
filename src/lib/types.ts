@@ -257,8 +257,9 @@ export interface LessonPlay {
   audioUrl: string;
   promptAfter: boolean;
   text: string;
-  wordTimings?: WordTiming[]; // absent for older cached plays
-  sectionName?: string;       // absent for older cached plays
+  spanishText?: string;        // Spanish voice segments only — the model answer
+  wordTimings?: WordTiming[];  // absent for older cached plays
+  sectionName?: string;        // absent for older cached plays
 }
 
 export interface PlayMeta {
@@ -271,6 +272,7 @@ export interface LessonGrade {
   label: 'Excellent' | 'Good' | 'Ok' | 'Almost' | 'Ouch';
   brief_feedback: string;
   observed_errors: { category: string; description: string }[];
+  suggested_answer?: string;   // shown when label is not Excellent/Good
 }
 
 export interface GeneratedLesson {

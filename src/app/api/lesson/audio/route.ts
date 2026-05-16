@@ -10,7 +10,7 @@ const CONCURRENCY = 4; // parallel ElevenLabs calls (plan limit is 5, use 4 for 
 
 type VoiceSegment = { type: 'english' | 'spanish'; text: string; sectionName?: string };
 type Segment = VoiceSegment | { type: 'prompt'; text: '' };
-type Play = { segments: VoiceSegment[]; promptAfter: boolean; text: string; sectionName?: string };
+type Play = { segments: VoiceSegment[]; promptAfter: boolean; text: string; spanishText?: string; sectionName?: string };
 
 function parseLesson(transcript: string): Segment[] {
   const parts = transcript.split(/(<\/?English voice>|<\/?Spanish voice>|<\/?prompt>|<section[^>]*>|<\/section>)/gi);
@@ -42,7 +42,8 @@ function groupIntoPlays(segments: Segment[]): Play[] {
     if (seg.type === 'prompt') {
       if (current.length > 0) {
         const raw = current.map((s) => s.text).join(' ');
-        plays.push({ segments: current, promptAfter: true, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), sectionName: current[0]?.sectionName });
+        const spanishText = current.filter((s) => s.type === 'spanish').map((s) => s.text).join(' ').trim() || undefined;
+        plays.push({ segments: current, promptAfter: true, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), spanishText, sectionName: current[0]?.sectionName });
         current = [];
       }
     } else {
@@ -51,7 +52,8 @@ function groupIntoPlays(segments: Segment[]): Play[] {
   }
   if (current.length > 0) {
     const raw = current.map((s) => s.text).join(' ');
-    plays.push({ segments: current, promptAfter: false, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), sectionName: current[0]?.sectionName });
+    const spanishText = current.filter((s) => s.type === 'spanish').map((s) => s.text).join(' ').trim() || undefined;
+    plays.push({ segments: current, promptAfter: false, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), spanishText, sectionName: current[0]?.sectionName });
   }
   return plays;
 }
@@ -189,7 +191,7 @@ export async function POST(req: Request) {
     // Use a fixed timestamp per lesson session stored by caller — for simplicity, embed startIdx in filename
     const ts = timestamp ?? Date.now();
 
-    const result: { audioUrl: string; promptAfter: boolean; text: string; wordTimings: WordTiming[]; sectionName?: string }[] = new Array(batch.length);
+    const result: { audioUrl: string; promptAfter: boolean; text: string; spanishText?: string; wordTimings: WordTiming[]; sectionName?: string }[] = new Array(batch.length);
 
     // Process plays in parallel batches to stay within ElevenLabs rate limits
     for (let b = 0; b < batch.length; b += CONCURRENCY) {
@@ -203,7 +205,7 @@ export async function POST(req: Request) {
         const filePath = path.join(lessonsDir, filename);
         const { buffer, wordTimings } = await generatePlayAudio(play);
         fs.writeFileSync(filePath, buffer);
-        result[i] = { audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, wordTimings, sectionName: play.sectionName };
+        result[i] = { audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, spanishText: play.spanishText, wordTimings, sectionName: play.sectionName };
       }));
 
       console.log(`[lesson/audio] sub-batch ${Math.floor(b / CONCURRENCY) + 1}/${Math.ceil(batch.length / CONCURRENCY)} done`);

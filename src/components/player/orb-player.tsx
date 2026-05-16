@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Icons } from '@/components/ui/icons';
 import { Scrubber } from '@/components/ui/scrubber';
@@ -27,6 +27,26 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
   const [hoverSection, setHoverSection] = useState<number | null>(null);
   const [showText, setShowText] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code !== 'Space') return;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'TEXTAREA' || tag === 'INPUT') return;
+      e.preventDefault();
+      if (p.state === 'prompting' || p.state === 'recording') {
+        p.record();
+      } else if (p.state === 'feedback') {
+        p.next();
+      } else if (p.state === 'playing') {
+        p.pause();
+      } else if (p.state === 'idle') {
+        p.play();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [p.state, p.record, p.next, p.play, p.pause]);
 
   const sections = customSections ?? SECTIONS;
   const prompts = customPrompts ?? LESSON.prompts;
@@ -147,6 +167,14 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
                             </li>
                           ))}
                         </ul>
+                      )}
+                      {p.grade.suggested_answer && (
+                        <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid var(--line)' }}>
+                          <span className="eyebrow eyebrow-warm" style={{ display: 'block', marginBottom: 4 }}>Try saying</span>
+                          <p className="serif" style={{ fontSize: 18, fontStyle: 'italic', margin: 0, color: 'var(--ink)' }}>
+                            &ldquo;{p.grade.suggested_answer}&rdquo;
+                          </p>
+                        </div>
                       )}
                     </div>
                   ) : (

@@ -53,7 +53,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
         fetch('/api/lesson/grade', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transcript: recordTranscript, playText: currentPlay.text }),
+          body: JSON.stringify({ transcript: recordTranscript, playText: currentPlay.text, spanishText: currentPlay.spanishText }),
         })
           .then((r) => r.json())
           .then((data) => setGrade(data))
