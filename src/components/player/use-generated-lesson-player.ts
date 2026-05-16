@@ -57,6 +57,8 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     if (loadedIdxRef.current !== currentIdx) {
       loadedIdxRef.current = currentIdx;
       audio.src = plays[currentIdx].audioUrl;
+      setAudioProgress(0);  // reset immediately — (playIdx+1)/total == (nextPlayIdx+0)/total, no jump
+      setAudioCurrentTime(0);
     }
 
     // Always re-attach onended (cleared by cleanup on pause)
