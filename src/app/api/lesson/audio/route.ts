@@ -2,15 +2,18 @@ import fs from 'fs';
 import path from 'path';
 import type { WordTiming } from '@/lib/types';
 
+export const maxDuration = 300; // 5-minute timeout for long lessons
+
 const ENGLISH_VOICE = 'nzFihrBIvB34imQBuxub';
 const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm'; // Facundo
+const CONCURRENCY = 8; // parallel ElevenLabs calls
 
 type VoiceSegment = { type: 'english' | 'spanish'; text: string; sectionName?: string };
 type Segment = VoiceSegment | { type: 'prompt'; text: '' };
 type Play = { segments: VoiceSegment[]; promptAfter: boolean; text: string; sectionName?: string };
 
 function parseLesson(transcript: string): Segment[] {
-  const parts = transcript.split(/(<\/?English voice>|<\/?Spanish voice>|<prompt>|<section[^>]*>|<\/section>)/gi);
+  const parts = transcript.split(/(<\/?English voice>|<\/?Spanish voice>|<\/?prompt>|<section[^>]*>|<\/section>)/gi);
   let current: 'english' | 'spanish' | null = null;
   let currentSection: string | undefined = undefined;
   const segs: Segment[] = [];
@@ -26,6 +29,7 @@ function parseLesson(transcript: string): Segment[] {
     }
     else if (/^<\/section>/i.test(clean)) { currentSection = undefined; }
     else if (/^<prompt>$/i.test(clean)) { segs.push({ type: 'prompt', text: '' }); }
+    else if (/^<\/prompt>$/i.test(clean)) { /* closing prompt tag — skip */ }
     else if (current) { segs.push({ type: current, text: clean, sectionName: currentSection }); }
   }
   return segs;
@@ -169,22 +173,30 @@ export async function POST(req: Request) {
   const segments = parseLesson(transcript);
   const plays = groupIntoPlays(segments);
 
+  console.log(`[lesson/audio] ${plays.length} plays, processing ${CONCURRENCY} at a time`);
+
   const safeUser = (userName ?? 'student').toLowerCase().replace(/[^a-z0-9]/g, '-');
   const timestamp = Date.now();
   const lessonsDir = path.join(process.cwd(), 'public', 'lessons');
   fs.mkdirSync(lessonsDir, { recursive: true });
 
-  const result: { audioUrl: string; promptAfter: boolean; text: string; wordTimings: WordTiming[]; sectionName?: string }[] = [];
+  const result: { audioUrl: string; promptAfter: boolean; text: string; wordTimings: WordTiming[]; sectionName?: string }[] = new Array(plays.length);
 
-  for (let i = 0; i < plays.length; i++) {
-    const play = plays[i];
-    const filename = `${safeUser}-${timestamp}-${i}.mp3`;
-    const filePath = path.join(lessonsDir, filename);
+  // Process plays in parallel batches to stay within ElevenLabs rate limits
+  for (let batch = 0; batch < plays.length; batch += CONCURRENCY) {
+    const batchItems = plays
+      .slice(batch, batch + CONCURRENCY)
+      .map((play, j) => ({ play, i: batch + j }));
 
-    const { buffer, wordTimings } = await generatePlayAudio(play);
-    fs.writeFileSync(filePath, buffer);
+    await Promise.all(batchItems.map(async ({ play, i }) => {
+      const filename = `${safeUser}-${timestamp}-${i}.mp3`;
+      const filePath = path.join(lessonsDir, filename);
+      const { buffer, wordTimings } = await generatePlayAudio(play);
+      fs.writeFileSync(filePath, buffer);
+      result[i] = { audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, wordTimings, sectionName: play.sectionName };
+    }));
 
-    result.push({ audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, wordTimings, sectionName: play.sectionName });
+    console.log(`[lesson/audio] batch ${Math.floor(batch / CONCURRENCY) + 1}/${Math.ceil(plays.length / CONCURRENCY)} done`);
   }
 
   return Response.json({ plays: result });
