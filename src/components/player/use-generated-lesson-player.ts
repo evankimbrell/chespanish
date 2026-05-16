@@ -22,6 +22,9 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const rafRef = useRef<number | null>(null);
   const seekAfterLoadFractionRef = useRef<number | null>(null);
   const playDurationsRef = useRef<number[]>([]); // actual audio duration (seconds) per play index
+  const isAskRef = useRef(false);
+  const savedAskPositionRef = useRef<{ playIdx: number; fraction: number } | null>(null);
+  const answerAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const {
     startRecording, stopRecording,
@@ -43,23 +46,61 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     }
   }, [totalCount, plays.length]);
 
-  // When real transcript arrives, move to feedback and fire grade request
+  // Resume lesson at saved position after ask-answer finishes or fails
+  const resumeAfterAsk = useCallback(() => {
+    answerAudioRef.current = null;
+    const saved = savedAskPositionRef.current;
+    savedAskPositionRef.current = null;
+    if (saved) {
+      if (saved.fraction > 0) seekAfterLoadFractionRef.current = saved.fraction;
+      loadedIdxRef.current = -1; // force reload so onloadedmetadata fires
+      setPlayIdx(saved.playIdx);
+    }
+    setState('idle');
+  }, []);
+
+  // When transcript arrives, route to ask flow or lesson prompt flow
   useEffect(() => {
-    if (recordTranscript !== null) {
-      setTranscript(recordTranscript);
-      setState('feedback');
-      setGrade(null);
-      const currentPlay = plays[playIdx];
-      if (currentPlay) {
-        fetch('/api/lesson/grade', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transcript: recordTranscript, playText: currentPlay.text, spanishText: currentPlay.spanishText }),
+    if (recordTranscript === null) return;
+
+    if (isAskRef.current) {
+      isAskRef.current = false;
+      const contextText = plays
+        .slice(Math.max(0, playIdx - 2), playIdx + 1)
+        .map((p) => p.text)
+        .join(' ');
+      fetch('/api/lesson/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: recordTranscript, lessonContext: contextText }),
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (!data.audioUrl) { resumeAfterAsk(); return; }
+          const audio = new Audio(data.audioUrl);
+          answerAudioRef.current = audio;
+          audio.onended = resumeAfterAsk;
+          audio.onerror = resumeAfterAsk;
+          audio.play().catch(resumeAfterAsk);
         })
-          .then((r) => r.json())
-          .then((data) => setGrade(data))
-          .catch(() => {});
-      }
+        .catch(resumeAfterAsk);
+      return;
+    }
+
+    // Lesson prompt path
+    setTranscript(recordTranscript);
+    setState('feedback');
+    setGrade(null);
+    const currentPlay = plays[playIdx];
+    if (currentPlay) {
+      fetch('/api/lesson/grade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: recordTranscript, playText: currentPlay.text, spanishText: currentPlay.spanishText }),
+      })
+        .then((r) => r.json())
+        .then((data) => setGrade(data))
+        .catch(() => {});
     }
   }, [recordTranscript]);
 
@@ -129,6 +170,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   useEffect(() => () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     audioRef.current?.pause();
+    answerAudioRef.current?.pause();
     clearSub();
   }, []);
 
@@ -140,12 +182,19 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     setState('idle');
   }, []);
 
-  // Toggle: first call starts recording, second call stops it (triggers transcription)
+  // Toggle for lesson prompts. Also handles stopping ask recording.
   const record = useCallback(() => {
+    if (state === 'asking') {
+      // Stop ask recording — transcript effect will handle the rest
+      stopRecording();
+      setState('answering'); // show spinner immediately
+      return;
+    }
     if (state === 'recording') {
       stopRecording();
       setState('processing');
     } else {
+      isAskRef.current = false;
       setTranscript(null);
       resetRecording();
       startRecording();
@@ -198,7 +247,20 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       setState('idle');
     }
   }, [totalCount, plays.length, playIdx, state]);
-  const ask = useCallback(() => setState('asking'), []);
+  const ask = useCallback(() => {
+    if (state !== 'playing' && state !== 'idle') return;
+    const fraction = (audioRef.current?.duration ?? 0) > 0
+      ? audioRef.current!.currentTime / audioRef.current!.duration
+      : audioProgress;
+    savedAskPositionRef.current = { playIdx, fraction };
+    audioRef.current?.pause();
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    clearSub();
+    isAskRef.current = true;
+    resetRecording();
+    startRecording();
+    setState('asking');
+  }, [state, playIdx, audioProgress, startRecording, resetRecording]);
   const submitQuestion = useCallback(() => setState('idle'), []);
 
   const progress = totalCount > 0 ? (playIdx + audioProgress) / totalCount : 0;

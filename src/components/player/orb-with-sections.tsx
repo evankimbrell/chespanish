@@ -272,19 +272,13 @@ export function OrbWithSections({
             <Icons.mic />
           </button>
         )}
-        {state === 'recording' && (
+        {(state === 'recording' || state === 'asking') && (
           <button className="mic-btn recording" style={{ pointerEvents: 'auto', width: 96, height: 96 }} onClick={onRecord}>
             <Icons.mic />
           </button>
         )}
-        {state === 'processing' && (
+        {(state === 'processing' || state === 'answering') && (
           <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
-        )}
-        {(state === 'asking' || state === 'answering') && (
-          <div className="col center gap-2" style={{ textAlign: 'center' }}>
-            <Icons.spark style={{ color: 'var(--warm)', width: 24, height: 24 }} />
-            <span className="kicker eyebrow-warm">{state === 'asking' ? 'PAUSED · ASK' : 'ANSWERING'}</span>
-          </div>
         )}
       </div>
     </div>

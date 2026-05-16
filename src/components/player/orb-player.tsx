@@ -5,7 +5,6 @@ import { Icons } from '@/components/ui/icons';
 import { Scrubber } from '@/components/ui/scrubber';
 import { OrbWithSections } from './orb-with-sections';
 import { UserResponseAnalysis } from './user-response-analysis';
-import { AskOverlay } from './ask-overlay';
 import { KaraokeTranscript } from './karaoke-transcript';
 import { LESSON, SECTIONS, SUBTITLE_LINES } from '@/lib/data';
 import type { FakePlayer } from './use-fake-player';
@@ -34,7 +33,7 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'TEXTAREA' || tag === 'INPUT') return;
       e.preventDefault();
-      if (p.state === 'prompting' || p.state === 'recording') {
+      if (p.state === 'prompting' || p.state === 'recording' || p.state === 'asking') {
         p.record();
       } else if (p.state === 'feedback') {
         p.next();
@@ -78,19 +77,28 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
               {Math.round(p.progress * 100)}% · section {String(activeSection?.id ?? 1).padStart(2, '0')} of {String(sections.length).padStart(2, '0')}
             </span>
           </div>
-          <button className="btn btn-text small" onClick={p.ask}>
-            <Icons.spark /> Ask a question
+          <button
+            className="btn btn-text small"
+            onClick={p.ask}
+            disabled={p.state === 'answering'}
+            style={{ opacity: p.state === 'asking' || p.state === 'answering' ? 0.5 : 1 }}
+          >
+            <Icons.spark />
+            {p.state === 'asking' ? 'Recording…' : p.state === 'answering' ? 'Getting answer…' : 'Ask a question'}
           </button>
         </div>
 
         {/* Orb area */}
-        <div className="col center" style={{ flex: 1, padding: '24px 0', position: 'relative' }}>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+          {/* Fixed top spacer — anchors orb at a stable vertical position regardless of content below */}
+          <div style={{ flex: '0 0 80px' }} />
+
           <OrbWithSections
             progress={p.progress}
             sections={sections}
             prompts={prompts}
-            active={p.state === 'playing' || p.state === 'recording'}
-            accent={p.state === 'recording'}
+            active={p.state === 'playing' || p.state === 'recording' || p.state === 'asking'}
+            accent={p.state === 'recording' || p.state === 'asking'}
             hoverSection={hoverSection}
             setHoverSection={setHoverSection}
             onSeek={p.seek}
@@ -100,8 +108,12 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
             onRecord={p.record}
           />
 
-          {/* Show text toggle — only after lesson has started */}
-          {!(p.state === 'idle' && p.progress === 0) && (
+          {/* Show text toggle — only when audio is playing/idle (not during prompting/recording/feedback) */}
+          {!(p.state === 'idle' && p.progress === 0) &&
+            p.state !== 'feedback' &&
+            p.state !== 'prompting' &&
+            p.state !== 'recording' &&
+            p.state !== 'processing' && (
             <button className="btn btn-ghost btn-sm" style={{ marginTop: 48 }} onClick={() => setShowText((s) => !s)}>
               {showText ? 'Hide text' : 'Show text'}
             </button>
@@ -224,7 +236,6 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
         </div>
       </div>
 
-      <AskOverlay p={p} />
     </div>
   );
 }
