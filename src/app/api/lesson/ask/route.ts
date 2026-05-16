@@ -12,6 +12,12 @@ function getOpenAI() {
   return _openai;
 }
 
+let _eleven: ElevenLabsClient | null = null;
+function getEleven() {
+  if (!_eleven) _eleven = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY! });
+  return _eleven;
+}
+
 const SYSTEM = `You are an Argentine Spanish tutor answering a student's question mid-lesson.
 
 Format your answer using ONLY these tags:
@@ -37,10 +43,9 @@ The lesson will resume automatically after this.
 </English voice>`;
 
 async function segmentToBuffer(text: string, voiceId: string): Promise<Buffer> {
-  const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY! });
-  const stream = await client.textToSpeech.convertAsStream(voiceId, {
+  const stream = await getEleven().textToSpeech.convertAsStream(voiceId, {
     text,
-    model_id: 'eleven_multilingual_v2',
+    model_id: 'eleven_turbo_v2_5',
     output_format: 'mp3_44100_128',
   });
   const chunks: Buffer[] = [];
@@ -57,7 +62,7 @@ export async function POST(req: Request) {
   try {
     // Generate answer with voice tags
     const completion = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       max_tokens: 300,
       messages: [
         { role: 'system', content: SYSTEM },
@@ -87,12 +92,10 @@ export async function POST(req: Request) {
       segments.push({ type: 'english', text: answerText });
     }
 
-    // TTS each segment sequentially (keep order)
-    const buffers: Buffer[] = [];
-    for (const seg of segments) {
-      const voiceId = seg.type === 'english' ? ENGLISH_VOICE : SPANISH_VOICE;
-      buffers.push(await segmentToBuffer(seg.text, voiceId));
-    }
+    // TTS all segments in parallel — order preserved by Promise.all
+    const buffers = await Promise.all(
+      segments.map((seg) => segmentToBuffer(seg.text, seg.type === 'english' ? ENGLISH_VOICE : SPANISH_VOICE))
+    );
 
     const combined = Buffer.concat(buffers);
 
