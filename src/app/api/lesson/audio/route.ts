@@ -164,40 +164,46 @@ async function generatePlayAudio(
 
 export async function POST(req: Request) {
   if (!process.env.ELEVENLABS_API_KEY) {
-    return new Response('ELEVENLABS_API_KEY not configured', { status: 500 });
+    return Response.json({ error: 'ELEVENLABS_API_KEY not configured' }, { status: 500 });
   }
 
   const { transcript, userName } = await req.json();
   if (!transcript) return Response.json({ error: 'missing_transcript' }, { status: 400 });
 
-  const segments = parseLesson(transcript);
-  const plays = groupIntoPlays(segments);
+  try {
+    const segments = parseLesson(transcript);
+    const plays = groupIntoPlays(segments);
 
-  console.log(`[lesson/audio] ${plays.length} plays, processing ${CONCURRENCY} at a time`);
+    console.log(`[lesson/audio] ${plays.length} plays, processing ${CONCURRENCY} at a time`);
 
-  const safeUser = (userName ?? 'student').toLowerCase().replace(/[^a-z0-9]/g, '-');
-  const timestamp = Date.now();
-  const lessonsDir = path.join(process.cwd(), 'public', 'lessons');
-  fs.mkdirSync(lessonsDir, { recursive: true });
+    const safeUser = (userName ?? 'student').toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const timestamp = Date.now();
+    const lessonsDir = path.join(process.cwd(), 'public', 'lessons');
+    fs.mkdirSync(lessonsDir, { recursive: true });
 
-  const result: { audioUrl: string; promptAfter: boolean; text: string; wordTimings: WordTiming[]; sectionName?: string }[] = new Array(plays.length);
+    const result: { audioUrl: string; promptAfter: boolean; text: string; wordTimings: WordTiming[]; sectionName?: string }[] = new Array(plays.length);
 
-  // Process plays in parallel batches to stay within ElevenLabs rate limits
-  for (let batch = 0; batch < plays.length; batch += CONCURRENCY) {
-    const batchItems = plays
-      .slice(batch, batch + CONCURRENCY)
-      .map((play, j) => ({ play, i: batch + j }));
+    // Process plays in parallel batches to stay within ElevenLabs rate limits
+    for (let batch = 0; batch < plays.length; batch += CONCURRENCY) {
+      const batchItems = plays
+        .slice(batch, batch + CONCURRENCY)
+        .map((play, j) => ({ play, i: batch + j }));
 
-    await Promise.all(batchItems.map(async ({ play, i }) => {
-      const filename = `${safeUser}-${timestamp}-${i}.mp3`;
-      const filePath = path.join(lessonsDir, filename);
-      const { buffer, wordTimings } = await generatePlayAudio(play);
-      fs.writeFileSync(filePath, buffer);
-      result[i] = { audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, wordTimings, sectionName: play.sectionName };
-    }));
+      await Promise.all(batchItems.map(async ({ play, i }) => {
+        const filename = `${safeUser}-${timestamp}-${i}.mp3`;
+        const filePath = path.join(lessonsDir, filename);
+        const { buffer, wordTimings } = await generatePlayAudio(play);
+        fs.writeFileSync(filePath, buffer);
+        result[i] = { audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, wordTimings, sectionName: play.sectionName };
+      }));
 
-    console.log(`[lesson/audio] batch ${Math.floor(batch / CONCURRENCY) + 1}/${Math.ceil(plays.length / CONCURRENCY)} done`);
+      console.log(`[lesson/audio] batch ${Math.floor(batch / CONCURRENCY) + 1}/${Math.ceil(plays.length / CONCURRENCY)} done`);
+    }
+
+    return Response.json({ plays: result });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[lesson/audio] error:', msg);
+    return Response.json({ error: msg }, { status: 500 });
   }
-
-  return Response.json({ plays: result });
 }

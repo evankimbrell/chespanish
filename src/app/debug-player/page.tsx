@@ -45,8 +45,8 @@ export default function DebugPlayerPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript, userName }),
       });
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `API returned ${res.status}`);
       if (!data.plays?.length) throw new Error('No plays returned');
       setGeneratedLesson({
         transcript,
