@@ -25,21 +25,29 @@ Format your answer using ONLY these tags:
 <Spanish voice>Spanish phrases here</Spanish voice>
 
 Rules:
-- Keep answers concise: 30–80 words total
+- Give a thorough, satisfying explanation: 80–180 words total
+- Include multiple Spanish examples where helpful — show the phrase in context, not just isolated
 - Use <Spanish voice> ONLY for actual Spanish words/phrases, never for English
 - Use vos conjugations (tenés, querés, estás, sos) not tú conjugations
 - Be warm and encouraging
 - Do not say "Great question" or similar filler
+- End with a brief note that the lesson will resume
 
 Example:
 <English voice>
-The word "cortado" means a coffee with a splash of milk. To order one you say:
+The word "cortado" means a coffee with a splash of milk — it's one of the most common orders at any café in Buenos Aires. The name comes from "cortar" (to cut), because the espresso is "cut" with just a splash of milk to soften the bitterness. To order one you say:
 </English voice>
 <Spanish voice>
 Un cortado, por favor.
 </Spanish voice>
 <English voice>
-The lesson will resume automatically after this.
+If you want two, just say:
+</English voice>
+<Spanish voice>
+Dos cortados, por favor.
+</Spanish voice>
+<English voice>
+The lesson will resume now.
 </English voice>`;
 
 async function segmentToBuffer(text: string, voiceId: string): Promise<Buffer> {
@@ -62,8 +70,8 @@ export async function POST(req: Request) {
   try {
     // Generate answer with voice tags
     const completion = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 300,
+      model: 'gpt-5.5-mini',
+      max_tokens: 600,
       messages: [
         { role: 'system', content: SYSTEM },
         {
