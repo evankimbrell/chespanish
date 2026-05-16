@@ -25,7 +25,7 @@ IMPORTANT: The audio lesson should use the core tenets of Pimsleur lessons. Pims
 
 Each portion of the lesson needs to be labeled as <English voice> and <Spanish voice>. When the user is expected to respond with an answer, put <prompt>. Use <prompts> frequently to maintain engagement.
 
-Generate the lesson. Do not include any other text other than the lesson transcript.`;
+Generate the lesson. Do not include any other text other than the lesson transcript. The user does not hear the word <prompt> because this is just a signal for the audio transcriber to read. The English voice should never read Spanish.`;
 
 function formatSessionForOpenAI(session: LevelTestSession, userName: string): string {
   const report = session.report;
@@ -151,7 +151,7 @@ export async function POST(req: Request) {
   const formattedReport = formatSessionForOpenAI(session, userName ?? 'student');
 
   const completion = await getOpenAI().chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-5.5',
     temperature: 0.4,
     max_tokens: 800,
     messages: [
@@ -162,7 +162,7 @@ export async function POST(req: Request) {
   const educatorReport = completion.choices[0]?.message?.content ?? '';
 
   const lessonCompletion = await getOpenAI().chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-5.5',
     temperature: 0.5,
     max_tokens: 3000,
     messages: [

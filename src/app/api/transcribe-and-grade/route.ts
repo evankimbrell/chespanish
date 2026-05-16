@@ -188,7 +188,7 @@ Skipped: false
 Prompt ID to echo back: ${q.prompt_id}`;
 
         const completion = await getOpenAI().chat.completions.create({
-          model: 'gpt-4o-mini',
+          model: 'gpt-5.5-mini',
           response_format: { type: 'json_object' },
           temperature: 0.2,
           max_tokens: 900,

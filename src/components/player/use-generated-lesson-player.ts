@@ -13,9 +13,11 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const [playIdx, setPlayIdx] = useState(0);
   const [subtitleIdx, setSubtitleIdx] = useState(0);
   const [transcript, setTranscript] = useState<string | null>(null);
+  const [audioProgress, setAudioProgress] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const subRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadedIdxRef = useRef(-1);
+  const rafRef = useRef<number | null>(null);
 
   const {
     startRecording, stopRecording,
@@ -58,7 +60,9 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
 
     // Always re-attach onended (cleared by cleanup on pause)
     audio.onended = () => {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       clearSub();
+      setAudioProgress(0);
       if (plays[currentIdx]?.promptAfter) {
         setState('prompting');
       } else {
@@ -66,19 +70,33 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       }
     };
 
+    // Poll at 60fps for smooth word-by-word highlighting
+    const pollProgress = () => {
+      if (audioRef.current && audioRef.current.duration > 0) {
+        setAudioProgress(audioRef.current.currentTime / audioRef.current.duration);
+      }
+      rafRef.current = requestAnimationFrame(pollProgress);
+    };
+    rafRef.current = requestAnimationFrame(pollProgress);
+
     audio.play().catch(() => {});
 
     clearSub();
     subRef.current = setInterval(() => setSubtitleIdx((i) => (i + 1) % Math.max(1, total)), 3200);
 
     return () => {
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       audio.onended = null;
       audio.pause();
       clearSub();
     };
   }, [state, playIdx]);
 
-  useEffect(() => () => { audioRef.current?.pause(); clearSub(); }, []);
+  useEffect(() => () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    audioRef.current?.pause();
+    clearSub();
+  }, []);
 
   const play = useCallback(() => setState('playing'), []);
 
@@ -119,5 +137,5 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
 
   const progress = total > 0 ? playIdx / total : 0;
 
-  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, play, pause, record, next, retry, seek, ask, submitQuestion };
+  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, play, pause, record, next, retry, seek, ask, submitQuestion };
 }

@@ -6,6 +6,7 @@ import { Scrubber } from '@/components/ui/scrubber';
 import { OrbWithSections } from './orb-with-sections';
 import { UserResponseAnalysis } from './user-response-analysis';
 import { AskOverlay } from './ask-overlay';
+import { KaraokeTranscript } from './karaoke-transcript';
 import { LESSON, SECTIONS, SUBTITLE_LINES } from '@/lib/data';
 import type { FakePlayer } from './use-fake-player';
 
@@ -82,29 +83,27 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, l
 
           {/* Transcript / subtitle card */}
           {showText && p.state !== 'prompting' && p.state !== 'feedback' && (
-            <div
-              className="fade-in"
-              style={{
-                marginTop: 16, padding: '16px 24px',
-                background: 'rgba(10,9,8,.7)', backdropFilter: 'blur(8px)',
-                border: '1px solid var(--line)', borderRadius: 4, maxWidth: 680, textAlign: 'center',
-              }}
-            >
-              {customSubtitles ? (
-                // Generated lesson: show the current play's full text, indexed by playIdx
-                <p className="serif" style={{ fontSize: 20, fontStyle: 'italic', margin: 0, lineHeight: 1.5 }}>
-                  {subtitleLines[p.promptIdx] ?? ''}
+            customSubtitles ? (
+              <KaraokeTranscript
+                text={subtitleLines[p.promptIdx] ?? ''}
+                audioProgress={p.audioProgress ?? 0}
+              />
+            ) : (
+              // Fake demo player: cycling CC display
+              <div
+                className="fade-in"
+                style={{
+                  marginTop: 16, padding: '16px 24px',
+                  background: 'rgba(10,9,8,.7)', backdropFilter: 'blur(8px)',
+                  border: '1px solid var(--line)', borderRadius: 4, maxWidth: 680, textAlign: 'center',
+                }}
+              >
+                <span className="kicker">CC · {p.subtitleIdx + 1} / {subtitleLines.length}</span>
+                <p className="serif" style={{ fontSize: 24, fontStyle: 'italic', margin: '8px 0 0', lineHeight: 1.35 }}>
+                  &ldquo;{subtitleLines[p.subtitleIdx % subtitleLines.length]}&rdquo;
                 </p>
-              ) : (
-                // Fake demo player: cycling CC display
-                <>
-                  <span className="kicker">CC · {p.subtitleIdx + 1} / {subtitleLines.length}</span>
-                  <p className="serif" style={{ fontSize: 24, fontStyle: 'italic', margin: '8px 0 0', lineHeight: 1.35 }}>
-                    &ldquo;{subtitleLines[p.subtitleIdx % subtitleLines.length]}&rdquo;
-                  </p>
-                </>
-              )}
-            </div>
+              </div>
+            )
           )}
 
           {/* Prompting cue */}

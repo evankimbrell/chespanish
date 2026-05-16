@@ -25,7 +25,9 @@ function GeneratedLessonPlayerPage() {
     .map((play, i) => play.promptAfter ? { id: i + 1, t: (i + 1) / total } : null)
     .filter((x): x is NonNullable<typeof x> => x !== null);
 
-  const subtitleLines = plays.map((pl) => pl.text);
+  const subtitleLines = plays.map((pl) =>
+    pl.text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+  );
 
   return (
     <OrbPlayer
