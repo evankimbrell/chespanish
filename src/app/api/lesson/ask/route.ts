@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import { ElevenLabsClient } from 'elevenlabs';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,12 +9,6 @@ let _openai: OpenAI | null = null;
 function getOpenAI() {
   if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
   return _openai;
-}
-
-let _eleven: ElevenLabsClient | null = null;
-function getEleven() {
-  if (!_eleven) _eleven = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY! });
-  return _eleven;
 }
 
 const SYSTEM = `You are an Argentine Spanish tutor answering a student's question mid-lesson.
@@ -51,16 +44,19 @@ The lesson will resume now.
 </English voice>`;
 
 async function segmentToBuffer(text: string, voiceId: string): Promise<Buffer> {
-  const stream = await getEleven().textToSpeech.convertAsStream(voiceId, {
-    text,
-    model_id: 'eleven_turbo_v2_5',
-    output_format: 'mp3_44100_128',
-  });
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream) {
-    chunks.push(Buffer.from(chunk as ArrayBuffer));
-  }
-  return Buffer.concat(chunks);
+  const res = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+    {
+      method: 'POST',
+      headers: {
+        'xi-api-key': process.env.ELEVENLABS_API_KEY!,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text, model_id: 'eleven_turbo_v2_5', output_format: 'mp3_44100_128' }),
+    }
+  );
+  if (!res.ok) throw new Error(`ElevenLabs TTS error ${res.status}: ${await res.text()}`);
+  return Buffer.from(await res.arrayBuffer());
 }
 
 export async function POST(req: Request) {
