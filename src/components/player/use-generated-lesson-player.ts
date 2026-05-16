@@ -248,7 +248,8 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     }
   }, [totalCount, plays.length, playIdx, state]);
   const ask = useCallback(() => {
-    if (state !== 'playing' && state !== 'idle') return;
+    // Block only if already in a recording/answer flow
+    if (state === 'recording' || state === 'asking' || state === 'answering') return;
     const fraction = (audioRef.current?.duration ?? 0) > 0
       ? audioRef.current!.currentTime / audioRef.current!.duration
       : audioProgress;
@@ -258,7 +259,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     clearSub();
     isAskRef.current = true;
     resetRecording();
-    startRecording();
+    startRecording({ allowEnglish: true });
     setState('asking');
   }, [state, playIdx, audioProgress, startRecording, resetRecording]);
   const submitQuestion = useCallback(() => setState('idle'), []);
