@@ -1,35 +1,54 @@
 'use client';
 import { useMemo } from 'react';
+import type { WordTiming } from '@/lib/types';
 
 const CHUNK_SIZE = 15;
 
 interface Props {
   text: string;
-  audioProgress: number; // 0–1 within current play
+  audioProgress: number; // 0–1 fallback when no wordTimings
+  currentTime?: number;  // seconds from audio element
+  wordTimings?: WordTiming[];
 }
 
 function cleanText(text: string): string {
   return text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
-export function KaraokeTranscript({ text, audioProgress }: Props) {
-  const words = useMemo(() => cleanText(text).split(/\s+/).filter(Boolean), [text]);
-  const chunks = useMemo<string[][]>(() => {
-    const out: string[][] = [];
-    for (let i = 0; i < words.length; i += CHUNK_SIZE) out.push(words.slice(i, i + CHUNK_SIZE));
-    return out;
-  }, [words]);
+export function KaraokeTranscript({ text, audioProgress, currentTime, wordTimings }: Props) {
+  const hasTimings = !!wordTimings && wordTimings.length > 0 && currentTime !== undefined;
 
-  const n = chunks.length || 1;
-  const chunkIdx = Math.min(Math.floor(audioProgress * n), n - 1);
-  const chunk = chunks[chunkIdx] ?? [];
+  // Binary search: last index where wordTimings[i].start <= currentTime
+  const activeWordIdxFromTimings = useMemo(() => {
+    if (!hasTimings || !wordTimings || currentTime === undefined) return null;
+    let lo = 0, hi = wordTimings.length - 1, result = 0;
+    while (lo <= hi) {
+      const mid = (lo + hi) >> 1;
+      if (wordTimings[mid].start <= currentTime) { result = mid; lo = mid + 1; }
+      else hi = mid - 1;
+    }
+    return result;
+  }, [wordTimings, currentTime, hasTimings]);
 
-  const chunkStart = chunkIdx / n;
-  const chunkEnd = (chunkIdx + 1) / n;
-  const within = chunkEnd > chunkStart
-    ? Math.min(Math.max((audioProgress - chunkStart) / (chunkEnd - chunkStart), 0), 1)
-    : 0;
-  const activeWordIdx = Math.floor(within * chunk.length);
+  // Words list — from timings or from cleaned text
+  const words = useMemo(() => {
+    if (hasTimings && wordTimings) return wordTimings.map((wt) => wt.word);
+    return cleanText(text).split(/\s+/).filter(Boolean);
+  }, [text, wordTimings, hasTimings]);
+
+  const totalWords = words.length;
+
+  // Active word index — real timestamps or proportional fallback
+  const activeWordIdx = hasTimings
+    ? (activeWordIdxFromTimings ?? 0)
+    : Math.floor(audioProgress * totalWords);
+
+  // Which 15-word chunk contains the active word
+  const chunkIdx = Math.floor(activeWordIdx / CHUNK_SIZE);
+  const totalChunks = Math.ceil(totalWords / CHUNK_SIZE) || 1;
+  const chunkStart = chunkIdx * CHUNK_SIZE;
+  const chunk = words.slice(chunkStart, chunkStart + CHUNK_SIZE);
+  const localActiveIdx = activeWordIdx - chunkStart;
 
   if (!chunk.length) return null;
 
@@ -48,12 +67,12 @@ export function KaraokeTranscript({ text, audioProgress }: Props) {
           <span
             key={i}
             style={{
-              color: i < activeWordIdx
+              color: i < localActiveIdx
                 ? 'rgba(212,165,116,0.65)'
-                : i === activeWordIdx
+                : i === localActiveIdx
                   ? 'var(--ink)'
                   : 'rgba(255,255,255,0.15)',
-              fontWeight: i === activeWordIdx ? 600 : 400,
+              fontWeight: i === localActiveIdx ? 600 : 400,
               transition: 'color 0.08s',
               marginRight: i < chunk.length - 1 ? '0.3em' : 0,
               display: 'inline-block',
@@ -64,7 +83,7 @@ export function KaraokeTranscript({ text, audioProgress }: Props) {
         ))}
       </p>
       <span style={{ fontSize: 11, color: 'var(--mute-2)', marginTop: 8, display: 'block', letterSpacing: '.06em' }}>
-        {chunkIdx + 1} / {n}
+        {chunkIdx + 1} / {totalChunks}
       </span>
     </div>
   );

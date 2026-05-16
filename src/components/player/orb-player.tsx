@@ -9,6 +9,7 @@ import { AskOverlay } from './ask-overlay';
 import { KaraokeTranscript } from './karaoke-transcript';
 import { LESSON, SECTIONS, SUBTITLE_LINES } from '@/lib/data';
 import type { FakePlayer } from './use-fake-player';
+import type { WordTiming } from '@/lib/types';
 
 interface Section { id: number; label: string; pct: number; end: number; blurb?: string }
 interface PromptDot { id: number; t: number; cue?: string; es?: string }
@@ -18,10 +19,11 @@ interface OrbPlayerProps {
   customSections?: Section[];
   customPrompts?: PromptDot[];
   customSubtitles?: string[];
+  customWordTimings?: (WordTiming[] | undefined)[];
   lessonTitle?: string;
 }
 
-export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, lessonTitle }: OrbPlayerProps) {
+export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, customWordTimings, lessonTitle }: OrbPlayerProps) {
   const [hoverSection, setHoverSection] = useState<number | null>(null);
   const [showText, setShowText] = useState(false);
   const router = useRouter();
@@ -87,6 +89,8 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, l
               <KaraokeTranscript
                 text={subtitleLines[p.promptIdx] ?? ''}
                 audioProgress={p.audioProgress ?? 0}
+                currentTime={p.audioCurrentTime}
+                wordTimings={customWordTimings?.[p.promptIdx]}
               />
             ) : (
               // Fake demo player: cycling CC display

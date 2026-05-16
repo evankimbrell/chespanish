@@ -1,8 +1,6 @@
-import { ElevenLabsClient } from 'elevenlabs';
 import fs from 'fs';
 import path from 'path';
-
-const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY! });
+import type { WordTiming } from '@/lib/types';
 
 const ENGLISH_VOICE = 'nzFihrBIvB34imQBuxub';
 const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm'; // Facundo
@@ -65,29 +63,93 @@ function splitAtSentences(text: string, maxChars = 4000): string[] {
   return chunks;
 }
 
-async function textToBuffer(text: string, voiceId: string): Promise<Buffer> {
-  const stream = await client.textToSpeech.convertAsStream(voiceId, {
-    text,
-    model_id: 'eleven_multilingual_v2',
-    output_format: 'mp3_44100_128',
-  });
-  const chunks: Buffer[] = [];
-  for await (const chunk of stream as AsyncIterable<Buffer>) {
-    chunks.push(Buffer.from(chunk));
+type ElevenLabsAlignment = {
+  characters: string[];
+  character_start_times_seconds: number[];
+  character_end_times_seconds: number[];
+};
+
+function charAlignmentToWordTimings(alignment: ElevenLabsAlignment, offsetSec: number): WordTiming[] {
+  const timings: WordTiming[] = [];
+  let word = '';
+  let wordStart = 0;
+
+  for (let i = 0; i < alignment.characters.length; i++) {
+    const ch = alignment.characters[i];
+    if (ch.trim() === '') {
+      if (word) {
+        timings.push({
+          word,
+          start: wordStart + offsetSec,
+          end: (alignment.character_end_times_seconds[i - 1] ?? 0) + offsetSec,
+        });
+        word = '';
+      }
+    } else {
+      if (!word) wordStart = alignment.character_start_times_seconds[i];
+      word += ch;
+    }
   }
-  return Buffer.concat(chunks);
+  if (word) {
+    const last = alignment.character_end_times_seconds.at(-1) ?? 0;
+    timings.push({ word, start: wordStart + offsetSec, end: last + offsetSec });
+  }
+  return timings;
 }
 
-async function generatePlayAudio(play: Play): Promise<Buffer> {
+async function textToBufferWithTimings(
+  text: string,
+  voiceId: string,
+  offsetSec: number
+): Promise<{ buffer: Buffer; wordTimings: WordTiming[]; durationSec: number }> {
+  const res = await fetch(
+    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps`,
+    {
+      method: 'POST',
+      headers: {
+        'xi-api-key': process.env.ELEVENLABS_API_KEY!,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text,
+        model_id: 'eleven_multilingual_v2',
+        output_format: 'mp3_44100_128',
+      }),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`ElevenLabs /with-timestamps error ${res.status}: ${err}`);
+  }
+
+  const data = await res.json();
+  const buffer = Buffer.from(data.audio_base64, 'base64');
+  const wordTimings = charAlignmentToWordTimings(data.alignment, offsetSec);
+  const durationSec = data.alignment.character_end_times_seconds.at(-1) ?? 0;
+
+  return { buffer, wordTimings, durationSec };
+}
+
+async function generatePlayAudio(
+  play: Play
+): Promise<{ buffer: Buffer; wordTimings: WordTiming[] }> {
   const buffers: Buffer[] = [];
+  const allTimings: WordTiming[] = [];
+  let offsetSec = 0;
+
   for (const seg of play.segments) {
     const voiceId = seg.type === 'english' ? ENGLISH_VOICE : SPANISH_VOICE;
     const chunks = splitAtSentences(seg.text);
     for (const chunk of chunks) {
-      buffers.push(await textToBuffer(chunk, voiceId));
+      const { buffer, wordTimings, durationSec } = await textToBufferWithTimings(chunk, voiceId, offsetSec);
+      buffers.push(buffer);
+      allTimings.push(...wordTimings);
+      offsetSec += durationSec;
     }
   }
-  return Buffer.concat(buffers);
+
+  return { buffer: Buffer.concat(buffers), wordTimings: allTimings };
 }
 
 export async function POST(req: Request) {
@@ -106,17 +168,17 @@ export async function POST(req: Request) {
   const lessonsDir = path.join(process.cwd(), 'public', 'lessons');
   fs.mkdirSync(lessonsDir, { recursive: true });
 
-  const result: { audioUrl: string; promptAfter: boolean; text: string }[] = [];
+  const result: { audioUrl: string; promptAfter: boolean; text: string; wordTimings: WordTiming[] }[] = [];
 
   for (let i = 0; i < plays.length; i++) {
     const play = plays[i];
     const filename = `${safeUser}-${timestamp}-${i}.mp3`;
     const filePath = path.join(lessonsDir, filename);
 
-    const audio = await generatePlayAudio(play);
-    fs.writeFileSync(filePath, audio);
+    const { buffer, wordTimings } = await generatePlayAudio(play);
+    fs.writeFileSync(filePath, buffer);
 
-    result.push({ audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text });
+    result.push({ audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, wordTimings });
   }
 
   return Response.json({ plays: result });

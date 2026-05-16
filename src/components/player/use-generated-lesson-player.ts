@@ -14,6 +14,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const [subtitleIdx, setSubtitleIdx] = useState(0);
   const [transcript, setTranscript] = useState<string | null>(null);
   const [audioProgress, setAudioProgress] = useState(0);
+  const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const subRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadedIdxRef = useRef(-1);
@@ -63,6 +64,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       clearSub();
       setAudioProgress(0);
+      setAudioCurrentTime(0);
       if (plays[currentIdx]?.promptAfter) {
         setState('prompting');
       } else {
@@ -73,7 +75,9 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     // Poll at 60fps for smooth word-by-word highlighting
     const pollProgress = () => {
       if (audioRef.current && audioRef.current.duration > 0) {
-        setAudioProgress(audioRef.current.currentTime / audioRef.current.duration);
+        const t = audioRef.current.currentTime;
+        setAudioProgress(t / audioRef.current.duration);
+        setAudioCurrentTime(t);
       }
       rafRef.current = requestAnimationFrame(pollProgress);
     };
@@ -137,5 +141,5 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
 
   const progress = total > 0 ? playIdx / total : 0;
 
-  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, play, pause, record, next, retry, seek, ask, submitQuestion };
+  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, play, pause, record, next, retry, seek, ask, submitQuestion };
 }

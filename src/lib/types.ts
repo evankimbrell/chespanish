@@ -247,10 +247,17 @@ export interface LevelTestSession {
   report: TestReport | null;
 }
 
+export interface WordTiming {
+  word: string;
+  start: number; // seconds
+  end: number;   // seconds
+}
+
 export interface LessonPlay {
   audioUrl: string;
   promptAfter: boolean;
   text: string;
+  wordTimings?: WordTiming[]; // absent for older cached plays
 }
 
 export interface GeneratedLesson {

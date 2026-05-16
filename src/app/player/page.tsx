@@ -29,12 +29,15 @@ function GeneratedLessonPlayerPage() {
     pl.text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
   );
 
+  const customWordTimings = plays.map((pl) => pl.wordTimings);
+
   return (
     <OrbPlayer
       p={p}
       customSections={sections}
       customPrompts={promptDots}
       customSubtitles={subtitleLines.length > 0 ? subtitleLines : undefined}
+      customWordTimings={customWordTimings}
       lessonTitle={generatedLesson.title}
     />
   );
