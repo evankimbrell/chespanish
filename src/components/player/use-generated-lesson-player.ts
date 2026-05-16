@@ -139,7 +139,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const ask = useCallback(() => setState('asking'), []);
   const submitQuestion = useCallback(() => setState('idle'), []);
 
-  const progress = total > 0 ? playIdx / total : 0;
+  const progress = total > 0 ? (playIdx + audioProgress) / total : 0;
 
   return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, play, pause, record, next, retry, seek, ask, submitQuestion };
 }
