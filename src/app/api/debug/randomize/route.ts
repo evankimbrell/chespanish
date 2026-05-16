@@ -376,6 +376,13 @@ export async function POST() {
     }],
   });
   const lessonTranscript = lessonCompletion.choices[0]?.message?.content ?? '';
+  const finishReason = lessonCompletion.choices[0]?.finish_reason;
+
+  console.log('[debug/randomize] lesson finish_reason:', finishReason, 'length:', lessonTranscript.length);
+
+  if (!lessonTranscript) {
+    return Response.json({ error: `Lesson completion returned empty content. finish_reason=${finishReason}, educator_length=${educatorReport.length}` }, { status: 500 });
+  }
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const filename = `${userName}-${timestamp}.json`;
