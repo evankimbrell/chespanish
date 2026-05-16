@@ -67,8 +67,8 @@ export default function DebugPlayerPage() {
     setRandomizeProfile(null);
     try {
       const res = await fetch('/api/debug/randomize', { method: 'POST' });
-      if (!res.ok) throw new Error(`API returned ${res.status}`);
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? `API returned ${res.status}`);
       if (!data.lessonTranscript) throw new Error('No transcript returned');
       setTranscript(data.lessonTranscript);
       setRandomizeProfile(data.profile ?? null);

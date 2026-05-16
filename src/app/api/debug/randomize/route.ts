@@ -354,6 +354,7 @@ export async function POST() {
     return new Response('OPENAI_API_KEY not configured', { status: 500 });
   }
 
+  try {
   const profile = pick(PROFILES);
   const session = buildFakeSession(profile);
   const userName = `debug-${profile.label.toLowerCase()}`;
@@ -388,4 +389,9 @@ export async function POST() {
   );
 
   return Response.json({ lessonTranscript, profile: profile.label, savedTo: `data/reports/${filename}` });
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[debug/randomize] error:', msg);
+    return Response.json({ error: msg }, { status: 500 });
+  }
 }
