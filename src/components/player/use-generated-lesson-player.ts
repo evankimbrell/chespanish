@@ -1,6 +1,6 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import type { GeneratedLesson } from '@/lib/types';
+import type { GeneratedLesson, LessonGrade } from '@/lib/types';
 import type { FakePlayer } from './use-fake-player';
 import type { PlayerState } from '@/lib/types';
 import { useRecording } from '@/hooks/use-recording';
@@ -15,10 +15,12 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const [transcript, setTranscript] = useState<string | null>(null);
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
+  const [grade, setGrade] = useState<LessonGrade | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const subRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadedIdxRef = useRef(-1);
   const rafRef = useRef<number | null>(null);
+  const seekAfterLoadFractionRef = useRef<number | null>(null);
 
   const {
     startRecording, stopRecording,
@@ -40,11 +42,23 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     }
   }, [totalCount, plays.length]);
 
-  // When real transcript arrives, move to feedback
+  // When real transcript arrives, move to feedback and fire grade request
   useEffect(() => {
     if (recordTranscript !== null) {
       setTranscript(recordTranscript);
       setState('feedback');
+      setGrade(null);
+      const currentPlay = plays[playIdx];
+      if (currentPlay) {
+        fetch('/api/lesson/grade', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transcript: recordTranscript, playText: currentPlay.text }),
+        })
+          .then((r) => r.json())
+          .then((data) => setGrade(data))
+          .catch(() => {});
+      }
     }
   }, [recordTranscript]);
 
@@ -60,8 +74,17 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     if (loadedIdxRef.current !== currentIdx) {
       loadedIdxRef.current = currentIdx;
       audio.src = plays[currentIdx].audioUrl;
-      setAudioProgress(0);  // reset immediately — (playIdx+1)/total == (nextPlayIdx+0)/total, no jump
+      setAudioProgress(0);
       setAudioCurrentTime(0);
+      // Apply a pending seek fraction once this audio's duration is known
+      audio.onloadedmetadata = () => {
+        if (seekAfterLoadFractionRef.current !== null && audio.duration > 0) {
+          audio.currentTime = seekAfterLoadFractionRef.current * audio.duration;
+          setAudioProgress(seekAfterLoadFractionRef.current);
+          setAudioCurrentTime(audio.currentTime);
+          seekAfterLoadFractionRef.current = null;
+        }
+      };
     }
 
     // Always re-attach onended (cleared by cleanup on pause)
@@ -129,22 +152,54 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   }, [state, startRecording, stopRecording, resetRecording]);
 
   const next = useCallback(() => {
+    setGrade(null);
     setTranscript(null);
     resetRecording();
+    setAudioProgress(0);
+    setAudioCurrentTime(0);
     advanceOrComplete(playIdx);
   }, [playIdx, advanceOrComplete, resetRecording]);
 
   const retry = useCallback(() => {
+    setGrade(null);
     setTranscript(null);
     resetRecording();
     setState('prompting');
   }, [resetRecording]);
 
-  const seek = useCallback(() => {}, []);
+  const playCorrect = useCallback(() => {
+    if (!plays[playIdx]) return;
+    const tmp = new Audio(plays[playIdx].audioUrl);
+    tmp.play().catch(() => {});
+  }, [plays, playIdx]);
+
+  const seek = useCallback((t: number) => {
+    const clamped = Math.max(0, Math.min(1, t));
+    const fractionalIdx = clamped * totalCount;
+    const targetIdx = Math.min(Math.floor(fractionalIdx), Math.max(0, plays.length - 1));
+    const targetFraction = Math.max(0, fractionalIdx - targetIdx);
+
+    if (targetIdx === playIdx) {
+      if (audioRef.current && audioRef.current.duration > 0) {
+        audioRef.current.currentTime = targetFraction * audioRef.current.duration;
+      }
+      setAudioProgress(targetFraction);
+      setAudioCurrentTime((audioRef.current?.duration ?? 0) * targetFraction);
+    } else {
+      seekAfterLoadFractionRef.current = targetFraction;
+      setPlayIdx(targetIdx);
+      setAudioProgress(targetFraction);
+      setAudioCurrentTime(0);
+    }
+
+    if (['prompting', 'feedback', 'recording', 'processing', 'complete'].includes(state)) {
+      setState('idle');
+    }
+  }, [totalCount, plays.length, playIdx, state]);
   const ask = useCallback(() => setState('asking'), []);
   const submitQuestion = useCallback(() => setState('idle'), []);
 
   const progress = totalCount > 0 ? (playIdx + audioProgress) / totalCount : 0;
 
-  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, play, pause, record, next, retry, seek, ask, submitQuestion };
+  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, play, pause, record, next, retry, seek, ask, submitQuestion, playCorrect, grade };
 }

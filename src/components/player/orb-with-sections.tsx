@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Icons } from '@/components/ui/icons';
 import { Tag } from '@/components/ui/tag';
 import type { PlayerState } from '@/lib/types';
@@ -37,9 +37,20 @@ const CY = SIZE / 2;
 const R = 142;
 const LABEL_R = 175;
 const N_BARS = 72;
+const RING_HIT = 24; // px tolerance around ring for drag activation
 
 function angleAt(t: number) {
   return t * 2 * Math.PI - Math.PI / 2;
+}
+
+function progressFromAngle(angle: number) {
+  const adjusted = ((angle + Math.PI / 2) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  return adjusted / (2 * Math.PI);
+}
+
+function fmtTime(t: number) {
+  const totalSec = Math.round(t * 25 * 60);
+  return `${Math.floor(totalSec / 60)}:${String(totalSec % 60).padStart(2, '0')}`;
 }
 
 export function OrbWithSections({
@@ -50,6 +61,45 @@ export function OrbWithSections({
     () => Array.from({ length: N_BARS }, (_, i) => 0.4 + Math.abs(Math.sin(i * 0.4)) * 0.6),
     []
   );
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [dragProgress, setDragProgress] = useState<number | null>(null);
+
+  function progressFromPointer(e: React.PointerEvent) {
+    const svg = svgRef.current;
+    if (!svg) return null;
+    const rect = svg.getBoundingClientRect();
+    const scaleX = SIZE / rect.width;
+    const scaleY = SIZE / rect.height;
+    const px = (e.clientX - rect.left) * scaleX;
+    const py = (e.clientY - rect.top) * scaleY;
+    const dx = px - CX, dy = py - CY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (Math.abs(dist - R) > RING_HIT) return null;
+    return progressFromAngle(Math.atan2(dy, dx));
+  }
+
+  const onSvgPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    const t = progressFromPointer(e);
+    if (t === null) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setDragProgress(t);
+  };
+
+  const onSvgPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (dragProgress === null) return;
+    const t = progressFromPointer(e);
+    if (t !== null) setDragProgress(t);
+  };
+
+  const onSvgPointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (dragProgress === null) return;
+    const t = progressFromPointer(e) ?? dragProgress;
+    setDragProgress(null);
+    onSeek(t);
+  };
+
+  const displayProgress = dragProgress ?? progress;
 
   return (
     <div style={{ position: 'relative', width: SIZE, height: SIZE }}>
@@ -62,7 +112,14 @@ export function OrbWithSections({
         }}
       />
 
-      <svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`} style={{ position: 'absolute', inset: 0 }}>
+      <svg
+        ref={svgRef}
+        width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}
+        style={{ position: 'absolute', inset: 0, cursor: dragProgress !== null ? 'grabbing' : 'default' }}
+        onPointerDown={onSvgPointerDown}
+        onPointerMove={onSvgPointerMove}
+        onPointerUp={onSvgPointerUp}
+      >
         {/* Outer ring */}
         <circle cx={CX} cy={CY} r={LABEL_R} fill="none" stroke="var(--line)" strokeWidth="1" />
         {/* Inner ring */}
@@ -75,9 +132,9 @@ export function OrbWithSections({
           const x1 = CX + Math.cos(a1) * R, y1 = CY + Math.sin(a1) * R;
           const x2 = CX + Math.cos(a2) * R, y2 = CY + Math.sin(a2) * R;
           const largeArc = (s.end - s.pct) > 0.5 ? 1 : 0;
-          const isActive = progress >= s.pct && progress < s.end;
+          const isActive = displayProgress >= s.pct && displayProgress < s.end;
           const isHover = hoverSection === s.id;
-          const isPast = progress >= s.end;
+          const isPast = displayProgress >= s.end;
 
           return (
             <path
@@ -90,7 +147,7 @@ export function OrbWithSections({
               style={{ transition: 'all .2s', cursor: 'pointer' }}
               onMouseEnter={() => setHoverSection(s.id)}
               onMouseLeave={() => setHoverSection(null)}
-              onClick={() => onSeek(s.pct + 0.001)}
+              onClick={() => dragProgress === null && onSeek(s.pct + 0.001)}
             />
           );
         })}
@@ -99,7 +156,7 @@ export function OrbWithSections({
         {prompts.map((pr) => {
           const a = angleAt(pr.t);
           const x = CX + Math.cos(a) * R, y = CY + Math.sin(a) * R;
-          const done = progress >= pr.t;
+          const done = displayProgress >= pr.t;
           return (
             <g key={pr.id}>
               <circle cx={x} cy={y} r={2} fill="var(--bg)" stroke={done ? 'var(--warm)' : 'var(--mute-2)'} strokeWidth="1" />
@@ -110,9 +167,28 @@ export function OrbWithSections({
 
         {/* Progress head */}
         {(() => {
-          const a = angleAt(Math.max(0.001, progress));
+          const a = angleAt(Math.max(0.001, displayProgress));
           const x = CX + Math.cos(a) * R, y = CY + Math.sin(a) * R;
-          return <circle cx={x} cy={y} r={6} fill="var(--ink)" />;
+          const isDragging = dragProgress !== null;
+          return (
+            <g>
+              <circle
+                cx={x} cy={y} r={isDragging ? 9 : 6}
+                fill="var(--ink)"
+                style={{ cursor: 'grab', transition: isDragging ? 'none' : 'r .1s' }}
+              />
+              {isDragging && (
+                <text
+                  x={x} y={y - 16}
+                  textAnchor="middle" fontSize="11"
+                  fill="var(--ink)" fontFamily="monospace"
+                  style={{ pointerEvents: 'none', userSelect: 'none' }}
+                >
+                  {fmtTime(dragProgress)}
+                </text>
+              )}
+            </g>
+          );
         })()}
 
         {/* Audio bars */}
@@ -144,7 +220,7 @@ export function OrbWithSections({
         const lx = CX + Math.cos(a) * outR;
         const ly = CY + Math.sin(a) * outR;
         const alignRight = lx < CX - 4;
-        const isActive = progress >= s.pct && progress < s.end;
+        const isActive = displayProgress >= s.pct && displayProgress < s.end;
         const isHover = hoverSection === s.id;
 
         return (
@@ -203,12 +279,6 @@ export function OrbWithSections({
         )}
         {state === 'processing' && (
           <div className="spinner" style={{ width: 36, height: 36, borderWidth: 3 }} />
-        )}
-        {state === 'feedback' && (
-          <div className="col center gap-2" style={{ textAlign: 'center' }}>
-            <Tag kind="warm">● Almost</Tag>
-            <span className="mono" style={{ fontSize: 10, color: 'var(--mute)', letterSpacing: '.1em' }}>2 ISSUES</span>
-          </div>
         )}
         {(state === 'asking' || state === 'answering') && (
           <div className="col center gap-2" style={{ textAlign: 'center' }}>

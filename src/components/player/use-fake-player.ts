@@ -1,7 +1,7 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { LESSON, SUBTITLE_LINES } from '@/lib/data';
-import type { PlayerState } from '@/lib/types';
+import type { LessonGrade, PlayerState } from '@/lib/types';
 
 export interface FakePlayer {
   state: PlayerState;
@@ -19,6 +19,8 @@ export interface FakePlayer {
   seek: (t: number) => void;
   ask: () => void;
   submitQuestion: () => void;
+  playCorrect?: () => void;
+  grade?: LessonGrade | null;
 }
 
 export function useFakePlayer(): FakePlayer {

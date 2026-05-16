@@ -127,14 +127,30 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
                   <p className="serif" style={{ fontSize: 26, fontStyle: 'italic', lineHeight: 1.4, margin: '8px 0 0' }}>
                     &ldquo;{p.transcript}&rdquo;
                   </p>
-                  {(prompt as { es?: string })?.es && (
-                    <>
-                      <hr className="divider" style={{ margin: '18px 0' }} />
-                      <span className="eyebrow eyebrow-warm">TARGET</span>
-                      <p className="serif" style={{ fontSize: 24, fontStyle: 'italic', marginTop: 8, marginBottom: 0 }}>
-                        &ldquo;{(prompt as { es?: string }).es}&rdquo;
-                      </p>
-                    </>
+
+                  {/* Grade — appears when grading resolves */}
+                  {p.grade ? (
+                    <div className="fade-in" style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+                      <div className="row gap-2" style={{ alignItems: 'center', marginBottom: 6 }}>
+                        <span className={`eyebrow ${p.grade.label === 'Excellent' || p.grade.label === 'Good' ? 'eyebrow-warm' : ''}`}>
+                          {p.grade.label}
+                        </span>
+                      </div>
+                      {p.grade.brief_feedback && (
+                        <p className="small" style={{ color: 'var(--ink-2)', margin: 0 }}>{p.grade.brief_feedback}</p>
+                      )}
+                      {p.grade.observed_errors.length > 0 && (
+                        <ul style={{ margin: '10px 0 0', paddingLeft: 18 }}>
+                          {p.grade.observed_errors.map((err, i) => (
+                            <li key={i} className="small" style={{ color: 'var(--mute)', marginBottom: 4 }}>
+                              <strong>{err.category}</strong>: {err.description}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="small" style={{ color: 'var(--mute)', marginTop: 14, marginBottom: 0 }}>Grading…</p>
                   )}
                 </div>
               ) : (
@@ -142,7 +158,7 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
               )}
               <div className="row gap-2" style={{ marginTop: 18, justifyContent: 'center' }}>
                 <button className="btn btn-ghost btn-sm" onClick={p.retry}><Icons.refresh /> Try again</button>
-                <button className="btn btn-ghost btn-sm"><Icons.play /> Hear correct version</button>
+                {p.playCorrect && <button className="btn btn-ghost btn-sm" onClick={p.playCorrect}><Icons.play /> Hear correct version</button>}
                 <button className="btn btn-primary btn-sm" onClick={p.next}>Continue <Icons.arrow /></button>
               </div>
             </div>

@@ -267,6 +267,12 @@ export interface PlayMeta {
   sectionName?: string;
 }
 
+export interface LessonGrade {
+  label: 'Excellent' | 'Good' | 'Ok' | 'Almost' | 'Ouch';
+  brief_feedback: string;
+  observed_errors: { category: string; description: string }[];
+}
+
 export interface GeneratedLesson {
   transcript: string;
   plays: LessonPlay[];
