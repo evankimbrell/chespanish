@@ -363,7 +363,7 @@ export async function POST() {
   const educatorCompletion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
     temperature: 0.4,
-    max_tokens: 800,
+    max_completion_tokens: 800,
     messages: [{ role: 'user', content: EDUCATOR_PROMPT + '\n\n' + formattedReport }],
   });
   const educatorReport = educatorCompletion.choices[0]?.message?.content ?? '';
@@ -371,7 +371,7 @@ export async function POST() {
   const lessonCompletion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
     temperature: 0.5,
-    max_tokens: 3000,
+    max_completion_tokens: 3000,
     messages: [{
       role: 'user',
       content: `${LESSON_PROMPT}\n\n--- EDUCATOR RECOMMENDATIONS ---\n${educatorReport}\n\n--- LEVEL TEST REPORT ---\n${formattedReport}`,

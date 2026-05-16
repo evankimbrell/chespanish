@@ -156,7 +156,7 @@ Prompt ID to echo back: ${q.prompt_id}`;
       model: 'gpt-5.5-mini',
       response_format: { type: 'json_object' },
       temperature: 0.2,
-      max_tokens: 900,
+      max_completion_tokens: 900,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: userMessage },
