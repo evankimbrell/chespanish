@@ -56,8 +56,12 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
   const activeSection = sections.find((s) => p.progress >= s.pct && p.progress < s.end) || sections[0];
   const displaySection = hoverSection != null ? sections.find((s) => s.id === hoverSection) : activeSection;
 
-  const mins  = Math.floor(p.progress * 25);
-  const secs  = String(Math.floor((p.progress * 25 % 1) * 60)).padStart(2, '0');
+  const elapsedSec  = p.elapsedSeconds ?? (p.progress * 25 * 60);
+  const totalSec    = p.totalSeconds   ?? (25 * 60);
+  const mins  = Math.floor(elapsedSec / 60);
+  const secs  = String(Math.floor(elapsedSec % 60)).padStart(2, '0');
+  const totalMins = Math.floor(totalSec / 60);
+  const totalSecsDisplay = String(Math.floor(totalSec % 60)).padStart(2, '0');
 
   return (
     <div style={{ minHeight: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column' }}>
@@ -215,7 +219,7 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
           <Scrubber progress={p.progress} markers={sections.map((s) => ({ t: s.pct }))} onSeek={p.seek} />
           <div className="row between" style={{ marginTop: 8 }}>
             <span className="kicker tabular">{mins}:{secs}</span>
-            <span className="kicker">25:00</span>
+            <span className="kicker">{totalMins}:{totalSecsDisplay}</span>
           </div>
         </div>
       </div>

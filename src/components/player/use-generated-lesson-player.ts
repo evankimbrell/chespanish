@@ -21,6 +21,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const loadedIdxRef = useRef(-1);
   const rafRef = useRef<number | null>(null);
   const seekAfterLoadFractionRef = useRef<number | null>(null);
+  const playDurationsRef = useRef<number[]>([]); // actual audio duration (seconds) per play index
 
   const {
     startRecording, stopRecording,
@@ -91,6 +92,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     audio.onended = () => {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       clearSub();
+      playDurationsRef.current[currentIdx] = audio.duration || 0;
       setAudioProgress(1); // hold at end-of-play until next play starts
       setAudioCurrentTime(0);
       if (plays[currentIdx]?.promptAfter) {
@@ -201,5 +203,18 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
 
   const progress = totalCount > 0 ? (playIdx + audioProgress) / totalCount : 0;
 
-  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, play, pause, record, next, retry, seek, ask, submitQuestion, playCorrect, grade };
+  // Compute actual elapsed time from recorded play durations + current play position
+  const completedSecs = playDurationsRef.current
+    .slice(0, playIdx)
+    .reduce((sum, d) => sum + (d || 0), 0);
+  const elapsedSeconds = completedSecs + audioCurrentTime;
+
+  // Estimate total lesson duration from average of recorded plays
+  const recordedDurations = playDurationsRef.current.filter(Boolean);
+  const avgPlaySecs = recordedDurations.length > 0
+    ? recordedDurations.reduce((a, b) => a + b, 0) / recordedDurations.length
+    : 30;
+  const totalSeconds = totalCount * avgPlaySecs;
+
+  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, elapsedSeconds, totalSeconds, play, pause, record, next, retry, seek, ask, submitQuestion, playCorrect, grade };
 }

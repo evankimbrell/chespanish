@@ -11,6 +11,8 @@ export interface FakePlayer {
   transcript?: string | null;
   audioProgress?: number;
   audioCurrentTime?: number;
+  elapsedSeconds?: number;
+  totalSeconds?: number;
   play: () => void;
   pause: () => void;
   record: () => void;
