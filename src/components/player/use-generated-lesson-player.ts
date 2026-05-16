@@ -63,7 +63,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     audio.onended = () => {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
       clearSub();
-      setAudioProgress(0);
+      setAudioProgress(1); // hold at end-of-play until next play starts
       setAudioCurrentTime(0);
       if (plays[currentIdx]?.promptAfter) {
         setState('prompting');

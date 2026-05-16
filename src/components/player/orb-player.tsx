@@ -84,7 +84,7 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
           )}
 
           {/* Transcript / subtitle card */}
-          {showText && p.state !== 'prompting' && p.state !== 'feedback' && (
+          {showText && p.state !== 'prompting' && p.state !== 'feedback' && p.state !== 'recording' && p.state !== 'processing' && (
             customSubtitles ? (
               <KaraokeTranscript
                 text={subtitleLines[p.promptIdx] ?? ''}
