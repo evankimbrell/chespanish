@@ -13,13 +13,23 @@ function GeneratedLessonPlayerPage() {
   const plays = generatedLesson.plays;
   const total = plays.length;
 
-  const sections = plays.map((play, i) => ({
-    id: i + 1,
-    label: play.promptAfter ? `Part ${i + 1}` : 'Closing',
-    pct: i / total,
-    end: (i + 1) / total,
-    blurb: play.text.slice(0, 120) + (play.text.length > 120 ? '…' : ''),
-  }));
+  const sectionMap: { name: string; startIdx: number }[] = [];
+  plays.forEach((play, i) => {
+    const name = play.sectionName ?? (play.promptAfter ? `Part ${i + 1}` : 'Closing');
+    if (!sectionMap.length || sectionMap.at(-1)!.name !== name) {
+      sectionMap.push({ name, startIdx: i });
+    }
+  });
+  const sections = sectionMap.map((s, i) => {
+    const endIdx = sectionMap[i + 1]?.startIdx ?? total;
+    return {
+      id: i + 1,
+      label: s.name,
+      pct: s.startIdx / total,
+      end: endIdx / total,
+      blurb: plays[s.startIdx].text.slice(0, 120) + (plays[s.startIdx].text.length > 120 ? '…' : ''),
+    };
+  });
 
   const promptDots = plays
     .map((play, i) => play.promptAfter ? { id: i + 1, t: (i + 1) / total } : null)

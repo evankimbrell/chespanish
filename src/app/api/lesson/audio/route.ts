@@ -5,13 +5,14 @@ import type { WordTiming } from '@/lib/types';
 const ENGLISH_VOICE = 'nzFihrBIvB34imQBuxub';
 const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm'; // Facundo
 
-type VoiceSegment = { type: 'english' | 'spanish'; text: string };
+type VoiceSegment = { type: 'english' | 'spanish'; text: string; sectionName?: string };
 type Segment = VoiceSegment | { type: 'prompt'; text: '' };
-type Play = { segments: VoiceSegment[]; promptAfter: boolean; text: string };
+type Play = { segments: VoiceSegment[]; promptAfter: boolean; text: string; sectionName?: string };
 
 function parseLesson(transcript: string): Segment[] {
-  const parts = transcript.split(/(<\/?English voice>|<\/?Spanish voice>|<prompt>)/gi);
+  const parts = transcript.split(/(<\/?English voice>|<\/?Spanish voice>|<prompt>|<section[^>]*>|<\/section>)/gi);
   let current: 'english' | 'spanish' | null = null;
+  let currentSection: string | undefined = undefined;
   const segs: Segment[] = [];
   for (const part of parts) {
     const clean = part.trim();
@@ -19,8 +20,13 @@ function parseLesson(transcript: string): Segment[] {
     if (/^<English voice>$/i.test(clean)) { current = 'english'; }
     else if (/^<Spanish voice>$/i.test(clean)) { current = 'spanish'; }
     else if (/^<\/(?:English|Spanish) voice>$/i.test(clean)) { /* closing tag — skip */ }
+    else if (/^<section/i.test(clean)) {
+      const m = clean.match(/name="([^"]+)"/i);
+      currentSection = m ? m[1] : undefined;
+    }
+    else if (/^<\/section>/i.test(clean)) { currentSection = undefined; }
     else if (/^<prompt>$/i.test(clean)) { segs.push({ type: 'prompt', text: '' }); }
-    else if (current) { segs.push({ type: current, text: clean }); }
+    else if (current) { segs.push({ type: current, text: clean, sectionName: currentSection }); }
   }
   return segs;
 }
@@ -32,7 +38,7 @@ function groupIntoPlays(segments: Segment[]): Play[] {
     if (seg.type === 'prompt') {
       if (current.length > 0) {
         const raw = current.map((s) => s.text).join(' ');
-        plays.push({ segments: current, promptAfter: true, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() });
+        plays.push({ segments: current, promptAfter: true, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), sectionName: current[0]?.sectionName });
         current = [];
       }
     } else {
@@ -41,7 +47,7 @@ function groupIntoPlays(segments: Segment[]): Play[] {
   }
   if (current.length > 0) {
     const raw = current.map((s) => s.text).join(' ');
-    plays.push({ segments: current, promptAfter: false, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() });
+    plays.push({ segments: current, promptAfter: false, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), sectionName: current[0]?.sectionName });
   }
   return plays;
 }
@@ -168,7 +174,7 @@ export async function POST(req: Request) {
   const lessonsDir = path.join(process.cwd(), 'public', 'lessons');
   fs.mkdirSync(lessonsDir, { recursive: true });
 
-  const result: { audioUrl: string; promptAfter: boolean; text: string; wordTimings: WordTiming[] }[] = [];
+  const result: { audioUrl: string; promptAfter: boolean; text: string; wordTimings: WordTiming[]; sectionName?: string }[] = [];
 
   for (let i = 0; i < plays.length; i++) {
     const play = plays[i];
@@ -178,7 +184,7 @@ export async function POST(req: Request) {
     const { buffer, wordTimings } = await generatePlayAudio(play);
     fs.writeFileSync(filePath, buffer);
 
-    result.push({ audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, wordTimings });
+    result.push({ audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, wordTimings, sectionName: play.sectionName });
   }
 
   return Response.json({ plays: result });

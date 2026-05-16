@@ -31,7 +31,9 @@ IMPORTANT: The audio lesson should use the core tenets of Pimsleur lessons. Pims
 
 Each portion of the lesson needs to be labeled as <English voice> and <Spanish voice>. When the user is expected to respond with an answer, put <prompt>. Use <prompts> frequently to maintain engagement.
 
-Generate the lesson. Do not include any other text other than the lesson transcript. The user does not hear the word <prompt> because this is just a signal for the audio transcriber to read. The English voice should never read Spanish.`;
+Generate the lesson. Do not include any other text other than the lesson transcript. The user does not hear the word <prompt> because this is just a signal for the audio transcriber to read. The English voice should never read Spanish.
+
+Wrap related groups of content in <section name="3-5 word label"> and </section> tags. Each lesson must have 5–7 sections total. Section names should be 3–5 words describing the theme or activity (e.g. "Café Greeting", "Ordering Coffee", "Asking for the Bill"). All <English voice>, <Spanish voice>, and <prompt> tags must appear inside a section block.`;
 
 // ── Fake data pools ───────────────────────────────────────────────────────────
 

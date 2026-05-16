@@ -258,6 +258,7 @@ export interface LessonPlay {
   promptAfter: boolean;
   text: string;
   wordTimings?: WordTiming[]; // absent for older cached plays
+  sectionName?: string;       // absent for older cached plays
 }
 
 export interface GeneratedLesson {

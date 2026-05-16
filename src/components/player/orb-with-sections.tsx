@@ -102,8 +102,8 @@ export function OrbWithSections({
           const done = progress >= pr.t;
           return (
             <g key={pr.id}>
-              <circle cx={x} cy={y} r={5} fill="var(--bg)" stroke={done ? 'var(--warm)' : 'var(--mute-2)'} strokeWidth="1.5" />
-              {done && <circle cx={x} cy={y} r={2.5} fill="var(--warm)" />}
+              <circle cx={x} cy={y} r={2} fill="var(--bg)" stroke={done ? 'var(--warm)' : 'var(--mute-2)'} strokeWidth="1" />
+              {done && <circle cx={x} cy={y} r={1} fill="var(--warm)" />}
             </g>
           );
         })}
