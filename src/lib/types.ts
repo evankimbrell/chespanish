@@ -261,9 +261,17 @@ export interface LessonPlay {
   sectionName?: string;       // absent for older cached plays
 }
 
+export interface PlayMeta {
+  promptAfter: boolean;
+  text: string;
+  sectionName?: string;
+}
+
 export interface GeneratedLesson {
   transcript: string;
   plays: LessonPlay[];
   generatedAt: string;
   title: string;
+  totalCount?: number;      // full parsed play count (may be > plays.length while loading)
+  allPlayMeta?: PlayMeta[]; // lightweight metadata for all plays — no audio URLs
 }

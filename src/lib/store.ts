@@ -1,6 +1,6 @@
 'use client';
 import { create } from 'zustand';
-import type { BuilderState, ComfortLevel, GeneratedLesson, LevelTestSession, PlayerVariant, ProfileState, PromptResult, TestReport } from './types';
+import type { BuilderState, ComfortLevel, GeneratedLesson, LessonPlay, LevelTestSession, PlayerVariant, ProfileState, PromptResult, TestReport } from './types';
 
 interface AppStore {
   builder: BuilderState;
@@ -19,6 +19,7 @@ interface AppStore {
 
   generatedLesson: GeneratedLesson | null;
   setGeneratedLesson: (lesson: GeneratedLesson) => void;
+  appendPlays: (newPlays: LessonPlay[]) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -103,4 +104,15 @@ export const useAppStore = create<AppStore>((set) => ({
     try { localStorage.setItem('che_spanish_lesson', JSON.stringify(lesson)); } catch {}
     set({ generatedLesson: lesson });
   },
+
+  appendPlays: (newPlays) =>
+    set((s) => {
+      if (!s.generatedLesson) return s;
+      const updated: GeneratedLesson = {
+        ...s.generatedLesson,
+        plays: [...s.generatedLesson.plays, ...newPlays],
+      };
+      try { localStorage.setItem('che_spanish_lesson', JSON.stringify(updated)); } catch {}
+      return { generatedLesson: updated };
+    }),
 }));

@@ -7,7 +7,7 @@ import { useRecording } from '@/hooks/use-recording';
 
 export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const plays = lesson.plays;
-  const total = plays.length;
+  const totalCount = lesson.totalCount ?? plays.length;
 
   const [state, setState] = useState<PlayerState>('idle');
   const [playIdx, setPlayIdx] = useState(0);
@@ -29,13 +29,16 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const clearSub = () => { if (subRef.current) { clearInterval(subRef.current); subRef.current = null; } };
 
   const advanceOrComplete = useCallback((idx: number) => {
-    if (idx + 1 >= total) {
+    if (idx + 1 >= totalCount) {
       setState('complete');
+    } else if (idx + 1 >= plays.length) {
+      // Ran out of loaded audio — lesson continues but next batch isn't ready yet
+      setState('idle');
     } else {
       setPlayIdx(idx + 1);
       setState('playing');
     }
-  }, [total]);
+  }, [totalCount, plays.length]);
 
   // When real transcript arrives, move to feedback
   useEffect(() => {
@@ -88,7 +91,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     audio.play().catch(() => {});
 
     clearSub();
-    subRef.current = setInterval(() => setSubtitleIdx((i) => (i + 1) % Math.max(1, total)), 3200);
+    subRef.current = setInterval(() => setSubtitleIdx((i) => (i + 1) % Math.max(1, totalCount)), 3200);
 
     return () => {
       if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
@@ -141,7 +144,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const ask = useCallback(() => setState('asking'), []);
   const submitQuestion = useCallback(() => setState('idle'), []);
 
-  const progress = total > 0 ? (playIdx + audioProgress) / total : 0;
+  const progress = totalCount > 0 ? (playIdx + audioProgress) / totalCount : 0;
 
   return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, play, pause, record, next, retry, seek, ask, submitQuestion };
 }

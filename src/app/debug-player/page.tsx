@@ -43,7 +43,7 @@ export default function DebugPlayerPage() {
       const res = await fetch('/api/lesson/audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript, userName }),
+        body: JSON.stringify({ transcript, userName, startIdx: 0, count: 12 }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? `API returned ${res.status}`);
@@ -53,6 +53,8 @@ export default function DebugPlayerPage() {
         plays: data.plays,
         generatedAt: new Date().toISOString(),
         title: 'Debug Lesson',
+        totalCount: data.totalCount,
+        allPlayMeta: data.allPlayMeta,
       });
       router.push('/player');
     } catch (e) {
@@ -227,7 +229,7 @@ export default function DebugPlayerPage() {
 
       {status === 'generating' && (
         <p className="small" style={{ color: 'var(--mute)' }}>
-          Calling ElevenLabs for each voice segment — typically 30–60 seconds depending on transcript length.
+          Generating first 2 minutes of audio — usually 10–15 seconds. The rest loads in the background while you listen.
         </p>
       )}
 
