@@ -6,7 +6,7 @@ export const maxDuration = 300; // 5-minute timeout for long lessons
 
 const ENGLISH_VOICE = 'nzFihrBIvB34imQBuxub';
 const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm'; // Facundo
-const CONCURRENCY = 8; // parallel ElevenLabs calls
+const CONCURRENCY = 4; // parallel ElevenLabs calls (plan limit is 5, use 4 for safety)
 
 type VoiceSegment = { type: 'english' | 'spanish'; text: string; sectionName?: string };
 type Segment = VoiceSegment | { type: 'prompt'; text: '' };
