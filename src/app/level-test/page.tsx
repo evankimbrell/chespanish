@@ -440,11 +440,13 @@ export default function LevelTestPage() {
             </div>
           )}
 
-          <div className="row gap-3">
-            <button className="btn btn-primary" disabled={!done} onClick={next}>
-              Continue <Icons.arrow />
-            </button>
-          </div>
+          {done && (
+            <div className="row gap-3">
+              <button className="btn btn-primary fade-in" onClick={next}>
+                Continue <Icons.arrow />
+              </button>
+            </div>
+          )}
 
           <div className="row gap-3" style={{ marginTop: 24, padding: '12px 16px', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 4, maxWidth: 520 }}>
             <span className="mate-icon" style={{ marginTop: 4 }} />
