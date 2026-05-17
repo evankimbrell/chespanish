@@ -3,8 +3,8 @@ import type { TranscriptionCreateParams } from 'openai/resources/audio/transcrip
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-const ARGENTINE_PROMPT =
-  'Che, ¿qué hacés? ¿Querés tomar algo antes de salir? No sé, depende. Sí, claro que sí. Mirá, la verdad es que no tengo tiempo. ¿Y vos qué pensás? No entendí bien lo que me dijiste.';
+const WHISPER_PROMPT =
+  'Transcribe exactly what the speaker said, preserving the exact language they spoke — if they spoke English, transcribe in English; if they spoke Spanish, transcribe in Spanish with all grammatical errors intact. Do not translate, correct, or normalise anything.';
 
 // Diacritics that appear in Czech/Slovak/Slovenian but never in Spanish.
 // If Whisper returns these, it misidentified the language.
@@ -18,7 +18,7 @@ async function runTranscription(audio: File, forceLang?: string, noPrompt?: bool
       ? { language: forceLang }
       : noPrompt
         ? {}
-        : { prompt: ARGENTINE_PROMPT }),
+        : { prompt: WHISPER_PROMPT }),
   };
   const result = await openai.audio.transcriptions.create(params);
   return result.text;
