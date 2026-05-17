@@ -117,6 +117,7 @@ export default function LevelTestPage() {
 
   const [transcript, setTranscript] = useState<string | null>(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [transcribeError, setTranscribeError] = useState<string | null>(null);
 
   const { play, stop: stopTTS, isLoading: ttsLoading, isPlaying } = useTTS();
   const {
@@ -148,6 +149,7 @@ export default function LevelTestPage() {
     setIsGrading(false);
     setTranscript(null);
     setIsTranscribing(false);
+    setTranscribeError(null);
     setShowText(false);
     setUsedTranscriptHelp(false);
     reset();
@@ -159,6 +161,7 @@ export default function LevelTestPage() {
   }, [question]);
 
   const handleBlobReady = useCallback(async (blob: Blob, q: Question) => {
+    setTranscribeError(null);
     setIsTranscribing(true);
     const responseTimeSec = (recordPressTimeRef.current - promptReadyTimeRef.current) / 1000;
     const speakDurationSec = (recordingDurationMs ?? 0) / 1000;
@@ -178,6 +181,7 @@ export default function LevelTestPage() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = '';
+      let gotTranscript = false;
 
       while (true) {
         const { done: streamDone, value } = await reader.read();
@@ -190,6 +194,7 @@ export default function LevelTestPage() {
           try {
             const msg = JSON.parse(line);
             if (msg.type === 'transcript') {
+              gotTranscript = true;
               setTranscript(msg.transcript ?? null);
               setIsTranscribing(false);
               setIsGrading(true);
@@ -200,12 +205,23 @@ export default function LevelTestPage() {
                 setLastEvidenceScore(calculateEvidenceScore(q.difficulty_score, data.overall_score));
               }
               setIsGrading(false);
+            } else if (msg.type === 'error') {
+              console.error('[level-test] server error:', msg.message);
+              setTranscribeError('Transcription failed — tap the mic to try again.');
+              setIsTranscribing(false);
+              setIsGrading(false);
             }
           } catch { /* ignore malformed lines */ }
         }
       }
+      // Ensure we always exit the transcribing/grading state
+      if (!gotTranscript) {
+        setIsTranscribing(false);
+        setIsGrading(false);
+      }
     } catch (e) {
       console.error('[level-test] transcribe-and-grade error:', e);
+      setTranscribeError('Could not reach grading server — tap the mic to try again.');
       setIsTranscribing(false);
       setIsGrading(false);
     }
@@ -380,17 +396,19 @@ export default function LevelTestPage() {
               <Icons.mic />
             </button>
 
-            <span className="mono small" style={{ color: isRecording ? 'var(--crit)' : 'var(--mute)' }}>
+            <span className="mono small" style={{ color: transcribeError ? 'var(--crit)' : isRecording ? 'var(--crit)' : 'var(--mute)' }}>
               {isTranscribing
                 ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                     <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
                     Transcribing…
                   </span>
-                : isRecording
-                  ? '● Recording · tap to stop'
-                  : done
-                    ? 'Response captured'
-                    : 'Tap to respond'}
+                : transcribeError
+                  ? transcribeError
+                  : isRecording
+                    ? '● Recording · tap to stop'
+                    : done
+                      ? 'Response captured'
+                      : 'Tap to respond'}
             </span>
           </div>
 
