@@ -166,6 +166,7 @@ export default function LevelTestPage() {
     const responseTimeSec = (recordPressTimeRef.current - promptReadyTimeRef.current) / 1000;
     const speakDurationSec = (recordingDurationMs ?? 0) / 1000;
 
+    let gotTranscript = false;
     try {
       const fd = new FormData();
       fd.append('audio', blob, 'recording.webm');
@@ -181,7 +182,6 @@ export default function LevelTestPage() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = '';
-      let gotTranscript = false;
 
       while (true) {
         const { done: streamDone, value } = await reader.read();
@@ -207,7 +207,9 @@ export default function LevelTestPage() {
               setIsGrading(false);
             } else if (msg.type === 'error') {
               console.error('[level-test] server error:', msg.message);
-              setTranscribeError('Transcription failed — tap the mic to try again.');
+              if (!gotTranscript) {
+                setTranscribeError('Transcription failed — tap the mic to try again.');
+              }
               setIsTranscribing(false);
               setIsGrading(false);
             }
@@ -221,7 +223,9 @@ export default function LevelTestPage() {
       }
     } catch (e) {
       console.error('[level-test] transcribe-and-grade error:', e);
-      setTranscribeError('Could not reach grading server — tap the mic to try again.');
+      if (!gotTranscript) {
+        setTranscribeError('Could not reach grading server — tap the mic to try again.');
+      }
       setIsTranscribing(false);
       setIsGrading(false);
     }

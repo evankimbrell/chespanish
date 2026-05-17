@@ -83,7 +83,7 @@ export function useRecording() {
     mrRef.current.stop();
   }, [stopVolume]);
 
-  const startRecording = useCallback(async (opts?: { allowEnglish?: boolean; onBlobReady?: (blob: Blob) => void }) => {
+  const startRecording = useCallback(async (opts?: { allowEnglish?: boolean; onBlobReady?: (blob: Blob) => void; maxDurationMs?: number }) => {
     allowEnglishRef.current = opts?.allowEnglish ?? false;
     onBlobReadyRef.current = opts?.onBlobReady;
     setTranscript(null);
@@ -109,7 +109,7 @@ export function useRecording() {
     mr.start();
     setIsRecording(true);
 
-    timerRef.current = setTimeout(stopRecording, 30_000);
+    timerRef.current = setTimeout(stopRecording, opts?.maxDurationMs ?? 120_000);
   }, [stopRecording, trackVolume]);
 
   const reset = useCallback(() => {
