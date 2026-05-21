@@ -1,17 +1,61 @@
 'use client';
 import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 import { TopNav } from '@/components/ui/top-nav';
 import { SectionHead } from '@/components/ui/section-head';
 import { Tag } from '@/components/ui/tag';
 import { Icons } from '@/components/ui/icons';
 import { DashboardCustomPrompt } from '@/components/builder/dashboard-custom-prompt';
-import { SCENARIOS, RECENT_LESSONS } from '@/lib/data';
+import { SCENARIOS } from '@/lib/data';
 import { useAppStore } from '@/lib/store';
 
 export default function DashboardPage() {
   const router = useRouter();
   const { name, level, lessonsCompleted, streak, totalSpeaking } = useAppStore((s) => s.profile);
   const generatedLesson = useAppStore((s) => s.generatedLesson);
+  const setGeneratedLesson = useAppStore((s) => s.setGeneratedLesson);
+  const [preparing, setPreparing] = useState(false);
+  const preparedRef = useRef(false);
+  const [recentLessons, setRecentLessons] = useState<{ id: string; title: string; date: string; duration: number; completed: boolean; completionPct?: number }[]>([]);
+
+  // Auto-prepare a lesson if none exists yet for this user
+  useEffect(() => {
+    if (generatedLesson || preparedRef.current) return;
+    preparedRef.current = true;
+    setPreparing(true);
+    fetch(`/api/lesson/prepare?user=${encodeURIComponent(name)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.transcript) {
+          setGeneratedLesson({
+            transcript: data.transcript,
+            plays: [],
+            generatedAt: new Date().toISOString(),
+            title: data.title ?? 'Your first lesson',
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => setPreparing(false));
+  }, [name]);
+
+  // Fetch recent lesson history for this user
+  useEffect(() => {
+    fetch(`/api/lesson/history?user=${encodeURIComponent(name)}`)
+      .then((r) => r.json())
+      .then((d) => {
+        const entries = d.entries ?? [];
+        setRecentLessons(entries.slice(0, 3).map((e: { id: string; title: string; lastAccessedAt: string; totalCount: number; playIdx: number; completed: boolean }) => ({
+          id: e.id,
+          title: e.title,
+          date: new Date(e.lastAccessedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          duration: Math.max(1, Math.round(e.totalCount * 13 / 60)),
+          completed: e.completed,
+          completionPct: e.completed ? undefined : Math.round(Math.min(99, (e.playIdx / Math.max(1, e.totalCount)) * 100)),
+        })));
+      })
+      .catch(() => {});
+  }, [name]);
 
   const STATS = [
     { k: 'Level',    v: level,              s: 'from level test' },
@@ -49,24 +93,35 @@ export default function DashboardPage() {
           <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24 }}>
             <div className="card" style={{ padding: 36, position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', right: -40, top: -40, width: 240, height: 240, borderRadius: '50%', background: 'radial-gradient(circle,rgba(212,165,116,.12),transparent 70%)' }} />
-              <span className="eyebrow eyebrow-warm">Recommended next · for you</span>
+              <span className="eyebrow eyebrow-warm">
+                Recommended next · for you
+                {preparing && <span className="mono" style={{ marginLeft: 10, fontSize: 10, color: 'var(--mute-2)', letterSpacing: '.06em' }}>Preparing…</span>}
+              </span>
               <h2 className="ty-h2" style={{ marginTop: 14, marginBottom: 16, maxWidth: 480 }}>
-                {generatedLesson?.title ?? 'Practice making plans and responding faster.'}
+                {generatedLesson?.title ?? (preparing ? '…' : 'Practice making plans and responding faster.')}
               </h2>
               <p className="body" style={{ maxWidth: 560 }}>
                 {generatedLesson
                   ? generatedLesson.transcript.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim().slice(0, 160) + '…'
-                  : <>You&rsquo;re accurate with simple café and restaurant phrases, but you hesitate on open-ended responses and still slip into{' '}
-                    <span style={{ fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic' }}>tú</span> forms.
-                    This lesson drills <span style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 13 }}>querés / tenés / podés</span> with timed responses.</>
+                  : preparing
+                    ? <span style={{ color: 'var(--mute-2)' }}>Building your personalized lesson based on your level test…</span>
+                    : <>You&rsquo;re accurate with simple café and restaurant phrases, but you hesitate on open-ended responses and still slip into{' '}
+                      <span style={{ fontFamily: 'var(--font-newsreader), serif', fontStyle: 'italic' }}>tú</span> forms.
+                      This lesson drills <span style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 13 }}>querés / tenés / podés</span> with timed responses.</>
                 }
               </p>
               <div className="row gap-2" style={{ marginTop: 24, flexWrap: 'wrap' }}>
                 <Tag kind="warm">25 min</Tag>
-                <Tag kind="mute">Personalized</Tag>
+                <Tag kind="mute">{generatedLesson ? 'Personalized' : preparing ? 'Generating…' : 'Personalized'}</Tag>
               </div>
               <div className="row gap-3" style={{ marginTop: 32 }}>
-                <button className="btn btn-primary" onClick={() => router.push(generatedLesson ? '/lesson' : '/preview')}>Start lesson <Icons.arrow /></button>
+                <button
+                  className="btn btn-primary"
+                  disabled={preparing && !generatedLesson}
+                  onClick={() => router.push(generatedLesson ? '/lesson' : '/preview')}
+                >
+                  Start lesson <Icons.arrow />
+                </button>
                 <button className="btn btn-ghost" onClick={() => router.push('/builder')}>Customize first</button>
               </div>
             </div>
@@ -135,34 +190,39 @@ export default function DashboardPage() {
           </div>
 
           {/* Recent lessons */}
-          <div>
-            <SectionHead
-              num="02 / Library"
-              title="Recent lessons"
-              right={
-                <button className="btn btn-text small" onClick={() => router.push('/lessons')}>
-                  See all 12 <Icons.arrow />
-                </button>
-              }
-            />
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, background: 'var(--line)', border: '1px solid var(--line)' }}>
-              {RECENT_LESSONS.slice(0, 3).map((l) => (
-                <div
-                  key={l.id}
-                  className="card-hover"
-                  style={{ background: 'var(--bg)', padding: 24, cursor: 'pointer' }}
-                  onClick={() => router.push('/lessons')}
-                >
-                  <div className="row between" style={{ marginBottom: 14, alignItems: 'center' }}>
-                    <span className="kicker">{l.date} · {l.duration} min</span>
-                    <Tag kind={l.score >= 85 ? 'leaf' : 'warm'}>{l.score}</Tag>
+          {recentLessons.length > 0 && (
+            <div>
+              <SectionHead
+                num="02 / Library"
+                title="Recent lessons"
+                right={
+                  <button className="btn btn-text small" onClick={() => router.push('/lessons')}>
+                    See all <Icons.arrow />
+                  </button>
+                }
+              />
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 1, background: 'var(--line)', border: '1px solid var(--line)' }}>
+                {recentLessons.map((l) => (
+                  <div
+                    key={l.id}
+                    className="card-hover"
+                    style={{ background: 'var(--bg)', padding: 24, cursor: 'pointer' }}
+                    onClick={() => router.push('/lessons')}
+                  >
+                    <div className="row between" style={{ marginBottom: 14, alignItems: 'center' }}>
+                      <span className="kicker">{l.date} · {l.duration} min</span>
+                      {l.completed
+                        ? <span style={{ color: 'var(--leaf)', fontSize: 14 }}>✓</span>
+                        : <span className="mono small" style={{ color: 'var(--mute-2)' }}>{l.completionPct}%</span>
+                      }
+                    </div>
+                    <div className="serif" style={{ fontSize: 22, letterSpacing: '-.01em', marginBottom: 8 }}>{l.title}</div>
+                    <div className="small" style={{ color: 'var(--mute)' }}>{l.completed ? 'Completed' : 'In progress'}</div>
                   </div>
-                  <div className="serif" style={{ fontSize: 22, letterSpacing: '-.01em', marginBottom: 8 }}>{l.title}</div>
-                  <div className="small" style={{ color: 'var(--mute)' }}>{l.focus}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </>
