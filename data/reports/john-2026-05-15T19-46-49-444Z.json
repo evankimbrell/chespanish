@@ -13,7 +13,7 @@
         "promptType": "listen_for_meaning",
         "promptDifficulty": 3.8,
         "promptBucket": "A2",
-        "promptText": "No puedo salir esta noche porque tengo que trabajar temprano mañana.",
+        "promptText": "No puedo salir esta noche porque tengo que trabajar temprano ma\u00f1ana.",
         "transcript": "I can't go out tonight because I have to work tomorrow early.",
         "usedTranscriptHelp": false,
         "skipped": false,
@@ -96,7 +96,7 @@
         "promptDifficulty": 3.8,
         "promptBucket": "A2",
         "promptText": "You're lost. Ask someone in Spanish: Excuse me, where is the nearest pharmacy?",
-        "transcript": "Perdón, ¿sabes dónde está la farmacia que es lo más cerca de aquí?",
+        "transcript": "Perd\u00f3n, \u00bfsabes d\u00f3nde est\u00e1 la farmacia que es lo m\u00e1s cerca de aqu\u00ed?",
         "usedTranscriptHelp": false,
         "skipped": false,
         "responseTimeSeconds": 32.269,
@@ -124,9 +124,9 @@
           "observed_errors": [
             {
               "category": "unnatural_wording",
-              "description": "The phrase 'que es lo más cerca' is awkward.",
+              "description": "The phrase 'que es lo m\u00e1s cerca' is awkward.",
               "severity": 2,
-              "correction": "la farmacia más cercana",
+              "correction": "la farmacia m\u00e1s cercana",
               "review_later": true
             }
           ],
@@ -146,7 +146,7 @@
         "promptDifficulty": 3.2,
         "promptBucket": "A2_MINUS",
         "promptText": "Answer in Spanish: What do you usually do on weekends?",
-        "transcript": "Depende, típicamente yo intento relajarme y leo libros.",
+        "transcript": "Depende, t\u00edpicamente yo intento relajarme y leo libros.",
         "usedTranscriptHelp": false,
         "skipped": false,
         "responseTimeSeconds": 79.495,
@@ -235,8 +235,8 @@
         "promptType": "roleplay_response",
         "promptDifficulty": 3.8,
         "promptBucket": "A2",
-        "promptText": "Perdón, ¿sabés cómo llegar a la estación de subte?",
-        "transcript": "Ah, perdóname, no sé dónde está la estación.",
+        "promptText": "Perd\u00f3n, \u00bfsab\u00e9s c\u00f3mo llegar a la estaci\u00f3n de subte?",
+        "transcript": "Ah, perd\u00f3name, no s\u00e9 d\u00f3nde est\u00e1 la estaci\u00f3n.",
         "usedTranscriptHelp": true,
         "skipped": false,
         "responseTimeSeconds": 39.072,
@@ -277,7 +277,7 @@
         "promptDifficulty": 3.8,
         "promptBucket": "A2",
         "promptText": "Say in Spanish: Can you help me?",
-        "transcript": "¿Podés ayudarme?",
+        "transcript": "\u00bfPod\u00e9s ayudarme?",
         "usedTranscriptHelp": false,
         "skipped": false,
         "responseTimeSeconds": 6.74,
@@ -317,7 +317,7 @@
         "promptType": "mini_dialogue_comprehension",
         "promptDifficulty": 5.2,
         "promptBucket": "B1_MINUS",
-        "promptText": "Persona A: Che, ¿querés ir a cenar después? Persona B: Hoy no puedo, tengo que terminar algo del laburo. ¿Mañana te va? Persona A: Sí, mañana perfecto.",
+        "promptText": "Persona A: Che, \u00bfquer\u00e9s ir a cenar despu\u00e9s? Persona B: Hoy no puedo, tengo que terminar algo del laburo. \u00bfMa\u00f1ana te va? Persona A: S\u00ed, ma\u00f1ana perfecto.",
         "transcript": "They decided to get dinner tomorrow instead of tonight.",
         "usedTranscriptHelp": false,
         "skipped": false,
@@ -337,7 +337,7 @@
         "promptType": "listen_for_meaning",
         "promptDifficulty": 5.2,
         "promptBucket": "B1_MINUS",
-        "promptText": "Che, perdón, llego un poco tarde porque hay mucho tráfico. ¿Podés esperarme diez minutos?",
+        "promptText": "Che, perd\u00f3n, llego un poco tarde porque hay mucho tr\u00e1fico. \u00bfPod\u00e9s esperarme diez minutos?",
         "transcript": "He's just apologizing because he's going to arrive late, and he's asking if they can wait ten minutes.",
         "usedTranscriptHelp": false,
         "skipped": false,
@@ -380,7 +380,7 @@
         "promptDifficulty": 5.8,
         "promptBucket": "B1",
         "promptText": "Answer in Spanish: What are your plans for the next few months?",
-        "transcript": "¿Cuáles tus planes por los meses próximos?",
+        "transcript": "\u00bfCu\u00e1les tus planes por los meses pr\u00f3ximos?",
         "usedTranscriptHelp": false,
         "skipped": false,
         "responseTimeSeconds": 11.479,
@@ -410,7 +410,7 @@
               "category": "grammar",
               "description": "Incorrect structure in the question.",
               "severity": 2,
-              "correction": "¿Cuáles son tus planes para los próximos meses?",
+              "correction": "\u00bfCu\u00e1les son tus planes para los pr\u00f3ximos meses?",
               "review_later": true
             },
             {
@@ -493,5 +493,49 @@
         }
       ]
     }
+  },
+  "testReport": {
+    "overall_score": 2.8,
+    "display_level": "A2",
+    "cefr_band": "A2",
+    "confidence": "medium",
+    "confidence_range": [
+      1.8,
+      3.5
+    ],
+    "summary": "John handles basic greetings and simple caf\u00e9 vocabulary but struggles with verb conjugation and open-ended responses.",
+    "skill_scores": {
+      "listening_comprehension": 3,
+      "speaking_fluency": 2,
+      "grammar_control": 2,
+      "vocabulary_range": 3,
+      "pronunciation_intelligibility": 3,
+      "response_speed": 3,
+      "target_style_alignment": 2,
+      "practical_communication": 3
+    },
+    "strengths": [
+      "Basic vocabulary recall",
+      "Comprehension of slow speech"
+    ],
+    "weaknesses": [
+      "Verb conjugation",
+      "Open-ended responses"
+    ],
+    "most_common_error_categories": [
+      "verb_conjugation",
+      "response_speed"
+    ],
+    "next_level_gap": "Needs consistent vos conjugation and faster response times",
+    "recommended_first_lesson": {
+      "title": "Caf\u00e9 Basics",
+      "scenario": "Ordering at a caf\u00e9",
+      "focus_points": [
+        "vos conjugation",
+        "ordering phrases"
+      ],
+      "why": "Builds on existing vocabulary with correct conjugation patterns"
+    },
+    "next_three_lessons": []
   }
 }

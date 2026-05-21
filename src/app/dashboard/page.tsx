@@ -8,17 +8,17 @@ import { DashboardCustomPrompt } from '@/components/builder/dashboard-custom-pro
 import { SCENARIOS, RECENT_LESSONS } from '@/lib/data';
 import { useAppStore } from '@/lib/store';
 
-const STATS = [
-  { k: 'Level',    v: 'B1',     s: '+0.2 since Apr 14' },
-  { k: 'Lessons',  v: '12',     s: '6 this week' },
-  { k: 'Streak',   v: '5 days', s: 'best: 11' },
-  { k: 'Speaking', v: '4h 32m', s: 'avg 22 min' },
-];
-
 export default function DashboardPage() {
   const router = useRouter();
-  const name = useAppStore((s) => s.profile.name);
+  const { name, level, lessonsCompleted, streak, totalSpeaking } = useAppStore((s) => s.profile);
   const generatedLesson = useAppStore((s) => s.generatedLesson);
+
+  const STATS = [
+    { k: 'Level',    v: level,              s: 'from level test' },
+    { k: 'Lessons',  v: String(lessonsCompleted), s: '6 this week' },
+    { k: 'Streak',   v: `${streak} days`,   s: 'best: 11' },
+    { k: 'Speaking', v: totalSpeaking,      s: 'avg 22 min' },
+  ];
 
   return (
     <>
