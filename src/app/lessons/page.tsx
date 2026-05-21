@@ -81,7 +81,7 @@ export default function LessonsPage() {
     <>
       <TopNav />
       <div className="page fade-in">
-        <SectionHead num="01 / Library" title="Finished lessons." sub="Replay full lessons, just the prompts you missed, or only the listening sections." />
+        <SectionHead title="Finished lessons." sub="Replay full lessons, just the prompts you missed, or only the listening sections." />
 
         <div className="row gap-2" style={{ marginBottom: 24, flexWrap: 'wrap' }}>
           {FILTERS.map((f, i) => (
@@ -102,13 +102,23 @@ export default function LessonsPage() {
             >
               <div className="row between" style={{ marginBottom: 14, alignItems: 'center' }}>
                 <span className="kicker">{l.date} · {l.duration} min · {l.level}</span>
-                <Tag kind={l.score >= 85 ? 'leaf' : 'warm'}>{l.score}</Tag>
+                {l.completed
+                  ? <span style={{ color: 'var(--leaf)', fontSize: 16 }}>✓</span>
+                  : <span className="mono small" style={{ color: 'var(--mute-2)' }}>{l.completionPct}%</span>
+                }
               </div>
               <h3 className="ty-h3" style={{ marginBottom: 10 }}>{l.title}.</h3>
-              <p className="small" style={{ marginBottom: 18 }}>Focus · {l.focus}</p>
+              <div className="row gap-2" style={{ marginBottom: 18, flexWrap: 'wrap' }}>
+                {l.topics.map((t) => (
+                  <span key={t} className="chip" style={{ fontSize: 11, padding: '2px 8px', cursor: 'default' }}>{t}</span>
+                ))}
+              </div>
               <div className="row gap-2" style={{ alignItems: 'center' }}>
                 <Tag kind="mute">{l.mistakes} mistakes</Tag>
-                <button className="btn btn-text small" style={{ marginLeft: 'auto', padding: 0 }}>Open <Icons.arrow /></button>
+                {l.improvements > 0 && <Tag kind="warm">{l.improvements} improvements</Tag>}
+                <button className="btn btn-text small" style={{ marginLeft: 'auto', padding: 0 }}>
+                  {l.completed ? 'Re-do' : 'Resume'} <Icons.arrow />
+                </button>
               </div>
             </div>
           ))}

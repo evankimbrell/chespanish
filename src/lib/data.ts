@@ -103,12 +103,12 @@ export const LESSON: Lesson = {
 };
 
 export const RECENT_LESSONS = [
-  { id: 'l1', title: 'Making plans with a friend',  date: 'May 9',   duration: 26, level: 'B1', focus: 'vos forms + fast responses', mistakes: 6, score: 88 },
-  { id: 'l2', title: 'At the parrilla in San Telmo', date: 'May 7',  duration: 24, level: 'B1', focus: 'restaurant vocabulary',        mistakes: 4, score: 92 },
-  { id: 'l3', title: 'Apartment hot water issue',    date: 'May 5',   duration: 18, level: 'B1', focus: 'describing problems',          mistakes: 9, score: 74 },
-  { id: 'l4', title: 'Taxi to Recoleta',             date: 'May 3',   duration: 15, level: 'A2', focus: 'directions + small talk',      mistakes: 5, score: 84 },
-  { id: 'l5', title: 'Watching Boca play',           date: 'May 1',   duration: 28, level: 'B1', focus: 'casual reactions',             mistakes: 7, score: 79 },
-  { id: 'l6', title: 'Greengrocer on the corner',    date: 'Apr 28',  duration: 12, level: 'A2', focus: 'numbers + quantities',         mistakes: 3, score: 90 },
+  { id: 'l1', title: 'Making plans with a friend',   date: 'May 9',  duration: 26, level: 'B1', focus: 'vos forms + fast responses', mistakes: 6, score: 88, completed: true,  improvements: 2, topics: ['vos forms', 'social plans', 'fast responses'] },
+  { id: 'l2', title: 'At the parrilla in San Telmo', date: 'May 7',  duration: 24, level: 'B1', focus: 'restaurant vocabulary',       mistakes: 4, score: 92, completed: true,  improvements: 1, topics: ['ordering food', 'restaurant vocab', 'polite requests'] },
+  { id: 'l3', title: 'Apartment hot water issue',    date: 'May 5',  duration: 18, level: 'B1', focus: 'describing problems',         mistakes: 9, score: 74, completed: false, completionPct: 45, improvements: 4, topics: ['describing problems', 'ser vs estar'] },
+  { id: 'l4', title: 'Taxi to Recoleta',             date: 'May 3',  duration: 15, level: 'A2', focus: 'directions + small talk',     mistakes: 5, score: 84, completed: false, completionPct: 62, improvements: 3, topics: ['directions', 'small talk'] },
+  { id: 'l5', title: 'Watching Boca play',           date: 'May 1',  duration: 28, level: 'B1', focus: 'casual reactions',            mistakes: 7, score: 79, completed: false, completionPct: 30, improvements: 3, topics: ['casual reactions', 'exclamations', 'soccer vocab'] },
+  { id: 'l6', title: 'Greengrocer on the corner',    date: 'Apr 28', duration: 12, level: 'A2', focus: 'numbers + quantities',        mistakes: 3, score: 90, completed: true,  improvements: 1, topics: ['numbers', 'quantities', 'shopping'] },
 ];
 
 export const COMMON_MISTAKES = [
