@@ -275,6 +275,18 @@ export interface LessonGrade {
   suggested_answer?: string;   // shown when label is not Excellent/Good
 }
 
+export interface LessonHistoryEntry {
+  id: string;             // generatedAt — unique per generation
+  title: string;
+  transcript: string;
+  startedAt: string;
+  lastAccessedAt: string;
+  playIdx: number;
+  totalCount: number;
+  completed: boolean;
+  topics: string[];
+}
+
 export interface GeneratedLesson {
   transcript: string;
   plays: LessonPlay[];

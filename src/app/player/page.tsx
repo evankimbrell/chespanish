@@ -22,6 +22,57 @@ function GeneratedLessonPlayerPage() {
 
   const loadingRef = useRef(false);
 
+  // Always-current ref to avoid stale closures in save/cleanup
+  const saveHistoryRef = useRef<(playIdx: number, completed: boolean) => void>(() => {});
+  saveHistoryRef.current = (playIdx: number, completed: boolean) => {
+    const topics = [...new Set(
+      allMeta.map((m) => m.sectionName).filter((s): s is string => Boolean(s))
+    )].slice(0, 5);
+    fetch('/api/lesson/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userName,
+        entry: {
+          id: generatedLesson.generatedAt,
+          title: generatedLesson.title,
+          transcript: generatedLesson.transcript,
+          startedAt: generatedLesson.generatedAt,
+          lastAccessedAt: new Date().toISOString(),
+          playIdx,
+          totalCount: total,
+          completed,
+          topics,
+        },
+      }),
+    }).catch(() => {});
+  };
+
+  // Record lesson start on mount
+  useEffect(() => {
+    saveHistoryRef.current(0, false);
+  }, []);
+
+  // Save progress 3s after promptIdx changes
+  useEffect(() => {
+    const t = setTimeout(() => saveHistoryRef.current(p.promptIdx, false), 3000);
+    return () => clearTimeout(t);
+  }, [p.promptIdx]);
+
+  // Save immediately when lesson completes
+  useEffect(() => {
+    if (p.state === 'complete') saveHistoryRef.current(p.promptIdx, true);
+  }, [p.state]);
+
+  // Track latest values for unmount save
+  const latestRef = useRef({ promptIdx: 0, state: '' });
+  latestRef.current = { promptIdx: p.promptIdx, state: p.state };
+  useEffect(() => {
+    return () => {
+      saveHistoryRef.current(latestRef.current.promptIdx, latestRef.current.state === 'complete');
+    };
+  }, []);
+
   // Background-load next batch when player is close to the end of loaded audio
   useEffect(() => {
     const loadedCount = plays.length;
