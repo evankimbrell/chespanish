@@ -218,6 +218,7 @@ export default function LevelResultPage() {
   const storeSession = useAppStore((s) => s.levelTestSession);
   const profile = useAppStore((s) => s.profile);
   const setGeneratedLesson = useAppStore((s) => s.setGeneratedLesson);
+  const setProfile = useAppStore((s) => s.setProfile);
   const [localSession, setLocalSession] = useState<LevelTestSession | null>(null);
   const [reportSaved, setReportSaved] = useState(false);
 
@@ -243,6 +244,10 @@ export default function LevelResultPage() {
     })
       .then((r) => r.json())
       .then((data) => {
+        // Update profile level from the test result
+        const newLevel = data.testReport?.display_level ?? data.testReport?.cefr_band;
+        if (newLevel) setProfile({ level: newLevel });
+
         if (data.lessonTranscript) {
           setGeneratedLesson({
             transcript: data.lessonTranscript,

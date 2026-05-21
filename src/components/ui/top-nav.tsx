@@ -20,6 +20,22 @@ function ProfileSwitcher() {
   const [profiles, setProfiles] = useState<ProfileEntry[]>([]);
   const ref = useRef<HTMLDivElement>(null);
 
+  // Load real stats for a user and update the profile store
+  const loadStats = (userName: string) => {
+    fetch(`/api/profile/stats?user=${encodeURIComponent(userName)}`)
+      .then((r) => r.json())
+      .then((stats) => {
+        const updates: Record<string, string | number> = {};
+        if (typeof stats.lessonsCompleted === 'number') updates.lessonsCompleted = stats.lessonsCompleted;
+        if (stats.level) updates.level = stats.level;
+        if (Object.keys(updates).length) setProfile(updates);
+      })
+      .catch(() => {});
+  };
+
+  // Load stats for the current user on mount
+  useEffect(() => { loadStats(name); }, [name]);
+
   useEffect(() => {
     fetch('/api/debug/profiles')
       .then((r) => r.json())
@@ -61,6 +77,7 @@ function ProfileSwitcher() {
                 key={p.name}
                 onClick={() => {
                   setProfile({ name: p.name, level: p.level });
+                  loadStats(p.name);
                   setOpen(false);
                 }}
                 style={{

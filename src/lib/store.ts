@@ -2,6 +2,19 @@
 import { create } from 'zustand';
 import type { BuilderState, ComfortLevel, GeneratedLesson, LessonPlay, LevelTestSession, PlayerVariant, ProfileState, PromptResult, TestReport } from './types';
 
+function lessonKey(name: string): string {
+  return `che_lesson_${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
+}
+
+function loadLesson(name: string): GeneratedLesson | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    // Try user-specific key first, fall back to old shared key for backward compat
+    const raw = localStorage.getItem(lessonKey(name)) ?? localStorage.getItem('che_spanish_lesson');
+    return raw ? JSON.parse(raw) as GeneratedLesson : null;
+  } catch { return null; }
+}
+
 interface AppStore {
   builder: BuilderState;
   setBuilder: (updates: Partial<BuilderState>) => void;
@@ -42,7 +55,7 @@ export const useAppStore = create<AppStore>((set) => ({
     name: 'Mateo',
     comfortLevel: null,
     level: 'B1',
-    lessonsCompleted: 12,
+    lessonsCompleted: 0,
     streak: 5,
     totalSpeaking: '4h 32m',
     lastLessonAt: 'May 9',
@@ -56,8 +69,17 @@ export const useAppStore = create<AppStore>((set) => ({
       playbackSpeed: 1.0,
     },
   },
+
+  // When switching profiles, also swap the generated lesson to the new user's
   setProfile: (updates) =>
-    set((s) => ({ profile: { ...s.profile, ...updates } })),
+    set((s) => {
+      const newProfile = { ...s.profile, ...updates };
+      let newLesson = s.generatedLesson;
+      if (updates.name && updates.name !== s.profile.name) {
+        newLesson = loadLesson(updates.name);
+      }
+      return { profile: newProfile, generatedLesson: newLesson };
+    }),
 
   levelTestSession: null,
 
@@ -93,17 +115,13 @@ export const useAppStore = create<AppStore>((set) => ({
       return { levelTestSession: completed };
     }),
 
-  generatedLesson: (() => {
-    try {
-      const raw = typeof window !== 'undefined' ? localStorage.getItem('che_spanish_lesson') : null;
-      return raw ? JSON.parse(raw) as GeneratedLesson : null;
-    } catch { return null; }
-  })(),
+  generatedLesson: loadLesson('Mateo'),
 
-  setGeneratedLesson: (lesson) => {
-    try { localStorage.setItem('che_spanish_lesson', JSON.stringify(lesson)); } catch {}
-    set({ generatedLesson: lesson });
-  },
+  setGeneratedLesson: (lesson) =>
+    set((s) => {
+      try { localStorage.setItem(lessonKey(s.profile.name), JSON.stringify(lesson)); } catch {}
+      return { generatedLesson: lesson };
+    }),
 
   appendPlays: (newPlays) =>
     set((s) => {
@@ -112,7 +130,7 @@ export const useAppStore = create<AppStore>((set) => ({
         ...s.generatedLesson,
         plays: [...s.generatedLesson.plays, ...newPlays],
       };
-      try { localStorage.setItem('che_spanish_lesson', JSON.stringify(updated)); } catch {}
+      try { localStorage.setItem(lessonKey(s.profile.name), JSON.stringify(updated)); } catch {}
       return { generatedLesson: updated };
     }),
 }));

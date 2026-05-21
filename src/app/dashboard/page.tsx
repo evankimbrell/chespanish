@@ -15,13 +15,15 @@ export default function DashboardPage() {
   const generatedLesson = useAppStore((s) => s.generatedLesson);
   const setGeneratedLesson = useAppStore((s) => s.setGeneratedLesson);
   const [preparing, setPreparing] = useState(false);
-  const preparedRef = useRef(false);
+  const preparedForRef = useRef<string | null>(null);
   const [recentLessons, setRecentLessons] = useState<{ id: string; title: string; date: string; duration: number; completed: boolean; completionPct?: number }[]>([]);
 
-  // Auto-prepare a lesson if none exists yet for this user
+  // Auto-prepare a lesson if none exists for this user (re-runs on profile switch)
   useEffect(() => {
-    if (generatedLesson || preparedRef.current) return;
-    preparedRef.current = true;
+    setPreparing(false); // reset spinner when switching users
+    if (generatedLesson) { preparedForRef.current = name; return; }
+    if (preparedForRef.current === name) return;
+    preparedForRef.current = name;
     setPreparing(true);
     fetch(`/api/lesson/prepare?user=${encodeURIComponent(name)}`)
       .then((r) => r.json())
