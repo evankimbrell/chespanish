@@ -17,8 +17,8 @@ export function EditorialPlayer({ p }: { p: FakePlayer }) {
   return (
     <div className="page-narrow fade-in" style={{ maxWidth: 920 }}>
       <div className="row between" style={{ marginBottom: 8 }}>
-        <button className="btn btn-text small" style={{ paddingLeft: 0 }} onClick={() => router.push('/preview')}>
-          <Icons.arrowLeft /> Lesson preview
+        <button className="btn btn-text small" style={{ paddingLeft: 0 }} onClick={() => router.push('/dashboard')}>
+          <Icons.arrowLeft /> Exit lesson
         </button>
         <span className="kicker">SECTION 03 · PROMPT-RESPONSE</span>
       </div>

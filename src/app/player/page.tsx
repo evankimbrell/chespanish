@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
 import { useFakePlayer } from '@/components/player/use-fake-player';
 import { useGeneratedLessonPlayer } from '@/components/player/use-generated-lesson-player';
@@ -146,14 +147,30 @@ function FakeLessonPlayerPage() {
 export default function PlayerPage() {
   const [mounted, setMounted] = useState(false);
   const generatedLesson = useAppStore((s) => s.generatedLesson);
+  const router = useRouter();
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Redirect to /lesson for audio generation if transcript exists but audio hasn't been generated yet
+  useEffect(() => {
+    if (!mounted) return;
+    const hasAudio = (generatedLesson?.plays?.length ?? 0) > 0;
+    const hasTranscript = !!generatedLesson?.transcript;
+    if (!hasAudio && hasTranscript) {
+      router.replace('/lesson');
+    }
+  }, [mounted, generatedLesson, router]);
 
   // Render fake player on server and first client paint to avoid hydration mismatch
   // (generatedLesson comes from localStorage which is unavailable server-side)
   if (!mounted) return <FakeLessonPlayerPage />;
 
   const hasAudio = (generatedLesson?.plays?.length ?? 0) > 0;
+  const hasTranscript = !!generatedLesson?.transcript;
+
   if (hasAudio) return <GeneratedLessonPlayerPage />;
+  // If transcript exists but no audio, the useEffect above will redirect to /lesson
+  // Show a brief loading state rather than the fake demo
+  if (hasTranscript) return null;
   return <FakeLessonPlayerPage />;
 }

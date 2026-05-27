@@ -12,7 +12,7 @@ export function ConversationPlayer({ p }: { p: FakePlayer }) {
   return (
     <div className="page-narrow fade-in" style={{ maxWidth: 760 }}>
       <div className="row between" style={{ marginBottom: 24 }}>
-        <button className="btn btn-text small" style={{ paddingLeft: 0 }} onClick={() => router.push('/preview')}>
+        <button className="btn btn-text small" style={{ paddingLeft: 0 }} onClick={() => router.push('/dashboard')}>
           <Icons.arrowLeft /> Exit lesson
         </button>
         <span className="kicker">{LESSON.title} · 03 / 06</span>

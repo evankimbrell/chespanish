@@ -27,14 +27,25 @@ export default function LessonPage() {
     fetch('/api/lesson/audio', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transcript: generatedLesson.transcript, userName: profile.name }),
+      body: JSON.stringify({ transcript: generatedLesson.transcript, userName: profile.name, startIdx: 0, count: 12 }),
     })
       .then((r) => r.json())
       .then((data) => {
-        setGeneratedLesson({ ...generatedLesson, plays: data.plays ?? [] });
+        const plays = data.plays ?? [];
+        if (plays.length === 0) {
+          // Audio generation returned nothing — go back to dashboard rather than looping
+          router.replace('/dashboard');
+          return;
+        }
+        setGeneratedLesson({
+          ...generatedLesson,
+          plays,
+          totalCount: data.totalCount ?? plays.length,
+          allPlayMeta: data.allPlayMeta,
+        });
         router.replace('/player');
       })
-      .catch(() => router.replace('/player'));
+      .catch(() => router.replace('/dashboard'));
   }, []);
 
   return (
