@@ -175,7 +175,7 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
                       {p.grade.brief_feedback && (
                         <p className="small" style={{ color: 'var(--ink-2)', margin: 0 }}>{p.grade.brief_feedback}</p>
                       )}
-                      {p.grade.observed_errors.length > 0 && (
+                      {(p.grade.observed_errors?.length ?? 0) > 0 && (
                         <ul style={{ margin: '10px 0 0', paddingLeft: 18 }}>
                           {p.grade.observed_errors.map((err, i) => (
                             <li key={i} className="small" style={{ color: 'var(--mute)', marginBottom: 4 }}>
