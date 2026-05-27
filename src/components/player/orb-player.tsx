@@ -68,7 +68,7 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
 
         {/* Top bar */}
         <div className="row between" style={{ marginBottom: 8 }}>
-          <button className="btn btn-text small" style={{ paddingLeft: 0 }} onClick={() => router.push('/preview')}>
+          <button className="btn btn-text small" style={{ paddingLeft: 0 }} onClick={() => router.push('/dashboard')}>
             <Icons.arrowLeft /> Exit lesson
           </button>
           <div className="col gap-1" style={{ textAlign: 'center' }}>
