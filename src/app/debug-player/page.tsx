@@ -90,6 +90,18 @@ export default function DebugPlayerPage() {
     setErrorMsg(null);
   };
 
+  const loadDemo = async () => {
+    try {
+      const res = await fetch('/api/debug/demo-lesson');
+      const lesson = await res.json();
+      setGeneratedLesson(lesson);
+      router.push('/player');
+    } catch (e) {
+      setErrorMsg('Failed to load demo: ' + String(e));
+      setStatus('error');
+    }
+  };
+
   const cachedPlays = generatedLesson?.plays?.length ?? 0;
 
   return (
@@ -218,6 +230,10 @@ export default function DebugPlayerPage() {
         </button>
         <button className="btn btn-ghost" onClick={clearCache} disabled={status === 'generating' || status === 'randomizing'}>
           Clear Lesson Cache
+        </button>
+        <button className="btn btn-ghost" onClick={loadDemo} disabled={status === 'generating' || status === 'randomizing'}
+          title="Load pre-generated 'Café & Daily Greetings' lesson — no API calls needed">
+          ▶ Load Demo Lesson
         </button>
       </div>
 
