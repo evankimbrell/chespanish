@@ -27,7 +27,25 @@ async function buildResponseText(category: ScenarioCategory, question: Question,
   const systemMsg: Record<ScenarioCategory, string> = {
     correct: '',
     wrong_language: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}". Generate a natural English response to this specific question (translated/answered in English instead of Spanish). Return ONLY the spoken text, nothing else.`,
-    bad_grammar: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}". Generate a Spanish response with a clear grammatical error that is PHONETICALLY DISTINCT from the correct form — so a text-to-speech engine cannot silently fix it. Good error types: wrong verb tense (e.g. present instead of preterite: "voy" instead of "fui"), wrong subject-verb conjugation (e.g. "yo estás" instead of "yo estoy"), entirely wrong word that sounds different (e.g. wrong vocabulary). BAD error types: contractions (e.g. "a la" vs "al" — TTS will fix these), silent letter differences, spelling-only errors. The error must survive spoken synthesis. Return ONLY the spoken text.`,
+    bad_grammar: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}".
+
+Your job: take the correct answer and introduce ONE clear grammatical error that makes it WRONG. The error MUST be phonetically distinct — a listener must be able to hear the mistake.
+
+REQUIRED: Your output must differ meaningfully from the correct answer. If it matches the correct answer, you have failed.
+
+Best error types to use (pick the most natural one for this sentence):
+- ser/estar/tener confusion: "Yo soy treinta años" instead of "Yo tengo treinta años"; "Estoy cansada" vs "Soy cansada"
+- Wrong verb tense: "Fui al mercado mañana" (preterite for future), "Voy ayer" (present for past)
+- Wrong subject-verb agreement: "Ellos come" instead of "Ellos comen", "Nosotros tiene" instead of "Nosotros tenemos"
+- Wrong gender article: "el mesa" instead of "la mesa", "una libro" instead of "un libro"
+- Wrong vocabulary (different-sounding word): substitute a clearly wrong noun or verb
+
+FORBIDDEN error types (TTS will silently fix these, making the error undetectable):
+- Contraction differences: "a la" vs "al", "de el" vs "del"
+- Accent mark differences (e.g. "esta" vs "está")
+- Spelling-only changes
+
+Return ONLY the spoken text with the error introduced, nothing else.`,
     incomplete: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}". Generate a Spanish response that is clearly ON-TOPIC (responding to the same question) but leaves out a KEY required element. The response must be recognizably about the same subject — NOT a random or unrelated answer. Examples of good incomplete responses: if asked to order coffee AND say no sugar → say only "Un café, por favor" (on topic, missing the constraint); if asked to introduce yourself with name AND where you're from → say only "Me llamo María" (on topic, missing location). The response should be grammatically correct but structurally incomplete. Return ONLY the spoken text.`,
     slow: correctAnswer || planResponse,
     wrong_answer: `The student was asked: "${prompt}". Generate a plausible-sounding Spanish response that completely misunderstands the question — answers something different. Return ONLY the spoken text.`,
@@ -40,13 +58,35 @@ async function buildResponseText(category: ScenarioCategory, question: Question,
   const userPrompt = systemMsg[category];
   if (!userPrompt) return planResponse;
 
+  const normalize = (s: string) => s.toLowerCase().replace(/[^a-záéíóúüñ\s]/g, '').replace(/\s+/g, ' ').trim();
+
   try {
-    const completion = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 60,
-      messages: [{ role: 'user', content: userPrompt }],
-    });
-    return completion.choices[0].message.content?.trim() || planResponse;
+    // For bad_grammar, retry up to 2 times if the model returns the correct answer unchanged
+    const maxAttempts = category === 'bad_grammar' ? 2 : 1;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const completion = await getOpenAI().chat.completions.create({
+        model: 'gpt-4o-mini',
+        max_tokens: 80,
+        messages: [{ role: 'user', content: userPrompt }],
+      });
+      const generated = completion.choices[0].message.content?.trim() || '';
+      if (!generated) break;
+
+      // For bad_grammar: reject if output is too similar to any acceptable answer
+      if (category === 'bad_grammar' && correctAnswer) {
+        const acceptableNorms = [
+          correctAnswer,
+          ...(question.acceptable_response_examples ?? []),
+        ].map(normalize);
+        if (acceptableNorms.some((a) => normalize(generated) === a)) {
+          // Generated correct form — retry on next iteration
+          continue;
+        }
+      }
+
+      return generated;
+    }
+    return planResponse;
   } catch {
     return planResponse;
   }
