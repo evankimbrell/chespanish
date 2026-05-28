@@ -133,6 +133,7 @@ async function smartEvaluate(
       ``,
       `--- PROMPT ---`,
       `Prompt type: ${q.prompt_type} (difficulty: ${q.difficulty_bucket}, CEFR: ${q.cefr_band})`,
+      `Response language: ${q.response_language_allowed === 'english_or_spanish' ? 'English OR Spanish allowed' : 'Spanish only'}`,
       `Instruction: "${q.instruction_text}"`,
       q.audio_text ? `Audio played to student: "${q.audio_text}"` : null,
       q.acceptable_response_examples?.length
@@ -173,25 +174,28 @@ The GRADER only sees the transcript. It cannot know what language the audio was 
 
 Your job: given the full context below, determine if this is a REAL GRADING BUG or a FALSE FAILURE caused by Whisper transcription error.
 
-SCENARIO CATEGORY GUIDE — critical for understanding intent:
-- wrong_language: Audio was INTENTIONALLY recorded in English. We expect Whisper to return English verbatim. The grader should then flag too_much_english and give Ouch.
-- correct: Audio was correct Spanish. If Whisper returned English (language detection failure), the grader correctly flagged English — but it's a Whisper misdetection error, not a grading bug.
-- bad_grammar/incomplete/wrong_answer: Audio was intentional erroneous Spanish. If Whisper returned correct Spanish (auto-corrected), that's a Whisper normalization error.
-- slow: Audio was slow Spanish. The grader should detect low WPM and flag response_speed.
+FIRST — READ THE PROMPT SECTION. "Response language" tells you whether English was allowed.
 
-FALSE FAILURE patterns (Whisper caused it, grader did its job given what it saw):
-1. correct scenario: Audio=Spanish, Whisper returned English → grader gave Ouch. NOT a grading bug — Whisper misdetected the language.
-2. Near-miss label variance: expected "Ok" got "Good", or expected "Good" got "Excellent" — marginal difference, not a real bug unless the direction is completely wrong.
-3. One-step label variance for slow/incomplete: these are subjective, one-step off is acceptable.
+SCENARIO CATEGORY GUIDE:
+- wrong_language: Audio was INTENTIONALLY English. ONLY valid when "Response language: Spanish only". If the prompt says "Response language: English OR Spanish allowed", then English IS a correct answer and the scenario was mis-configured — mark as passed.
+- correct: Audio was correct Spanish. If Whisper returned English (language detection failure), it's a Whisper error, not a grading bug.
+- bad_grammar/incomplete/wrong_answer: Intentional erroneous Spanish. If Whisper auto-corrected it, that's a Whisper normalization error.
+- slow: Slow Spanish. Grader should detect low WPM and flag response_speed.
 
-REAL BUG patterns (the production system behaved incorrectly — mark as failed):
-1. wrong_language scenario: Audio=English, Whisper returned SPANISH → grader gave Excellent. THIS IS A REAL PRODUCTION BUG. Whisper TRANSLATED the English audio into Spanish instead of transcribing it verbatim. An English response must never silently become passing Spanish. Always mark as failed.
-2. wrong_language scenario: Audio=English, Whisper returned English, grader gave Excellent WITHOUT flagging too_much_english. Real grading bug.
-3. Transcript IS correct Spanish AND grader gave Ouch/Bad for no reason (no grammar/vocab errors visible).
-4. Transcript clearly shows the expected error category (e.g. wrong verb form) but grader didn't flag it.
-5. Transcript is clearly off-topic/unrelated but grader gave Excellent.
+FALSE FAILURE patterns (not real bugs):
+0. INVALID TEST SETUP: Category is wrong_language BUT "Response language: English OR Spanish allowed" — English is legitimate for this question. Mark as passed regardless of grade.
+1. correct scenario: Audio=Spanish, Whisper returned English → grader gave Ouch. Whisper misdetected; not a grading bug.
+2. Near-miss label variance: expected "Ok" got "Good", or expected "Good" got "Excellent" — marginal difference is acceptable.
+3. One-step label variance for slow/incomplete: these are subjective.
 
-KEY CHECK for wrong_language: Audio=English + Transcript=Spanish → TRANSLATION BUG, always failed. Audio=Spanish + Transcript=English → Whisper misdetection, evaluate grader's response to what it saw.
+REAL BUG patterns (mark as failed):
+1. wrong_language scenario (Spanish-only question): Audio=English, Whisper returned SPANISH (translated) → grader gave Excellent. Translation bug — real failure.
+2. wrong_language scenario (Spanish-only question): Audio=English, Whisper returned English, grader gave Excellent WITHOUT flagging too_much_english. Grading bug.
+3. Transcript is correct Spanish AND grader gave Ouch/Bad for no apparent reason.
+4. Transcript clearly shows the expected error but grader didn't flag it.
+5. Transcript is clearly off-topic but grader gave Excellent.
+
+KEY CHECK: Always read "Response language" first. If English OR Spanish allowed → wrong_language scenarios are invalid test setups, mark passed. If Spanish only → evaluate as normal.
 
 Return JSON only:
 {

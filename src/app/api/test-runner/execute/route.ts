@@ -185,7 +185,8 @@ export async function POST(req: Request) {
           const question = selectQuestion(
             plan.promptTypePreference,
             plan.difficultyRange,
-            usedIds
+            usedIds,
+            plan.category
           );
 
           if (!question) {
