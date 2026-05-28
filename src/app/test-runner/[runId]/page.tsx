@@ -35,6 +35,9 @@ export default function TestRunDetailPage() {
   const [run, setRun] = useState<TestRun | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedScenarios, setExpandedScenarios] = useState<Set<string>>(new Set());
+  const [fixStatus, setFixStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
+  const [fixLog, setFixLog] = useState<{ text: string; kind: 'info' | 'success' | 'warn' | 'error' }[]>([]);
+  const [fixSummary, setFixSummary] = useState<string | null>(null);
 
   useEffect(() => {
     if (!runId) return;
@@ -46,6 +49,64 @@ export default function TestRunDetailPage() {
       })
       .catch(() => setLoading(false));
   }, [runId]);
+
+  async function implementFix() {
+    if (!runId) return;
+    setFixStatus('running');
+    setFixLog([{ text: 'Starting fix implementation…', kind: 'info' }]);
+    setFixSummary(null);
+
+    try {
+      const res = await fetch(`/api/test-runner/runs/${runId}/apply-fix`, { method: 'POST' });
+      if (!res.body) throw new Error('No response body');
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() ?? '';
+
+        for (const part of parts) {
+          if (!part.trim()) continue;
+          const lines = part.split('\n');
+          const eventLine = lines.find((l) => l.startsWith('event:'));
+          const dataLine = lines.find((l) => l.startsWith('data:'));
+          if (!dataLine) continue;
+          const eventName = eventLine?.replace('event:', '').trim() ?? 'message';
+          try {
+            const data = JSON.parse(dataLine.replace('data:', '').trim());
+            if (eventName === 'status') {
+              setFixLog((p) => [...p, { text: data.message, kind: 'info' }]);
+            } else if (eventName === 'files_identified') {
+              setFixLog((p) => [...p, { text: data.message, kind: 'info' }]);
+            } else if (eventName === 'edit_applied') {
+              setFixLog((p) => [...p, { text: `✓ ${data.filePath}: ${data.description}`, kind: 'success' }]);
+            } else if (eventName === 'warning') {
+              setFixLog((p) => [...p, { text: `⚠ ${data.message}`, kind: 'warn' }]);
+            } else if (eventName === 'complete') {
+              setFixSummary(data.summary as string);
+              setFixStatus('done');
+              // Refresh run data to show fixesApplied
+              fetch(`/api/test-runner/runs/${runId}`)
+                .then((r) => r.json())
+                .then((d) => { if (d.run) setRun(d.run); });
+            } else if (eventName === 'error') {
+              setFixLog((p) => [...p, { text: `Error: ${data.message}`, kind: 'error' }]);
+              setFixStatus('error');
+            }
+          } catch {}
+        }
+      }
+    } catch (e) {
+      setFixLog((p) => [...p, { text: `Fatal: ${String(e)}`, kind: 'error' }]);
+      setFixStatus('error');
+    }
+  }
 
   function toggleScenario(id: string) {
     setExpandedScenarios((prev) => {
@@ -271,6 +332,102 @@ export default function TestRunDetailPage() {
             }}
           >
             {run.fixPlan}
+          </div>
+        </div>
+      )}
+
+      {/* Implement Fix Plan */}
+      {(run.bugs.length > 0 || run.fixPlan) && (
+        <div style={{ marginBottom: 28 }}>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Implement Fix</div>
+          <div
+            style={{
+              padding: '20px 24px',
+              background: 'var(--bg-2)',
+              border: '1px solid var(--line)',
+              borderRadius: 6,
+            }}
+          >
+            {run.fixesApplied && fixStatus === 'idle' ? (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  color: 'var(--leaf)',
+                  fontSize: 13,
+                }}
+              >
+                <span>✓</span>
+                <span>Fixes have already been applied to the codebase.</span>
+              </div>
+            ) : (
+              <>
+                <div style={{ marginBottom: fixLog.length > 0 ? 16 : 0 }}>
+                  <button
+                    className="btn"
+                    onClick={implementFix}
+                    disabled={fixStatus === 'running' || run.fixesApplied}
+                    style={{ marginRight: 12 }}
+                  >
+                    {fixStatus === 'running'
+                      ? 'Applying fixes…'
+                      : fixStatus === 'done'
+                      ? 'Fixes applied ✓'
+                      : 'Implement Fix Plan'}
+                  </button>
+                  {fixStatus === 'running' && (
+                    <span className="mono small" style={{ color: 'var(--warm)' }}>
+                      Running…
+                    </span>
+                  )}
+                </div>
+
+                {fixLog.length > 0 && (
+                  <div
+                    style={{
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                      lineHeight: 1.8,
+                      marginBottom: fixSummary ? 16 : 0,
+                    }}
+                  >
+                    {fixLog.map((entry, i) => (
+                      <div
+                        key={i}
+                        style={{
+                          color:
+                            entry.kind === 'success'
+                              ? 'var(--leaf)'
+                              : entry.kind === 'error'
+                              ? 'var(--crit)'
+                              : entry.kind === 'warn'
+                              ? 'var(--warm)'
+                              : 'var(--mute)',
+                        }}
+                      >
+                        {entry.text}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {fixSummary && (
+                  <div
+                    style={{
+                      padding: '12px 16px',
+                      background: 'rgba(90,160,100,0.08)',
+                      border: '1px solid var(--leaf)',
+                      borderRadius: 4,
+                      fontSize: 13,
+                      color: 'var(--leaf)',
+                    }}
+                  >
+                    {fixSummary}
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       )}
