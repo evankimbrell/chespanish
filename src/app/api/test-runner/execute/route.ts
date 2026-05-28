@@ -1,10 +1,56 @@
 import fs from 'fs';
 import path from 'path';
-import type { TestRun, TestScenario, TargetArea } from '@/lib/testing/types';
+import OpenAI from 'openai';
+import type { TestRun, TestScenario, TargetArea, ScenarioCategory } from '@/lib/testing/types';
+import type { Question } from '@/lib/types';
 import { generateHypothesis, selectQuestion } from '@/lib/testing/hypothesis-generator';
 import { generateTestAudio, saveTestAudio } from '@/lib/testing/audio-generator';
 import { runScenario } from '@/lib/testing/api-tester';
 import { analyzeResults } from '@/lib/testing/bug-analyzer';
+
+let _openai: OpenAI | null = null;
+function getOpenAI() {
+  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  return _openai;
+}
+
+async function buildResponseText(category: ScenarioCategory, question: Question, planResponse: string): Promise<string> {
+  // For correct scenarios, use the question's own acceptable examples — not the AI's blind guess
+  if (category === 'correct') {
+    return question.acceptable_response_examples?.[0] ?? question.target_answer ?? planResponse;
+  }
+
+  // For broken scenarios, ask the AI to produce a contextually wrong response based on this specific question
+  const correctAnswer = question.acceptable_response_examples?.[0] ?? question.target_answer ?? '';
+  const prompt = question.instruction_text ?? question.audio_text ?? question.scenario ?? '';
+
+  const systemMsg: Record<ScenarioCategory, string> = {
+    correct: '',
+    wrong_language: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}". Generate a natural English response to this specific question (translated/answered in English instead of Spanish). Return ONLY the spoken text, nothing else.`,
+    bad_grammar: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}". Generate a Spanish response that answers the question but with clear grammatical mistakes (wrong verb conjugation, wrong gender agreement, etc.). Return ONLY the spoken text.`,
+    incomplete: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}". Generate a very short, incomplete Spanish response — just 1-2 words that hint at the right answer but are far too brief. Return ONLY the spoken text.`,
+    slow: correctAnswer || planResponse,
+    wrong_answer: `The student was asked: "${prompt}". Generate a plausible-sounding Spanish response that completely misunderstands the question — answers something different. Return ONLY the spoken text.`,
+    silence: '...',
+  };
+
+  if (category === 'slow') return correctAnswer || planResponse;
+  if (category === 'silence') return '...';
+
+  const userPrompt = systemMsg[category];
+  if (!userPrompt) return planResponse;
+
+  try {
+    const completion = await getOpenAI().chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 60,
+      messages: [{ role: 'user', content: userPrompt }],
+    });
+    return completion.choices[0].message.content?.trim() || planResponse;
+  } catch {
+    return planResponse;
+  }
+}
 
 const RUNS_DIR = path.join(process.cwd(), 'data', 'test-runs');
 
@@ -95,11 +141,13 @@ export async function POST(req: Request) {
 
           usedIds.push(question.prompt_id);
 
+          const responseText = await buildResponseText(plan.category, question, plan.responseToGenerate);
+
           let audioUrl = '';
           let audioBuffer: Buffer;
 
           try {
-            const text = plan.category === 'silence' ? '...' : plan.responseToGenerate;
+            const text = responseText;
             audioBuffer = await generateTestAudio(text, plan.voice ?? 'spanish');
             audioUrl = await saveTestAudio(runId, scenarioId, audioBuffer);
           } catch (e) {
@@ -111,7 +159,7 @@ export async function POST(req: Request) {
               name: plan.name,
               category: plan.category,
               promptQuestion: question,
-              generatedResponse: plan.responseToGenerate,
+              generatedResponse: responseText,
               audioUrl: '',
               transcript: null,
               grade: null,
@@ -132,7 +180,7 @@ export async function POST(req: Request) {
             name: plan.name,
             category: plan.category,
             promptQuestion: question,
-            generatedResponse: plan.responseToGenerate,
+            generatedResponse: responseText,
             audioUrl,
             transcript: null,
             grade: null,
