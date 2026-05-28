@@ -97,6 +97,7 @@ For wrong_language scenarios: expectedLabel="Ouch", expectedErrorCategories=["to
 For bad_grammar scenarios: expectedLabel="Ok" or "Bad" depending on severity, expectedErrorCategories=["grammar"] or ["verb_conjugation"]
 For incomplete scenarios: expectedLabel="Bad" ONLY if the response misses the core task entirely; use "Ok" if it partially addresses it
 For wrong_answer scenarios: expectedLabel="Bad" or "Ouch", expectedErrorCategories=["hallucinated_or_unrelated_answer"]
+For slow scenarios: the audio will be generated at 0.5x speed (genuinely slow speech). expectedLabel="Ok" or "Good" (slow doesn't fail the task — the content is still correct), expectedErrorCategories=["response_speed"]
 
 Return only valid JSON:
 {

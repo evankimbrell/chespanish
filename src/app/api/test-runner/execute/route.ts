@@ -148,7 +148,8 @@ export async function POST(req: Request) {
 
           try {
             const text = responseText;
-            audioBuffer = await generateTestAudio(text, plan.voice ?? 'spanish');
+            const audioSpeed = plan.category === 'slow' ? 0.5 : 1.0;
+            audioBuffer = await generateTestAudio(text, plan.voice ?? 'spanish', audioSpeed);
             audioUrl = await saveTestAudio(runId, scenarioId, audioBuffer);
           } catch (e) {
             send('warning', {

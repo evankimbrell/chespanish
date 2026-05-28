@@ -19,7 +19,7 @@ export async function runScenario(
       'allow_english',
       scenario.promptQuestion.response_language_allowed === 'english_or_spanish' ? '1' : '0'
     );
-    fd.append('response_time_seconds', '2.0');
+    fd.append('response_time_seconds', scenario.category === 'slow' ? '6.0' : '2.0');
     fd.append('speaking_duration_seconds', '2.0');
     fd.append('used_transcript_help', '0');
 

@@ -6,7 +6,8 @@ const ENGLISH_VOICE = 'nzFihrBIvB34imQBuxub';
 
 export async function generateTestAudio(
   text: string,
-  voice: 'english' | 'spanish' = 'spanish'
+  voice: 'english' | 'spanish' = 'spanish',
+  speed = 1.0
 ): Promise<Buffer> {
   const voiceId = voice === 'spanish' ? SPANISH_VOICE : ENGLISH_VOICE;
   const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
@@ -19,6 +20,7 @@ export async function generateTestAudio(
       text,
       model_id: 'eleven_turbo_v2_5',
       output_format: 'mp3_44100_128',
+      ...(speed !== 1.0 ? { voice_settings: { speed } } : {}),
     }),
   });
 

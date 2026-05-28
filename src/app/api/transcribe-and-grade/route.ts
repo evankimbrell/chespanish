@@ -1,5 +1,4 @@
 import OpenAI from 'openai';
-import type { TranscriptionCreateParams } from 'openai/resources/audio/transcriptions';
 import type { Question } from '@/lib/types';
 
 let _openai: OpenAI | null = null;
@@ -13,18 +12,48 @@ const WHISPER_PROMPT =
 
 const SLAVIC_RE = /[ČčŠšŽžĚěŘřŮů]/;
 
-async function runTranscription(audio: File, forceLang?: string, noPrompt?: boolean): Promise<string> {
-  const params: TranscriptionCreateParams = {
+interface WordTiming { word: string; start: number; end: number; }
+interface TranscriptionResult { text: string; words: WordTiming[]; }
+
+async function runTranscription(audio: File, forceLang?: string, noPrompt?: boolean): Promise<TranscriptionResult> {
+  // Build base params then add optional fields imperatively to avoid union-type overload issues
+  const params: Record<string, unknown> = {
     file: audio,
     model: 'whisper-1',
-    ...(forceLang
-      ? { language: forceLang }
-      : noPrompt
-        ? {}
-        : { prompt: WHISPER_PROMPT }),
+    response_format: 'verbose_json',
+    timestamp_granularities: ['word'],
   };
-  const result = await getOpenAI().audio.transcriptions.create(params);
-  return result.text;
+  if (forceLang) {
+    params.language = forceLang;
+  } else if (!noPrompt) {
+    params.prompt = WHISPER_PROMPT;
+  }
+  // SDK return type is narrowed by response_format at runtime; cast needed
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const result = await (getOpenAI().audio.transcriptions.create as any)(params) as {
+    text: string;
+    words?: WordTiming[];
+  };
+  return { text: result.text, words: result.words ?? [] };
+}
+
+interface SpeechMetrics {
+  initialSilenceSec: number;
+  maxPauseSec: number;
+  wordsPerMinute: number;
+}
+
+function analyzeSpeechTiming(words: WordTiming[]): SpeechMetrics | null {
+  if (words.length < 2) return null;
+  const initialSilenceSec = words[0].start;
+  let maxPauseSec = 0;
+  for (let i = 1; i < words.length; i++) {
+    const pause = words[i].start - words[i - 1].end;
+    if (pause > maxPauseSec) maxPauseSec = pause;
+  }
+  const speechDuration = words[words.length - 1].end - words[0].start;
+  const wordsPerMinute = speechDuration > 0 ? (words.length / speechDuration) * 60 : 0;
+  return { initialSilenceSec, maxPauseSec, wordsPerMinute };
 }
 
 const SYSTEM_PROMPT = `You are a grading assistant for an Argentine Spanish language level test. Grade each spoken response and return structured JSON.
@@ -58,7 +87,7 @@ DIMENSIONS (each 0–5):
 - vocabulary: Was vocabulary sufficient and appropriate?
 - fluency: How smoothly was the answer produced?
 - pronunciation_intelligibility: Could a listener understand the spoken Spanish?
-- response_speed: Based on responseLatencyMs — 5=<2s, 4=2–4s, 3=4–7s, 2=7–12s, 1=>12s, 0=no response
+- response_speed: Consider ALL timing signals — response latency, initial silence before speaking, longest mid-speech pause, and speech rate (WPM). Penalize: initial silence >2s, pauses between words >1.5s, or speech rate <80 WPM (normal conversational Spanish is 130–160 WPM). 5=fast+fluent, 4=slight delay, 3=noticeable hesitation, 2=significant slowness, 1=very slow throughout, 0=no response
 - target_style_alignment: How Argentine/Rioplatense is the phrasing?
 
 ERROR CATEGORIES (use only when applicable):
@@ -136,10 +165,12 @@ export async function POST(req: Request) {
 
       try {
         // Step 1: Transcribe
-        let transcriptText = await runTranscription(audio, undefined, allowEnglish);
-        if (!allowEnglish && SLAVIC_RE.test(transcriptText)) {
-          transcriptText = await runTranscription(audio, 'es');
+        let transcription = await runTranscription(audio, undefined, allowEnglish);
+        if (!allowEnglish && SLAVIC_RE.test(transcription.text)) {
+          transcription = await runTranscription(audio, 'es');
         }
+        const transcriptText = transcription.text;
+        const speechMetrics = analyzeSpeechTiming(transcription.words);
 
         send({ type: 'transcript', transcript: transcriptText });
 
@@ -177,12 +208,16 @@ export async function POST(req: Request) {
             : null,
         ].filter(Boolean).join('\n');
 
+        const speechTimingLine = speechMetrics
+          ? `Speech timing: initial silence ${speechMetrics.initialSilenceSec.toFixed(1)}s | longest pause ${speechMetrics.maxPauseSec.toFixed(1)}s | speech rate ${Math.round(speechMetrics.wordsPerMinute)} WPM`
+          : null;
+
         const userMessage = `${contextLines}
 
 User transcript: "${transcriptText}"
 Response latency: ${responseLatencyMs.toFixed(0)}ms
 Speaking duration: ${(speakDurationSec * 1000).toFixed(0)}ms
-Used transcript help: ${usedTranscriptHelp}
+${speechTimingLine ? speechTimingLine + '\n' : ''}Used transcript help: ${usedTranscriptHelp}
 Skipped: false
 
 Prompt ID to echo back: ${q.prompt_id}`;
