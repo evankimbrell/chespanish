@@ -8,7 +8,7 @@ function getOpenAI(): OpenAI {
 }
 
 const WHISPER_PROMPT =
-  'Transcribe exactly what the speaker said, preserving the exact language they spoke — if they spoke English, transcribe in English; if they spoke Spanish, transcribe in Spanish with all grammatical errors intact. Do not translate, correct, or normalise anything.';
+  'Transcribe VERBATIM exactly what the speaker said. Preserve every grammatical error, wrong verb conjugation, and incorrect word exactly as spoken. Do NOT apply contractions (write "a la" if that is what was said, not "al"). Do NOT correct grammar, spelling, or word choice. Do NOT translate. If the speaker said something grammatically wrong, write it wrong.';
 
 const SLAVIC_RE = /[ČčŠšŽžĚěŘřŮů]/;
 
