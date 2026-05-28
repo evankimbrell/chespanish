@@ -13,7 +13,7 @@ const WHISPER_PROMPT =
 const SLAVIC_RE = /[ČčŠšŽžĚěŘřŮů]/;
 
 interface WordTiming { word: string; start: number; end: number; }
-interface TranscriptionResult { text: string; words: WordTiming[]; }
+interface TranscriptionResult { text: string; words: WordTiming[]; detectedLanguage?: string; }
 
 async function runTranscription(audio: File, forceLang?: string, noPrompt?: boolean): Promise<TranscriptionResult> {
   // Build base params then add optional fields imperatively to avoid union-type overload issues
@@ -33,8 +33,9 @@ async function runTranscription(audio: File, forceLang?: string, noPrompt?: bool
   const result = await (getOpenAI().audio.transcriptions.create as any)(params) as {
     text: string;
     words?: WordTiming[];
+    language?: string;
   };
-  return { text: result.text, words: result.words ?? [] };
+  return { text: result.text, words: result.words ?? [], detectedLanguage: result.language };
 }
 
 interface SpeechMetrics {
@@ -171,7 +172,13 @@ export async function POST(req: Request) {
       try {
         // Step 1: Transcribe
         let transcription = await runTranscription(audio, undefined, allowEnglish);
-        if (!allowEnglish && SLAVIC_RE.test(transcription.text)) {
+        // Retry with forced Spanish if:
+        // 1. Spanish-only context AND Slavic chars appeared (pre-existing check), OR
+        // 2. Spanish-only context AND Whisper auto-detected English (language detection failure)
+        if (!allowEnglish && (
+          SLAVIC_RE.test(transcription.text) ||
+          transcription.detectedLanguage === 'english'
+        )) {
           transcription = await runTranscription(audio, 'es');
         }
         const transcriptText = transcription.text;
