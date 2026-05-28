@@ -219,9 +219,28 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   }, [resetRecording]);
 
   const playCorrect = useCallback(() => {
-    if (!plays[playIdx]) return;
-    const tmp = new Audio(plays[playIdx].audioUrl);
-    tmp.play().catch(() => {});
+    const play = plays[playIdx];
+    if (!play) return;
+    const text = play.spanishText?.trim();
+    if (!text) {
+      // Fallback: play full audio if no isolated Spanish text
+      new Audio(play.audioUrl).play().catch(() => {});
+      return;
+    }
+    fetch('/api/lesson/speak', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text }),
+    })
+      .then((r) => r.arrayBuffer())
+      .then((buf) => {
+        const blob = new Blob([buf], { type: 'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = () => URL.revokeObjectURL(url);
+        audio.play().catch(() => {});
+      })
+      .catch(() => {});
   }, [plays, playIdx]);
 
   const seek = useCallback((t: number) => {
