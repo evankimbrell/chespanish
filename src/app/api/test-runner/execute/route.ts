@@ -141,7 +141,12 @@ export async function POST(req: Request) {
 
           usedIds.push(question.prompt_id);
 
-          const responseText = await buildResponseText(plan.category, question, plan.responseToGenerate);
+          const baseResponseText = await buildResponseText(plan.category, question, plan.responseToGenerate);
+          const deliberatePauses = plan.category === 'slow' && !!plan.deliberatePauses;
+          // Inject <break> markers between sentences for deliberate-pause scenarios
+          const responseText = deliberatePauses
+            ? baseResponseText.replace(/([.!?¿¡])\s+/g, '$1 <break time="1.5s"/> ')
+            : baseResponseText;
 
           let audioUrl = '';
           let audioBuffer: Buffer;
@@ -166,6 +171,8 @@ export async function POST(req: Request) {
               grade: null,
               expectedLabel: plan.expectedLabel,
               expectedErrorCategories: plan.expectedErrorCategories,
+              audioSpeed: plan.category === 'slow' ? (plan.audioSpeed ?? 0.5) : undefined,
+              deliberatePauses: deliberatePauses || undefined,
               passed: false,
               failureReason: `Audio generation failed: ${String(e)}`,
               durationMs: 0,
@@ -187,6 +194,8 @@ export async function POST(req: Request) {
             grade: null,
             expectedLabel: plan.expectedLabel,
             expectedErrorCategories: plan.expectedErrorCategories,
+            audioSpeed: plan.category === 'slow' ? (plan.audioSpeed ?? 0.5) : undefined,
+            deliberatePauses: deliberatePauses || undefined,
             passed: false,
             failureReason: null,
             durationMs: 0,

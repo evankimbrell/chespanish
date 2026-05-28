@@ -575,6 +575,19 @@ function ScenarioRow({
             </p>
           </div>
 
+          {/* Audio params — only for slow scenarios */}
+          {scenario.category === 'slow' && (scenario.audioSpeed !== undefined || scenario.deliberatePauses) && (
+            <div style={{ marginBottom: 12 }}>
+              <span className="mono small" style={{ color: 'var(--mute)', display: 'block', marginBottom: 3 }}>
+                AUDIO PARAMS
+              </span>
+              <p style={{ fontSize: 13, color: 'var(--ink)', margin: 0 }}>
+                Speed: {scenario.audioSpeed !== undefined ? `${Math.round(scenario.audioSpeed * 100)}%` : 'default'}
+                {scenario.deliberatePauses && '  ·  Deliberate pauses: yes'}
+              </p>
+            </div>
+          )}
+
           {/* Transcript */}
           <div style={{ marginBottom: 12 }}>
             <span className="mono small" style={{ color: 'var(--mute)', display: 'block', marginBottom: 3 }}>

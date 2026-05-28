@@ -27,6 +27,9 @@ export interface TestScenario {
   expectedLabel: GradeLabel;
   expectedErrorCategories: string[];
 
+  audioSpeed?: number;        // only set for 'slow' category; 1.0 = normal
+  deliberatePauses?: boolean; // whether pause markers were injected into the text
+
   passed: boolean;
   failureReason: string | null;
   durationMs: number;
