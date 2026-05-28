@@ -174,24 +174,24 @@ The GRADER only sees the transcript. It cannot know what language the audio was 
 Your job: given the full context below, determine if this is a REAL GRADING BUG or a FALSE FAILURE caused by Whisper transcription error.
 
 SCENARIO CATEGORY GUIDE — critical for understanding intent:
-- wrong_language: Audio was INTENTIONALLY recorded in English. We expect Whisper to return English. The grader should then flag too_much_english and give Ouch. If Whisper returned Spanish instead of English, that's a Whisper error — the grader correctly graded what it received, so there's NO grading bug.
-- correct: Audio was correct Spanish. If Whisper returned English (language detection failure), the grader correctly flagged English — but it's a Whisper error, not a grading bug.
+- wrong_language: Audio was INTENTIONALLY recorded in English. We expect Whisper to return English verbatim. The grader should then flag too_much_english and give Ouch.
+- correct: Audio was correct Spanish. If Whisper returned English (language detection failure), the grader correctly flagged English — but it's a Whisper misdetection error, not a grading bug.
 - bad_grammar/incomplete/wrong_answer: Audio was intentional erroneous Spanish. If Whisper returned correct Spanish (auto-corrected), that's a Whisper normalization error.
 - slow: Audio was slow Spanish. The grader should detect low WPM and flag response_speed.
 
 FALSE FAILURE patterns (Whisper caused it, grader did its job given what it saw):
-1. wrong_language scenario: Audio=English, Whisper returned Spanish → grader gave Excellent for the Spanish. NOT a grading bug — Whisper failed to transcribe the English audio as English.
-2. correct scenario: Audio=Spanish, Whisper returned English → grader gave Ouch for the English. NOT a grading bug — Whisper failed to keep the language correct.
-3. Near-miss label variance: expected "Ok" got "Good", or expected "Good" got "Excellent" — marginal difference, not a real bug unless the direction is completely wrong.
-4. One-step label variance for slow/incomplete: these are subjective, one-step off is acceptable.
+1. correct scenario: Audio=Spanish, Whisper returned English → grader gave Ouch. NOT a grading bug — Whisper misdetected the language.
+2. Near-miss label variance: expected "Ok" got "Good", or expected "Good" got "Excellent" — marginal difference, not a real bug unless the direction is completely wrong.
+3. One-step label variance for slow/incomplete: these are subjective, one-step off is acceptable.
 
-REAL GRADING BUG patterns (Whisper worked fine, grader got it wrong):
-1. Whisper transcript matches audio language AND wrong_language transcript IS English AND grader gave Excellent without flagging too_much_english.
-2. Transcript IS correct Spanish AND grader gave Ouch/Bad for no reason (no grammar/vocab errors visible).
-3. Transcript clearly shows the expected error category (e.g. wrong verb form) but grader didn't flag it.
-4. Transcript is clearly off-topic/unrelated but grader gave Excellent.
+REAL BUG patterns (the production system behaved incorrectly — mark as failed):
+1. wrong_language scenario: Audio=English, Whisper returned SPANISH → grader gave Excellent. THIS IS A REAL PRODUCTION BUG. Whisper TRANSLATED the English audio into Spanish instead of transcribing it verbatim. An English response must never silently become passing Spanish. Always mark as failed.
+2. wrong_language scenario: Audio=English, Whisper returned English, grader gave Excellent WITHOUT flagging too_much_english. Real grading bug.
+3. Transcript IS correct Spanish AND grader gave Ouch/Bad for no reason (no grammar/vocab errors visible).
+4. Transcript clearly shows the expected error category (e.g. wrong verb form) but grader didn't flag it.
+5. Transcript is clearly off-topic/unrelated but grader gave Excellent.
 
-KEY CHECK: Always look at "Whisper language match" field. If NO match, Whisper is at fault. If YES match, evaluate the grader.
+KEY CHECK for wrong_language: Audio=English + Transcript=Spanish → TRANSLATION BUG, always failed. Audio=Spanish + Transcript=English → Whisper misdetection, evaluate grader's response to what it saw.
 
 Return JSON only:
 {
