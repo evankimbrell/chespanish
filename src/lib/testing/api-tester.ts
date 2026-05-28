@@ -106,46 +106,97 @@ async function smartEvaluate(
 
   try {
     const q = scenario.promptQuestion;
+
+    // Derive what language the audio was generated in
+    const audioLanguage = scenario.category === 'wrong_language' ? 'English' : 'Spanish';
+
+    // Derive whether Whisper was told to allow English
+    const allowEnglish = q.response_language_allowed === 'english_or_spanish';
+
+    // Detect transcript language heuristically (presence of Spanish accent chars or common words)
+    const spanishPattern = /[áéíóúüñ¿¡]|(\b(sí|no|de|la|el|que|en|es|por|con|una|los|las|para)\b)/i;
+    const transcriptLang = transcript
+      ? spanishPattern.test(transcript) ? 'Spanish' : 'English'
+      : 'unknown';
+
     const context = [
-      `Scenario category: ${scenario.category}`,
-      `Prompt type: ${q.prompt_type} (difficulty: ${q.difficulty_bucket})`,
-      `Prompt instruction: "${q.instruction_text}"`,
-      q.audio_text ? `Audio prompt: "${q.audio_text}"` : null,
-      `Generated audio text (what was synthesized to speech): "${scenario.generatedResponse}"`,
-      `Whisper transcript (what speech-to-text returned): "${transcript ?? '(none)'}"`,
-      `Grade label: ${grade?.label ?? 'null'}`,
-      `Grade feedback: "${grade?.brief_feedback ?? ''}"`,
-      `Error categories returned: ${(grade?.observed_errors ?? []).map(e => e.category).join(', ') || 'none'}`,
+      `--- SCENARIO SETUP ---`,
+      `Category: ${scenario.category}`,
+      `Category meaning:`,
+      `  correct = generated correct Spanish audio; expected Excellent`,
+      `  wrong_language = intentionally generated ENGLISH audio; expected Ouch + too_much_english`,
+      `  bad_grammar = Spanish audio with deliberate grammatical error; expected Ok or Bad`,
+      `  incomplete = Spanish audio that is on-topic but missing a required element; expected Ok or Bad`,
+      `  slow = correct Spanish at reduced speed; expected Ok or Good + response_speed error`,
+      `  wrong_answer = off-topic Spanish; expected Bad or Ouch`,
+      `  silence = near-silence audio; expected Ouch`,
+      ``,
+      `--- PROMPT ---`,
+      `Prompt type: ${q.prompt_type} (difficulty: ${q.difficulty_bucket}, CEFR: ${q.cefr_band})`,
+      `Instruction: "${q.instruction_text}"`,
+      q.audio_text ? `Audio played to student: "${q.audio_text}"` : null,
+      q.acceptable_response_examples?.length
+        ? `Acceptable responses: ${q.acceptable_response_examples.join(' | ')}`
+        : null,
+      ``,
+      `--- AUDIO GENERATED ---`,
+      `Audio language: ${audioLanguage} (${scenario.category === 'wrong_language' ? 'intentionally wrong language' : 'correct language for this scenario'})`,
+      `Audio text synthesized: "${scenario.generatedResponse}"`,
+      scenario.audioSpeed !== undefined ? `Audio speed: ${Math.round(scenario.audioSpeed * 100)}%` : null,
+      scenario.deliberatePauses ? `Deliberate pauses injected: yes` : null,
+      ``,
+      `--- WHISPER TRANSCRIPTION ---`,
+      `allow_english sent to Whisper: ${allowEnglish}`,
+      `Transcript returned: "${transcript ?? '(none)'}"`,
+      `Detected transcript language (heuristic): ${transcriptLang}`,
+      `Whisper language match: ${transcriptLang === audioLanguage ? 'YES — transcript matches audio language' : `NO — audio was ${audioLanguage} but transcript appears ${transcriptLang} (possible Whisper translation error)`}`,
+      ``,
+      `--- GRADE RESULT ---`,
+      `Label: ${grade?.label ?? 'null'}`,
+      `Feedback: "${grade?.brief_feedback ?? ''}"`,
+      `Dimension scores: ${JSON.stringify(grade?.dimension_scores ?? {})}`,
+      `Error categories: ${(grade?.observed_errors ?? []).map(e => `${e.category} (${e.description})`).join('; ') || 'none'}`,
+      ``,
+      `--- ASSERTION ---`,
       `Expected label: ${scenario.expectedLabel}`,
       `Expected error categories: ${scenario.expectedErrorCategories.join(', ') || 'none'}`,
-      `Simple assertion failure reason: ${simpleFailureReason}`,
-    ].filter(Boolean).join('\n');
+      `Simple check failure: ${simpleFailureReason}`,
+    ].filter((x): x is string => x !== null).join('\n');
 
-    const SYSTEM = `You are a QA engineer evaluating whether a test scenario for a Spanish language learning app genuinely failed.
+    const SYSTEM = `You are a QA engineer evaluating whether a test scenario for an Argentine Spanish language learning app genuinely failed.
 
-You have access to:
-- The scenario category (what type of response was intentionally generated)
-- The Spanish text that was synthesized to audio
-- What Whisper speech-to-text returned as a transcript
-- The grade that the grading API assigned
-- What the test expected
+The system under test has two parts:
+1. Whisper (OpenAI speech-to-text) — transcribes audio to text
+2. The grading LLM — evaluates the transcript against the prompt and grades it
 
-Your job: determine if this is a REAL test failure (the grading system behaved incorrectly) or a FALSE FAILURE (an infrastructure artifact that doesn't reflect a real bug).
+The GRADER only sees the transcript. It cannot know what language the audio was recorded in. If Whisper transcribes incorrectly, the grader will grade based on that wrong transcript.
 
-Common FALSE FAILURE patterns:
-1. Whisper language detection error: The generated audio was correct Spanish, but Whisper transcribed it as English (e.g. translated "Perdón, ¿podés hablar más despacio?" → "Sorry, can you speak more slowly?"). The grader then correctly flagged English — but the underlying audio WAS correct. This is a Whisper failure, not a grading bug.
-2. Near-miss label: The scenario expected "Ok" but got "Good" — the grading is directionally correct and the difference is marginal, not a real bug.
-3. Label within one step for slow/incomplete scenarios: slow speech that grades "Good" instead of "Ok" is acceptable variance.
+Your job: given the full context below, determine if this is a REAL GRADING BUG or a FALSE FAILURE caused by Whisper transcription error.
 
-REAL FAILURE patterns:
-1. Completely wrong label (e.g. correct Spanish graded as "Ouch" with no transcription issue)
-2. Missing critical error category (e.g. wrong_language scenario not flagged as too_much_english when the transcript IS English)
-3. Expected error category missing and the transcript clearly shows the error
+SCENARIO CATEGORY GUIDE — critical for understanding intent:
+- wrong_language: Audio was INTENTIONALLY recorded in English. We expect Whisper to return English. The grader should then flag too_much_english and give Ouch. If Whisper returned Spanish instead of English, that's a Whisper error — the grader correctly graded what it received, so there's NO grading bug.
+- correct: Audio was correct Spanish. If Whisper returned English (language detection failure), the grader correctly flagged English — but it's a Whisper error, not a grading bug.
+- bad_grammar/incomplete/wrong_answer: Audio was intentional erroneous Spanish. If Whisper returned correct Spanish (auto-corrected), that's a Whisper normalization error.
+- slow: Audio was slow Spanish. The grader should detect low WPM and flag response_speed.
+
+FALSE FAILURE patterns (Whisper caused it, grader did its job given what it saw):
+1. wrong_language scenario: Audio=English, Whisper returned Spanish → grader gave Excellent for the Spanish. NOT a grading bug — Whisper failed to transcribe the English audio as English.
+2. correct scenario: Audio=Spanish, Whisper returned English → grader gave Ouch for the English. NOT a grading bug — Whisper failed to keep the language correct.
+3. Near-miss label variance: expected "Ok" got "Good", or expected "Good" got "Excellent" — marginal difference, not a real bug unless the direction is completely wrong.
+4. One-step label variance for slow/incomplete: these are subjective, one-step off is acceptable.
+
+REAL GRADING BUG patterns (Whisper worked fine, grader got it wrong):
+1. Whisper transcript matches audio language AND wrong_language transcript IS English AND grader gave Excellent without flagging too_much_english.
+2. Transcript IS correct Spanish AND grader gave Ouch/Bad for no reason (no grammar/vocab errors visible).
+3. Transcript clearly shows the expected error category (e.g. wrong verb form) but grader didn't flag it.
+4. Transcript is clearly off-topic/unrelated but grader gave Excellent.
+
+KEY CHECK: Always look at "Whisper language match" field. If NO match, Whisper is at fault. If YES match, evaluate the grader.
 
 Return JSON only:
 {
   "passed": true | false,
-  "reason": "brief explanation of your decision (1-2 sentences)"
+  "reason": "1-2 sentences explaining whether this is a Whisper error, grader bug, or legitimate failure"
 }`;
 
     const completion = await getOpenAI().chat.completions.create({
