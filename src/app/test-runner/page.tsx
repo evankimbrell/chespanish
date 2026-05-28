@@ -26,6 +26,7 @@ export default function TestRunnerPage() {
   const router = useRouter();
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [instructions, setInstructions] = useState('');
   const [targetArea, setTargetArea] = useState<string>('grading');
@@ -36,6 +37,19 @@ export default function TestRunnerPage() {
   useEffect(() => {
     loadRuns();
   }, []);
+
+  async function clearRuns() {
+    if (!confirm('Delete all test runs and audio files? This cannot be undone.')) return;
+    setClearing(true);
+    try {
+      await fetch('/api/test-runner/runs', { method: 'DELETE' });
+      setRuns([]);
+      setRunLog([]);
+      setCurrentRunId(null);
+    } finally {
+      setClearing(false);
+    }
+  }
 
   function loadRuns() {
     fetch('/api/test-runner/runs')
@@ -131,19 +145,31 @@ export default function TestRunnerPage() {
         margin: '0 auto',
       }}
     >
-      <div style={{ marginBottom: 32 }}>
-        <span
-          className="mono small"
-          style={{ color: 'var(--mute)', letterSpacing: '0.08em' }}
-        >
-          DEV TOOL
-        </span>
-        <h1 className="serif" style={{ fontSize: 32, margin: '8px 0 4px' }}>
-          QA Test Runner
-        </h1>
-        <p className="small" style={{ color: 'var(--mute)' }}>
-          Automated hypothesis-driven testing of transcription + grading accuracy.
-        </p>
+      <div style={{ marginBottom: 32, display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+        <div style={{ flex: 1 }}>
+          <span
+            className="mono small"
+            style={{ color: 'var(--mute)', letterSpacing: '0.08em' }}
+          >
+            DEV TOOL
+          </span>
+          <h1 className="serif" style={{ fontSize: 32, margin: '8px 0 4px' }}>
+            QA Test Runner
+          </h1>
+          <p className="small" style={{ color: 'var(--mute)' }}>
+            Automated hypothesis-driven testing of transcription + grading accuracy.
+          </p>
+        </div>
+        {runs.length > 0 && !running && (
+          <button
+            className="btn btn-ghost small"
+            onClick={clearRuns}
+            disabled={clearing}
+            style={{ marginTop: 28, flexShrink: 0, color: 'var(--crit)', borderColor: 'var(--crit)' }}
+          >
+            {clearing ? 'Clearing…' : 'Clear All'}
+          </button>
+        )}
       </div>
 
       {/* New run button / form */}

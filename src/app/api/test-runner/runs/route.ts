@@ -40,3 +40,19 @@ export async function GET() {
 
   return Response.json({ runs });
 }
+
+export async function DELETE() {
+  ensureDir();
+  const files = fs.readdirSync(RUNS_DIR).filter((f) => f.endsWith('.json'));
+  for (const f of files) fs.unlinkSync(path.join(RUNS_DIR, f));
+
+  // Also clean up test audio files
+  const audioDir = path.join(process.cwd(), 'public', 'test-audio');
+  if (fs.existsSync(audioDir)) {
+    for (const f of fs.readdirSync(audioDir)) {
+      try { fs.unlinkSync(path.join(audioDir, f)); } catch {}
+    }
+  }
+
+  return Response.json({ cleared: files.length });
+}
