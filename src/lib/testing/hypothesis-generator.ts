@@ -19,6 +19,7 @@ export interface ScenarioPlan {
   expectedErrorCategories: string[];
   rationale: string;
   voice: 'spanish' | 'english';
+  audioSpeed?: number; // 1.0 = normal; only set for 'slow' category
 }
 
 export interface HypothesisResult {
@@ -97,7 +98,11 @@ For wrong_language scenarios: expectedLabel="Ouch", expectedErrorCategories=["to
 For bad_grammar scenarios: expectedLabel="Ok" or "Bad" depending on severity, expectedErrorCategories=["grammar"] or ["verb_conjugation"]
 For incomplete scenarios: expectedLabel="Bad" ONLY if the response misses the core task entirely; use "Ok" if it partially addresses it
 For wrong_answer scenarios: expectedLabel="Bad" or "Ouch", expectedErrorCategories=["hallucinated_or_unrelated_answer"]
-For slow scenarios: the audio will be generated at 0.5x speed (genuinely slow speech). expectedLabel="Ok" or "Good" (slow doesn't fail the task — the content is still correct), expectedErrorCategories=["response_speed"]
+For slow scenarios: set audioSpeed to a specific value to test different gradations of slowness:
+  - audioSpeed=0.5 → very slow (should grade response_speed=1 or 2), expectedLabel="Ok"
+  - audioSpeed=0.7 → noticeably slow (should grade response_speed=2 or 3), expectedLabel="Good" or "Ok"
+  - audioSpeed=0.85 → slightly slow (borderline, response_speed=3 or 4), expectedLabel="Good"
+  Include at least 2 slow scenarios at different speeds when testing slowness. Always set expectedErrorCategories=["response_speed"].
 
 Return only valid JSON:
 {
@@ -112,7 +117,8 @@ Return only valid JSON:
       "expectedLabel": "Excellent|Good|Ok|Ouch|Bad",
       "expectedErrorCategories": ["use_exact_category_names_from_list"],
       "rationale": "why this scenario tests something meaningful",
-      "voice": "spanish|english"
+      "voice": "spanish|english",
+      "audioSpeed": 1.0
     }
   ]
 }`;
