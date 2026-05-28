@@ -77,6 +77,15 @@ Generate a testing hypothesis and 4–6 specific test scenarios. For each scenar
 For wrong_language scenarios: use English text as responseToGenerate and set voice="english".
 For all other scenarios: use Spanish text and set voice="spanish".
 
+GRADING RUBRIC — use this to set realistic expectedLabel values:
+- Score 5/4 → "Excellent": correct, complete, natural, minimal errors
+- Score 3 → "Good": on-topic and understandable, noticeable but minor errors, core task accomplished
+- Score 2 → "Ok": addresses the prompt partially, major gaps or errors but intent is clear
+- Score 1 → "Bad": attempted but meaning mostly missing, fails to address the prompt, or barely intelligible
+- Score 0 → "Ouch": no meaningful response, completely off-topic, or total non-answer
+
+KEY RULE: A response that answers the core task (even without polite framing or perfect grammar) still scores 3 "Good". Only score "Bad" or "Ouch" when the response fundamentally FAILS to address the prompt.
+
 The grading API uses ONLY these exact error category names — use them verbatim in expectedErrorCategories:
 no_response, skipped, misunderstood_prompt, incomplete_answer, wrong_meaning, grammar,
 verb_conjugation, tense_error, ser_estar, por_para, gender_agreement, number_agreement,
@@ -84,10 +93,10 @@ word_order, missing_pronoun, object_pronoun, preposition, vocabulary_gap, unnatu
 pronunciation, response_speed, target_style_vos, target_style_vocabulary,
 target_style_pronunciation, too_much_english, hallucinated_or_unrelated_answer
 
-For wrong_language scenarios use: ["too_much_english"]
-For bad_grammar scenarios use: ["grammar", "verb_conjugation"] (pick the most relevant)
-For incomplete scenarios use: ["incomplete_answer"]
-For wrong_answer scenarios use: ["hallucinated_or_unrelated_answer"]
+For wrong_language scenarios: expectedLabel="Ouch", expectedErrorCategories=["too_much_english"]
+For bad_grammar scenarios: expectedLabel="Ok" or "Bad" depending on severity, expectedErrorCategories=["grammar"] or ["verb_conjugation"]
+For incomplete scenarios: expectedLabel="Bad" ONLY if the response misses the core task entirely; use "Ok" if it partially addresses it
+For wrong_answer scenarios: expectedLabel="Bad" or "Ouch", expectedErrorCategories=["hallucinated_or_unrelated_answer"]
 
 Return only valid JSON:
 {
