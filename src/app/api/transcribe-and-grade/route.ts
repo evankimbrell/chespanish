@@ -97,6 +97,10 @@ word_order, missing_pronoun, object_pronoun, preposition, vocabulary_gap, unnatu
 pronunciation, response_speed, target_style_vos, target_style_vocabulary,
 target_style_pronunciation, too_much_english, hallucinated_or_unrelated_answer
 
+DISTINGUISHING incomplete_answer vs hallucinated_or_unrelated_answer:
+- incomplete_answer: The learner addressed the prompt but left out a required element. They are clearly responding to the right question. Example: asked to "order a coffee and say no sugar" → said only "Un café, por favor" (correct topic, missing the no-sugar part).
+- hallucinated_or_unrelated_answer: The learner answered a completely different question or said something that has no connection to the prompt. Example: asked about coffee → said "Hola, me llamo Juan." Use this only when the response is clearly off-topic, not just incomplete.
+
 CEFR SIGNAL: Estimate the level this response suggests given prompt difficulty + quality.
 Values: below_A1, A1, A2, B1, B2, C1, C2
 
