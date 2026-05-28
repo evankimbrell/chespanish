@@ -67,7 +67,7 @@ export async function GET(req: Request) {
   const context = `This is a brand new student with no level test data yet. Generate a beginner-friendly first lesson in Argentine Spanish (Rioplatense dialect). Focus on essential greetings, basic conversational phrases, and the most important patterns for everyday life in Buenos Aires. Use the vos conjugation throughout. Keep it friendly and engaging for a complete beginner.`;
 
   const completion = await getOpenAI().chat.completions.create({
-    model: 'gpt-5.5-mini',
+    model: 'gpt-5.4-mini',
     max_completion_tokens: 8000,
     messages: [
       { role: 'user', content: `${LESSON_PROMPT}\n\n--- STUDENT CONTEXT ---\n${context}` },
