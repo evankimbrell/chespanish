@@ -77,6 +77,18 @@ Generate a testing hypothesis and 4–6 specific test scenarios. For each scenar
 For wrong_language scenarios: use English text as responseToGenerate and set voice="english".
 For all other scenarios: use Spanish text and set voice="spanish".
 
+The grading API uses ONLY these exact error category names — use them verbatim in expectedErrorCategories:
+no_response, skipped, misunderstood_prompt, incomplete_answer, wrong_meaning, grammar,
+verb_conjugation, tense_error, ser_estar, por_para, gender_agreement, number_agreement,
+word_order, missing_pronoun, object_pronoun, preposition, vocabulary_gap, unnatural_wording,
+pronunciation, response_speed, target_style_vos, target_style_vocabulary,
+target_style_pronunciation, too_much_english, hallucinated_or_unrelated_answer
+
+For wrong_language scenarios use: ["too_much_english"]
+For bad_grammar scenarios use: ["grammar", "verb_conjugation"] (pick the most relevant)
+For incomplete scenarios use: ["incomplete_answer"]
+For wrong_answer scenarios use: ["hallucinated_or_unrelated_answer"]
+
 Return only valid JSON:
 {
   "hypothesis": "what you expect to find and why",
@@ -88,7 +100,7 @@ Return only valid JSON:
       "difficultyRange": [min_float, max_float],
       "responseToGenerate": "exact text to TTS as learner response",
       "expectedLabel": "Excellent|Good|Ok|Ouch|Bad",
-      "expectedErrorCategories": ["category1"],
+      "expectedErrorCategories": ["use_exact_category_names_from_list"],
       "rationale": "why this scenario tests something meaningful",
       "voice": "spanish|english"
     }
