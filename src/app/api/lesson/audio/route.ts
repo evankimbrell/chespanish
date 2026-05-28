@@ -42,7 +42,9 @@ function groupIntoPlays(segments: Segment[]): Play[] {
     if (seg.type === 'prompt') {
       if (current.length > 0) {
         const raw = current.map((s) => s.text).join(' ');
-        const spanishText = current.filter((s) => s.type === 'spanish').map((s) => s.text).join(' ').trim() || undefined;
+        // Last Spanish segment = the direct model answer the user should replicate
+        const spanishSegments = current.filter((s) => s.type === 'spanish');
+        const spanishText = spanishSegments.at(-1)?.text?.trim() || undefined;
         plays.push({ segments: current, promptAfter: true, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), spanishText, sectionName: current[0]?.sectionName });
         current = [];
       }
@@ -52,7 +54,8 @@ function groupIntoPlays(segments: Segment[]): Play[] {
   }
   if (current.length > 0) {
     const raw = current.map((s) => s.text).join(' ');
-    const spanishText = current.filter((s) => s.type === 'spanish').map((s) => s.text).join(' ').trim() || undefined;
+    const spanishSegments = current.filter((s) => s.type === 'spanish');
+    const spanishText = spanishSegments.at(-1)?.text?.trim() || undefined;
     plays.push({ segments: current, promptAfter: false, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), spanishText, sectionName: current[0]?.sectionName });
   }
   return plays;
