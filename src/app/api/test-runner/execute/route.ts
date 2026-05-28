@@ -153,7 +153,7 @@ export async function POST(req: Request) {
 
           try {
             const text = responseText;
-            const audioSpeed = plan.audioSpeed ?? (plan.category === 'slow' ? 0.5 : 1.0);
+            const audioSpeed = plan.audioSpeed ?? (plan.category === 'slow' ? 0.7 : 1.0);
             audioBuffer = await generateTestAudio(text, plan.voice ?? 'spanish', audioSpeed);
             audioUrl = await saveTestAudio(runId, scenarioId, audioBuffer);
           } catch (e) {
@@ -171,7 +171,7 @@ export async function POST(req: Request) {
               grade: null,
               expectedLabel: plan.expectedLabel,
               expectedErrorCategories: plan.expectedErrorCategories,
-              audioSpeed: plan.category === 'slow' ? (plan.audioSpeed ?? 0.5) : undefined,
+              audioSpeed: plan.category === 'slow' ? (plan.audioSpeed ?? 0.7) : undefined,
               deliberatePauses: deliberatePauses || undefined,
               passed: false,
               failureReason: `Audio generation failed: ${String(e)}`,
@@ -194,7 +194,7 @@ export async function POST(req: Request) {
             grade: null,
             expectedLabel: plan.expectedLabel,
             expectedErrorCategories: plan.expectedErrorCategories,
-            audioSpeed: plan.category === 'slow' ? (plan.audioSpeed ?? 0.5) : undefined,
+            audioSpeed: plan.category === 'slow' ? (plan.audioSpeed ?? 0.7) : undefined,
             deliberatePauses: deliberatePauses || undefined,
             passed: false,
             failureReason: null,

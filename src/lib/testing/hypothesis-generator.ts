@@ -99,9 +99,10 @@ For wrong_language scenarios: expectedLabel="Ouch", expectedErrorCategories=["to
 For bad_grammar scenarios: expectedLabel="Ok" or "Bad" depending on severity, expectedErrorCategories=["grammar"] or ["verb_conjugation"]
 For incomplete scenarios: expectedLabel="Bad" ONLY if the response misses the core task entirely; use "Ok" if it partially addresses it
 For wrong_answer scenarios: expectedLabel="Bad" or "Ouch", expectedErrorCategories=["hallucinated_or_unrelated_answer"]
-For slow scenarios: set audioSpeed and optionally deliberatePauses to test different gradations of slowness:
-  - audioSpeed=0.5 → very slow overall speech rate, expectedLabel="Ok"
-  - audioSpeed=0.7 → noticeably slow speech, expectedLabel="Good" or "Ok"
+For slow scenarios: set audioSpeed and optionally deliberatePauses to test different gradations of slowness.
+  NOTE: ElevenLabs speed range is 0.7–1.2 — NEVER request audioSpeed below 0.7.
+  - audioSpeed=0.7 → very slow speech (minimum allowed), expectedLabel="Ok"
+  - audioSpeed=0.8 → noticeably slow speech, expectedLabel="Good" or "Ok"
   - audioSpeed=0.85 + deliberatePauses=true → borderline speed with hesitation pauses injected between phrases, expectedLabel="Good"
   Include at least 2 slow scenarios at different speeds/pause combinations when testing slowness. Always set expectedErrorCategories=["response_speed"].
 

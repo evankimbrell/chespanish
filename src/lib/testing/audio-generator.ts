@@ -20,7 +20,8 @@ export async function generateTestAudio(
       text,
       model_id: 'eleven_turbo_v2_5',
       output_format: 'mp3_44100_128',
-      ...(speed !== 1.0 ? { voice_settings: { speed } } : {}),
+      // ElevenLabs speed range is 0.7–1.2; clamp to avoid 400 errors
+      ...(speed !== 1.0 ? { voice_settings: { speed: Math.max(0.7, Math.min(1.2, speed)) } } : {}),
     }),
   });
 
