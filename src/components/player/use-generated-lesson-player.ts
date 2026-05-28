@@ -221,9 +221,10 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const playCorrect = useCallback(() => {
     const play = plays[playIdx];
     if (!play) return;
-    const text = play.spanishText?.trim();
+    // Prefer the grader's suggested_answer (GPT knows exactly what the student should say),
+    // then fall back to spanishText from the lesson, then full audio
+    const text = (grade?.suggested_answer ?? play.spanishText)?.trim();
     if (!text) {
-      // Fallback: play full audio if no isolated Spanish text
       new Audio(play.audioUrl).play().catch(() => {});
       return;
     }
@@ -241,7 +242,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
         audio.play().catch(() => {});
       })
       .catch(() => {});
-  }, [plays, playIdx]);
+  }, [plays, playIdx, grade]);
 
   const seek = useCallback((t: number) => {
     const clamped = Math.max(0, Math.min(1, t));

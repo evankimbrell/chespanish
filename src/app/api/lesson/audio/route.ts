@@ -42,9 +42,19 @@ function groupIntoPlays(segments: Segment[]): Play[] {
     if (seg.type === 'prompt') {
       if (current.length > 0) {
         const raw = current.map((s) => s.text).join(' ');
-        // Last Spanish segment = the direct model answer the user should replicate
-        const spanishSegments = current.filter((s) => s.type === 'spanish');
-        const spanishText = spanishSegments.at(-1)?.text?.trim() || undefined;
+        // Find the Spanish segment that immediately follows an English "say/repeat/respond" cue.
+        // That's the model answer the student should replicate. If no such pattern, use first Spanish segment.
+        const spanishText = (() => {
+          for (let i = 1; i < current.length; i++) {
+            if (current[i].type === 'spanish' && current[i - 1].type === 'english') {
+              const cue = current[i - 1].text.toLowerCase();
+              if (/\b(say|repeat|respond|tell|answer|now try|try saying|how do you say)\b/.test(cue)) {
+                return current[i].text.trim();
+              }
+            }
+          }
+          return current.find((s) => s.type === 'spanish')?.text?.trim() || undefined;
+        })();
         plays.push({ segments: current, promptAfter: true, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), spanishText, sectionName: current[0]?.sectionName });
         current = [];
       }
