@@ -38,6 +38,7 @@ export default function TestRunDetailPage() {
   const [fixStatus, setFixStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
   const [fixLog, setFixLog] = useState<{ text: string; kind: 'info' | 'success' | 'warn' | 'error' }[]>([]);
   const [fixSummary, setFixSummary] = useState<string | null>(null);
+  const [bugFixStates, setBugFixStates] = useState<Record<string, 'idle' | 'running' | 'done' | 'error'>>({});
 
   useEffect(() => {
     if (!runId) return;
@@ -50,14 +51,25 @@ export default function TestRunDetailPage() {
       .catch(() => setLoading(false));
   }, [runId]);
 
-  async function implementFix() {
+  async function runApplyFix(bugId?: string) {
     if (!runId) return;
-    setFixStatus('running');
-    setFixLog([{ text: 'Starting fix implementation…', kind: 'info' }]);
-    setFixSummary(null);
+
+    const isSingle = !!bugId;
+
+    if (isSingle) {
+      setBugFixStates((p) => ({ ...p, [bugId]: 'running' }));
+    } else {
+      setFixStatus('running');
+      setFixLog([{ text: 'Starting fix implementation…', kind: 'info' }]);
+      setFixSummary(null);
+    }
 
     try {
-      const res = await fetch(`/api/test-runner/runs/${runId}/apply-fix`, { method: 'POST' });
+      const res = await fetch(`/api/test-runner/runs/${runId}/apply-fix`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bugId ? { bugId } : {}),
+      });
       if (!res.body) throw new Error('No response body');
 
       const reader = res.body.getReader();
@@ -80,33 +92,49 @@ export default function TestRunDetailPage() {
           const eventName = eventLine?.replace('event:', '').trim() ?? 'message';
           try {
             const data = JSON.parse(dataLine.replace('data:', '').trim());
-            if (eventName === 'status') {
-              setFixLog((p) => [...p, { text: data.message, kind: 'info' }]);
-            } else if (eventName === 'files_identified') {
-              setFixLog((p) => [...p, { text: data.message, kind: 'info' }]);
-            } else if (eventName === 'edit_applied') {
-              setFixLog((p) => [...p, { text: `✓ ${data.filePath}: ${data.description}`, kind: 'success' }]);
-            } else if (eventName === 'warning') {
-              setFixLog((p) => [...p, { text: `⚠ ${data.message}`, kind: 'warn' }]);
-            } else if (eventName === 'complete') {
-              setFixSummary(data.summary as string);
-              setFixStatus('done');
-              // Refresh run data to show fixesApplied
-              fetch(`/api/test-runner/runs/${runId}`)
-                .then((r) => r.json())
-                .then((d) => { if (d.run) setRun(d.run); });
-            } else if (eventName === 'error') {
-              setFixLog((p) => [...p, { text: `Error: ${data.message}`, kind: 'error' }]);
-              setFixStatus('error');
+            if (!isSingle) {
+              if (eventName === 'status') {
+                setFixLog((p) => [...p, { text: data.message, kind: 'info' }]);
+              } else if (eventName === 'files_identified') {
+                setFixLog((p) => [...p, { text: data.message, kind: 'info' }]);
+              } else if (eventName === 'edit_applied') {
+                setFixLog((p) => [...p, { text: `✓ ${data.filePath}: ${data.description}`, kind: 'success' }]);
+              } else if (eventName === 'warning') {
+                setFixLog((p) => [...p, { text: `⚠ ${data.message}`, kind: 'warn' }]);
+              } else if (eventName === 'complete') {
+                setFixSummary(data.summary as string);
+                setFixStatus('done');
+                fetch(`/api/test-runner/runs/${runId}`)
+                  .then((r) => r.json())
+                  .then((d) => { if (d.run) setRun(d.run); });
+              } else if (eventName === 'error') {
+                setFixLog((p) => [...p, { text: `Error: ${data.message}`, kind: 'error' }]);
+                setFixStatus('error');
+              }
+            } else {
+              if (eventName === 'complete') {
+                setBugFixStates((p) => ({ ...p, [bugId]: 'done' }));
+                fetch(`/api/test-runner/runs/${runId}`)
+                  .then((r) => r.json())
+                  .then((d) => { if (d.run) setRun(d.run); });
+              } else if (eventName === 'error') {
+                setBugFixStates((p) => ({ ...p, [bugId]: 'error' }));
+              }
             }
           } catch {}
         }
       }
     } catch (e) {
-      setFixLog((p) => [...p, { text: `Fatal: ${String(e)}`, kind: 'error' }]);
-      setFixStatus('error');
+      if (isSingle && bugId) {
+        setBugFixStates((p) => ({ ...p, [bugId]: 'error' }));
+      } else {
+        setFixLog((p) => [...p, { text: `Fatal: ${String(e)}`, kind: 'error' }]);
+        setFixStatus('error');
+      }
     }
   }
+
+  function implementFix() { return runApplyFix(); }
 
   function toggleScenario(id: string) {
     setExpandedScenarios((prev) => {
@@ -307,7 +335,13 @@ export default function TestRunDetailPage() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {run.bugs.map((bug) => (
-              <BugCard key={bug.id} bug={bug} scenarios={run.scenarios} />
+              <BugCard
+                key={bug.id}
+                bug={bug}
+                scenarios={run.scenarios}
+                fixState={bugFixStates[bug.id] ?? 'idle'}
+                onFix={() => runApplyFix(bug.id)}
+              />
             ))}
           </div>
         </div>
@@ -371,10 +405,10 @@ export default function TestRunDetailPage() {
                     style={{ marginRight: 12 }}
                   >
                     {fixStatus === 'running'
-                      ? 'Applying fixes…'
+                      ? 'Applying all fixes…'
                       : fixStatus === 'done'
-                      ? 'Fixes applied ✓'
-                      : 'Implement Fix Plan'}
+                      ? 'All fixes applied ✓'
+                      : 'Apply All Fixes'}
                   </button>
                   {fixStatus === 'running' && (
                     <span className="mono small" style={{ color: 'var(--warm)' }}>
@@ -665,9 +699,13 @@ function ScenarioRow({
 function BugCard({
   bug,
   scenarios,
+  fixState,
+  onFix,
 }: {
   bug: Bug;
   scenarios: TestScenario[];
+  fixState: 'idle' | 'running' | 'done' | 'error';
+  onFix: () => void;
 }) {
   const affectedNames = bug.affectedScenarios
     .map((id) => scenarios.find((s) => s.id === id)?.name ?? id)
@@ -715,6 +753,22 @@ function BugCard({
         <span className="mono small" style={{ color: 'var(--mute)' }}>
           {bug.id}
         </span>
+        <div style={{ marginLeft: 'auto' }}>
+          {fixState === 'done' ? (
+            <span className="mono small" style={{ color: 'var(--leaf)' }}>✓ Applied</span>
+          ) : fixState === 'error' ? (
+            <span className="mono small" style={{ color: 'var(--crit)' }}>✗ Failed</span>
+          ) : (
+            <button
+              className="btn btn-text small"
+              onClick={onFix}
+              disabled={fixState === 'running'}
+              style={{ padding: '2px 8px', fontSize: 11 }}
+            >
+              {fixState === 'running' ? 'Applying…' : 'Apply Fix'}
+            </button>
+          )}
+        </div>
       </div>
 
       <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)', margin: '0 0 8px' }}>

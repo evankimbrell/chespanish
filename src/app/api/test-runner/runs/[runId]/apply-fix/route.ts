@@ -42,7 +42,7 @@ function readSourceFile(relPath: string): string | null {
 }
 
 export async function POST(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ runId: string }> }
 ) {
   const { runId } = await params;
@@ -63,6 +63,15 @@ export async function POST(
     return Response.json({ error: 'No fix plan or bugs to implement' }, { status: 400 });
   }
 
+  // Optional: fix only a single bug by ID
+  let bugId: string | null = null;
+  try {
+    const body = await req.json().catch(() => ({}));
+    bugId = body.bugId ?? null;
+  } catch {}
+
+  const bugsToFix = bugId ? run.bugs.filter((b) => b.id === bugId) : run.bugs;
+
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -80,14 +89,14 @@ export async function POST(
 
         // Collect all file paths mentioned across bugs and fix plan
         const allText = [
-          run.fixPlan ?? '',
-          ...run.bugs.map((b) => `${b.description} ${b.suggestedFix}`),
+          bugId ? '' : (run.fixPlan ?? ''),
+          ...bugsToFix.map((b) => `${b.description} ${b.suggestedFix}`),
         ].join('\n');
 
         const mentionedPaths = extractFilePaths(allText);
 
         // Also include common grading/transcription files if bugs are in those categories
-        const gradingBugs = run.bugs.filter((b) => b.category === 'grading' || b.category === 'transcription');
+        const gradingBugs = bugsToFix.filter((b) => b.category === 'grading' || b.category === 'transcription');
         if (gradingBugs.length > 0) {
           mentionedPaths.push(
             'src/app/api/transcribe-and-grade/route.ts',
@@ -117,7 +126,7 @@ export async function POST(
         }
 
         // Build the prompt
-        const bugsText = run.bugs
+        const bugsText = bugsToFix
           .map(
             (b, i) =>
               `Bug ${i + 1} [${b.severity}/${b.category}]: ${b.description}\nSuggested fix: ${b.suggestedFix}`
@@ -153,7 +162,8 @@ Critical requirements:
 - If you cannot find a safe edit to make, return { "edits": [], "summary": "No safe edits identified" }
 - Do not modify test runner files (src/app/api/test-runner/, src/lib/testing/)`;
 
-        const userMsg = `Fix Plan:\n${run.fixPlan ?? '(none — use bug descriptions)'}\n\nBugs to fix:\n${bugsText}\n\nSource files:\n${filesText}`;
+        const fixPlanSection = bugId ? '' : `Fix Plan:\n${run.fixPlan ?? '(none — use bug descriptions)'}\n\n`;
+        const userMsg = `${fixPlanSection}Bugs to fix:\n${bugsText}\n\nSource files:\n${filesText}`;
 
         send('status', { message: 'Generating code edits with AI…' });
 
