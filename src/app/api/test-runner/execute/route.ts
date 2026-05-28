@@ -15,9 +15,23 @@ function getOpenAI() {
 }
 
 async function buildResponseText(category: ScenarioCategory, question: Question, planResponse: string): Promise<string> {
-  // For correct scenarios, use the question's own acceptable examples — not the AI's blind guess
   if (category === 'correct') {
-    return question.acceptable_response_examples?.[0] ?? question.target_answer ?? planResponse;
+    // Generate a complete, natural correct response using GPT — don't blindly use the first
+    // acceptable example, which may be a template ("Me llamo...") or otherwise incomplete
+    const prompt = question.instruction_text ?? question.audio_text ?? question.scenario ?? '';
+    const examples = question.acceptable_response_examples ?? [];
+    const target = question.target_answer ?? '';
+    const guidance = [...(target ? [target] : []), ...examples].filter(Boolean).slice(0, 3).join(' | ');
+
+    const completion = await getOpenAI().chat.completions.create({
+      model: 'gpt-4o-mini',
+      max_tokens: 80,
+      messages: [{
+        role: 'user',
+        content: `The student was asked: "${prompt}". ${guidance ? `Acceptable answers include: ${guidance}. ` : ''}Generate ONE complete, natural Argentine Spanish response that fully answers the question. Fill in any blanks (names, numbers, etc.) with realistic values. Return ONLY the spoken text, no quotes, no ellipses.`,
+      }],
+    });
+    return completion.choices[0].message.content?.trim() || planResponse;
   }
 
   // For broken scenarios, ask the AI to produce a contextually wrong response based on this specific question
