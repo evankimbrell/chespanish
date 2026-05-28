@@ -174,28 +174,29 @@ The GRADER only sees the transcript. It cannot know what language the audio was 
 
 Your job: given the full context below, determine if this is a REAL GRADING BUG or a FALSE FAILURE caused by Whisper transcription error.
 
-FIRST — READ THE PROMPT SECTION. "Response language" tells you whether English was allowed.
+FIRST — CHECK THE WHISPER LANGUAGE MATCH FIELD. This is the most important signal.
+
+RULE: If "Whisper language match: NO" — the audio language and transcript language differ — that is always a Whisper transcription error. The grader did its job correctly given what Whisper returned. Mark as PASSED. Do not flag as a grading bug.
 
 SCENARIO CATEGORY GUIDE:
-- wrong_language: Audio was INTENTIONALLY English. ONLY valid when "Response language: Spanish only". If the prompt says "Response language: English OR Spanish allowed", then English IS a correct answer and the scenario was mis-configured — mark as passed.
-- correct: Audio was correct Spanish. If Whisper returned English (language detection failure), it's a Whisper error, not a grading bug.
-- bad_grammar/incomplete/wrong_answer: Intentional erroneous Spanish. If Whisper auto-corrected it, that's a Whisper normalization error.
+- wrong_language: Audio was INTENTIONALLY English. ONLY valid when "Response language: Spanish only". If "Response language: English OR Spanish allowed", English is a correct answer — invalid test setup, mark as passed.
+- correct: Audio was correct Spanish. If Whisper returned English (language mismatch), mark as passed — Whisper error.
+- bad_grammar/incomplete/wrong_answer: Intentional erroneous Spanish. Whisper normalization is a Whisper error.
 - slow: Slow Spanish. Grader should detect low WPM and flag response_speed.
 
-FALSE FAILURE patterns (not real bugs):
-0. INVALID TEST SETUP: Category is wrong_language BUT "Response language: English OR Spanish allowed" — English is legitimate for this question. Mark as passed regardless of grade.
-1. correct scenario: Audio=Spanish, Whisper returned English → grader gave Ouch. Whisper misdetected; not a grading bug.
-2. Near-miss label variance: expected "Ok" got "Good", or expected "Good" got "Excellent" — marginal difference is acceptable.
-3. One-step label variance for slow/incomplete: these are subjective.
+FALSE FAILURE patterns (mark as PASSED — not grading bugs):
+0. Language mismatch: "Whisper language match: NO" for ANY category → Whisper translated or misdetected → pass.
+1. Invalid test setup: Category is wrong_language BUT "Response language: English OR Spanish allowed" → pass.
+2. Near-miss label variance: expected "Ok" got "Good", or expected "Good" got "Excellent" — marginal, acceptable.
+3. One-step label variance for slow/incomplete: subjective, acceptable.
 
-REAL BUG patterns (mark as failed):
-1. wrong_language scenario (Spanish-only question): Audio=English, Whisper returned SPANISH (translated) → grader gave Excellent. Translation bug — real failure.
-2. wrong_language scenario (Spanish-only question): Audio=English, Whisper returned English, grader gave Excellent WITHOUT flagging too_much_english. Grading bug.
-3. Transcript is correct Spanish AND grader gave Ouch/Bad for no apparent reason.
-4. Transcript clearly shows the expected error but grader didn't flag it.
-5. Transcript is clearly off-topic but grader gave Excellent.
+REAL BUG patterns (mark as FAILED — only when Whisper language match is YES):
+1. wrong_language + Spanish-only question + transcript IS English + grader gave Excellent without flagging too_much_english. Grading bug.
+2. Transcript is correct Spanish AND grader gave Ouch/Bad for no apparent reason.
+3. Transcript clearly shows the expected error but grader didn't flag it.
+4. Transcript is clearly off-topic but grader gave Excellent.
 
-KEY CHECK: Always read "Response language" first. If English OR Spanish allowed → wrong_language scenarios are invalid test setups, mark passed. If Spanish only → evaluate as normal.
+KEY CHECK: "Whisper language match: NO" → always pass. "Whisper language match: YES" → evaluate the grader.
 
 Return JSON only:
 {
