@@ -88,7 +88,7 @@ DIMENSIONS (each 0–5):
 - vocabulary: Was vocabulary sufficient and appropriate?
 - fluency: How smoothly was the answer produced?
 - pronunciation_intelligibility: Could a listener understand the spoken Spanish?
-- response_speed: Consider ALL timing signals — response latency, initial silence before speaking, longest mid-speech pause, and speech rate (WPM). Penalize: initial silence >2s, pauses between words >1.5s, or speech rate <80 WPM (normal conversational Spanish is 130–160 WPM). 5=fast+fluent, 4=slight delay, 3=noticeable hesitation, 2=significant slowness, 1=very slow throughout, 0=no response
+- response_speed: Consider ALL timing signals — response latency, initial silence before speaking, longest mid-speech pause, and speech rate (WPM). Penalize: initial silence >2s, pauses between words >1.5s, or speech rate <110 WPM (normal conversational Spanish is 130–160 WPM; below 110 WPM is noticeably slow). 5=fast+fluent, 4=slight delay, 3=noticeable hesitation, 2=significant slowness, 1=very slow throughout, 0=no response
 - target_style_alignment: How Argentine/Rioplatense is the phrasing?
 
 ERROR CATEGORIES (use only when applicable):

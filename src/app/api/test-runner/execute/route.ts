@@ -198,10 +198,8 @@ export async function POST(req: Request) {
 
           const baseResponseText = await buildResponseText(plan.category, question, plan.responseToGenerate);
           const deliberatePauses = plan.category === 'slow' && !!plan.deliberatePauses;
-          // Inject <break> markers between sentences for deliberate-pause scenarios
-          const responseText = deliberatePauses
-            ? baseResponseText.replace(/([.!?¿¡])\s+/g, '$1 <break time="1.5s"/> ')
-            : baseResponseText;
+          // ElevenLabs does not support SSML break tags — strip any that slipped in via generated text
+          const responseText = baseResponseText.replace(/<break[^>]*\/>/gi, '').replace(/\s{2,}/g, ' ').trim();
 
           let audioUrl = '';
           let audioBuffer: Buffer;
