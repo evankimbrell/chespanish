@@ -41,20 +41,22 @@ async function buildResponseText(category: ScenarioCategory, question: Question,
   const systemMsg: Record<ScenarioCategory, string> = {
     correct: '',
     wrong_language: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}". Generate a natural English response to this specific question (translated/answered in English instead of Spanish). Return ONLY the spoken text, nothing else.`,
-    bad_grammar: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}".
+    bad_grammar: `The student was asked: "${prompt}".${question.audio_text ? ` Audio played to student: "${question.audio_text}".` : ''} A correct answer would be: "${correctAnswer}".
 
-Your job: take the correct answer and introduce ONE clear grammatical error that makes it WRONG. The error MUST be phonetically distinct — a listener must be able to hear the mistake.
+Your job: take the correct answer and introduce ONE clear grammatical error. The response MUST still answer the original question — only the grammar should be wrong, not the topic.
 
-REQUIRED: Your output must differ meaningfully from the correct answer. If it matches the correct answer, you have failed.
+CRITICAL: Keep the response on-topic. If someone was asked to order at a café, they must still order at a café. If asked about plans, they must still describe plans. NEVER change the subject.
+
+REQUIRED: Your output must differ meaningfully from the correct answer due to a grammar error. If it matches the correct answer, you have failed.
 
 Best error types to use (pick the most natural one for this sentence):
-- ser/estar/tener confusion: "Yo soy treinta años" instead of "Yo tengo treinta años"; "Estoy cansada" vs "Soy cansada"
+- ser/estar/tener confusion: "Yo soy treinta años" instead of "Yo tengo treinta años"
 - Wrong verb tense: "Fui al mercado mañana" (preterite for future), "Voy ayer" (present for past)
 - Wrong subject-verb agreement: "Ellos come" instead of "Ellos comen", "Nosotros tiene" instead of "Nosotros tenemos"
 - Wrong gender article: "el mesa" instead of "la mesa", "una libro" instead of "un libro"
-- Wrong vocabulary (different-sounding word): substitute a clearly wrong noun or verb
 
-FORBIDDEN error types (TTS will silently fix these, making the error undetectable):
+FORBIDDEN:
+- Changing the subject or topic of the response
 - Contraction differences: "a la" vs "al", "de el" vs "del"
 - Accent mark differences (e.g. "esta" vs "está")
 - Spelling-only changes
