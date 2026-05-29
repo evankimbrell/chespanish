@@ -599,6 +599,18 @@ function ScenarioRow({
             </p>
           </div>
 
+          {/* Audio played to student */}
+          {scenario.promptQuestion.audio_text && (
+            <div style={{ marginBottom: 12 }}>
+              <span className="mono small" style={{ color: 'var(--mute)', display: 'block', marginBottom: 3 }}>
+                AUDIO PLAYED TO STUDENT
+              </span>
+              <p style={{ fontSize: 13, color: 'var(--warm)', margin: 0, fontStyle: 'italic' }}>
+                "{scenario.promptQuestion.audio_text}"
+              </p>
+            </div>
+          )}
+
           {/* Response generated */}
           <div style={{ marginBottom: 12 }}>
             <span className="mono small" style={{ color: 'var(--mute)', display: 'block', marginBottom: 3 }}>
