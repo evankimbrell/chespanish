@@ -241,15 +241,18 @@ export async function POST(req: Request) {
             : null,
         ].filter(Boolean).join('\n');
 
+        const wordCount = transcription.words.length;
+        const tooShortForSpeed = wordCount < MIN_WORDS_FOR_WPM;
         const wpm = speechMetrics ? Math.round(speechMetrics.wordsPerMinute) : 0;
-        const wpmReliable = speechMetrics ? transcription.words.length >= MIN_WORDS_FOR_WPM : false;
-        const slowWpm = wpmReliable && wpm < 110;
-        const longSilence = speechMetrics ? speechMetrics.initialSilenceSec > 2 : false;
-        const significantPauses = speechMetrics
+        const slowWpm = !tooShortForSpeed && speechMetrics ? wpm < 110 : false;
+        const longSilence = !tooShortForSpeed && speechMetrics ? speechMetrics.initialSilenceSec > 2 : false;
+        const significantPauses = !tooShortForSpeed && speechMetrics
           ? speechMetrics.maxPauseSec > 2.0 || speechMetrics.notablePauseCount >= 3
           : false;
         const speechTimingLine = speechMetrics
-          ? `Speech timing (ALWAYS record in notes_for_profile): initial silence ${speechMetrics.initialSilenceSec.toFixed(1)}s | longest pause ${speechMetrics.maxPauseSec.toFixed(1)}s | pauses >1s: ${speechMetrics.notablePauseCount} | speech rate ${wpmReliable ? `${wpm} WPM` : `${wpm} WPM (unreliable — only ${transcription.words.length} words)`}${slowWpm ? ' ⚠ BELOW 110 WPM — add response_speed to observed_errors' : ''}${longSilence ? ' ⚠ INITIAL SILENCE >2s — add response_speed to observed_errors' : ''}${significantPauses ? ' ⚠ SIGNIFICANT PAUSES — add response_speed to observed_errors' : ''}`
+          ? tooShortForSpeed
+            ? `Speech timing (record in notes_for_profile as context only): ${wordCount} words — too short for reliable speed measurement. Do NOT grade response_speed; set response_speed dimension to 5 and omit from observed_errors.`
+            : `Speech timing (ALWAYS record in notes_for_profile): initial silence ${speechMetrics.initialSilenceSec.toFixed(1)}s | longest pause ${speechMetrics.maxPauseSec.toFixed(1)}s | pauses >1s: ${speechMetrics.notablePauseCount} | speech rate ${wpm} WPM${slowWpm ? ' ⚠ BELOW 110 WPM — add response_speed to observed_errors' : ''}${longSilence ? ' ⚠ INITIAL SILENCE >2s — add response_speed to observed_errors' : ''}${significantPauses ? ' ⚠ SIGNIFICANT PAUSES — add response_speed to observed_errors' : ''}`
           : null;
 
         const userMessage = `${contextLines}
