@@ -170,7 +170,7 @@ Critical requirements:
         const completion = await getOpenAI().chat.completions.create({
           model: 'gpt-5.5',
           response_format: { type: 'json_object' },
-          max_tokens: 3000,
+          max_completion_tokens: 3000,
           messages: [
             { role: 'system', content: SYSTEM },
             { role: 'user', content: userMsg },
