@@ -247,17 +247,25 @@ Return JSON only:
   }
 }
 
+function labelPasses(scenario: TestScenario, grade: GradeResult): boolean {
+  if (grade.label === scenario.expectedLabel) return true;
+  // wrong_language: both "Ouch" and "Bad" are acceptable — "Bad" means English but understood
+  // the prompt, "Ouch" means English with no apparent comprehension. Both are valid failures.
+  if (scenario.category === 'wrong_language') {
+    return grade.label === 'Ouch' || grade.label === 'Bad';
+  }
+  return false;
+}
+
 function checkAssertions(scenario: TestScenario, grade: GradeResult | null): boolean {
   if (!grade) return false;
-
-  const labelPasses = grade.label === scenario.expectedLabel;
 
   const errorCategories = (grade.observed_errors ?? []).map((e) => e.category);
   const categoriesPassed = scenario.expectedErrorCategories.every((cat) =>
     errorCategories.includes(cat)
   );
 
-  return labelPasses && categoriesPassed;
+  return labelPasses(scenario, grade) && categoriesPassed;
 }
 
 function buildFailureReason(scenario: TestScenario, grade: GradeResult | null): string {
@@ -265,8 +273,12 @@ function buildFailureReason(scenario: TestScenario, grade: GradeResult | null): 
 
   const reasons: string[] = [];
 
-  if (grade.label !== scenario.expectedLabel) {
-    reasons.push(`Expected "${scenario.expectedLabel}" but got "${grade.label}"`);
+  if (!labelPasses(scenario, grade)) {
+    const acceptable =
+      scenario.category === 'wrong_language'
+        ? '"Ouch" or "Bad"'
+        : `"${scenario.expectedLabel}"`;
+    reasons.push(`Expected ${acceptable} but got "${grade.label}"`);
   }
 
   const errorCategories = (grade.observed_errors ?? []).map((e) => e.category);

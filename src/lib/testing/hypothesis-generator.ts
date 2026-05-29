@@ -113,7 +113,7 @@ pronunciation, response_speed, target_style_vos, target_style_vocabulary,
 target_style_pronunciation, too_much_english, hallucinated_or_unrelated_answer
 
 CONSTRAINT: Never assign wrong_language to prompt types that allow English responses: mini_dialogue_comprehension, listen_for_meaning, monologue_comprehension. These questions explicitly allow English, so an English response is correct, not wrong. Only assign wrong_language to: say_it_in_spanish, roleplay_response, open_speaking, grammar_in_context, practical_problem, listen_and_respond.
-For wrong_language scenarios: expectedLabel="Ouch", expectedErrorCategories=["too_much_english"]
+For wrong_language scenarios: expectedLabel="Bad" (English response that understood the prompt scores Bad; only use "Ouch" if no comprehension is demonstrated), expectedErrorCategories=["too_much_english"]
 For bad_grammar scenarios: expectedLabel="Ok" or "Bad" depending on severity, expectedErrorCategories=["grammar"] or ["verb_conjugation"]
 For incomplete scenarios: expectedLabel="Bad" ONLY if the response misses the core task entirely; use "Ok" if it partially addresses it
 For wrong_answer scenarios: expectedLabel="Bad" or "Ouch", expectedErrorCategories=["hallucinated_or_unrelated_answer"]
