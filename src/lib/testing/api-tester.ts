@@ -254,6 +254,11 @@ function labelPasses(scenario: TestScenario, grade: GradeResult): boolean {
   if (scenario.category === 'wrong_language') {
     return grade.label === 'Ouch' || grade.label === 'Bad';
   }
+  // slow: the task was completed — we're testing that response_speed gets flagged, not that
+  // slowness tanks the overall label. Excellent/Good/Ok are all acceptable.
+  if (scenario.category === 'slow') {
+    return grade.label === 'Excellent' || grade.label === 'Good' || grade.label === 'Ok';
+  }
   return false;
 }
 
@@ -277,7 +282,9 @@ function buildFailureReason(scenario: TestScenario, grade: GradeResult | null): 
     const acceptable =
       scenario.category === 'wrong_language'
         ? '"Ouch" or "Bad"'
-        : `"${scenario.expectedLabel}"`;
+        : scenario.category === 'slow'
+          ? '"Excellent", "Good", or "Ok"'
+          : `"${scenario.expectedLabel}"`;
     reasons.push(`Expected ${acceptable} but got "${grade.label}"`);
   }
 

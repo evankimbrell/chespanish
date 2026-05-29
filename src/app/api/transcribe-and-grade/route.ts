@@ -102,6 +102,13 @@ CATEGORY PRIORITY RULES — apply the most specific category first:
 1. too_much_english: Use this whenever the learner's response is primarily or entirely in English when Spanish was required. This takes priority over hallucinated_or_unrelated_answer — a response in English is a language error, not an unrelated answer. Always use too_much_english for English responses to Spanish prompts.
 2. incomplete_answer: The learner addressed the prompt but left out a required element. They are clearly responding to the right question. Example: asked to "order a coffee and say no sugar" → said only "Un café, por favor" (correct topic, missing the no-sugar part).
 3. hallucinated_or_unrelated_answer: The learner answered a completely different question or said something that has no connection to the prompt. Example: asked about coffee → said "Hola, me llamo Juan." Use this only when the response is clearly off-topic AND not an English response — never combine with too_much_english.
+4. grammar vs wrong_meaning: Use 'grammar' for structural errors including wrong connectors/conjunctions (e.g. "cuando" instead of "porque", "pero" instead of "sino"), wrong prepositions, agreement errors. Reserve 'wrong_meaning' ONLY for vocabulary substitutions where the grammatical structure is correct but a word has the wrong semantic meaning (e.g. said "frío" when context required "caliente"). A wrong connector IS a grammar error, not a wrong_meaning error.
+
+SPEECH TIMING HARD RULES — when speech timing data is present in the input:
+- speech rate < 110 WPM: MUST add "response_speed" to observed_errors (description: "Speech rate of X WPM is below normal conversational pace")
+- initial silence > 2s: MUST add "response_speed" to observed_errors
+- longest pause > 1.5s: MUST add "response_speed" to observed_errors
+These are non-negotiable: if the timing data triggers one of these thresholds, response_speed MUST appear in observed_errors regardless of how good the content was.
 
 CEFR SIGNAL: Estimate the level this response suggests given prompt difficulty + quality.
 Values: below_A1, A1, A2, B1, B2, C1, C2
