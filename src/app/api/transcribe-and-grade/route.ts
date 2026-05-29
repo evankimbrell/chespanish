@@ -67,6 +67,9 @@ The most important question is: did the user actually answer what was asked?
 - A grammatically perfect sentence that doesn't answer the question is still score 0–1.
 - Only award score 2+ when the response at least partially addresses the actual prompt.
 
+CRITICAL RULE — GRAMMAR_IN_CONTEXT PROMPTS:
+When prompt_type is "grammar_in_context" (fill-in-the-blank, complete-the-sentence tasks), grammar accuracy is the entire point of the exercise. Any grammar error — even minor ones like wrong number agreement, wrong article, or wrong tense — MUST cap the overall_score at 3 (Good). A student who produces the correct sentence with no errors can score 4–5. A student with any grammar error, no matter how small, scores at most 3.
+
 OVERALL SCORE (0–5):
 0 = No meaningful response OR response that doesn't engage with the prompt at all
 1 = Attempted but meaning is mostly missing, wrong, or fails to address the prompt
