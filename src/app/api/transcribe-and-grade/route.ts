@@ -41,20 +41,25 @@ async function runTranscription(audio: File, forceLang?: string, noPrompt?: bool
 interface SpeechMetrics {
   initialSilenceSec: number;
   maxPauseSec: number;
+  notablePauseCount: number; // pauses > 1s between words
   wordsPerMinute: number;
 }
+
+const MIN_WORDS_FOR_WPM = 8; // fewer words → WPM is too noisy to be meaningful
 
 function analyzeSpeechTiming(words: WordTiming[]): SpeechMetrics | null {
   if (words.length < 2) return null;
   const initialSilenceSec = words[0].start;
   let maxPauseSec = 0;
+  let notablePauseCount = 0;
   for (let i = 1; i < words.length; i++) {
     const pause = words[i].start - words[i - 1].end;
     if (pause > maxPauseSec) maxPauseSec = pause;
+    if (pause > 1.0) notablePauseCount++;
   }
   const speechDuration = words[words.length - 1].end - words[0].start;
   const wordsPerMinute = speechDuration > 0 ? (words.length / speechDuration) * 60 : 0;
-  return { initialSilenceSec, maxPauseSec, wordsPerMinute };
+  return { initialSilenceSec, maxPauseSec, notablePauseCount, wordsPerMinute };
 }
 
 const SYSTEM_PROMPT = `You are a grading assistant for an Argentine Spanish language level test. Grade each spoken response and return structured JSON.
@@ -109,17 +114,15 @@ CATEGORY PRIORITY RULES — apply the most specific category first:
 
 SPEECH TIMING RULES — when speech timing data is present in the input:
 
-ALWAYS add one notes_for_profile entry with the raw timing data, e.g.:
-"Speech timing: 112 WPM, initial silence 0.1s, longest pause 0.3s — within acceptable range" or
-"Speech timing: 94 WPM, initial silence 0.2s, longest pause 1.8s — below normal pace"
-This is required even if speech was perfectly normal, so the data is available for learner progress tracking.
+ALWAYS add one notes_for_profile entry with the raw timing data. Include WPM, initial silence, longest pause, and pause count. Note whether it is within normal range or slow. This is required even if speech was perfectly fluent — the data is needed for learner progress tracking.
 
-ADDITIONALLY, if any threshold is crossed, MUST add "response_speed" to observed_errors:
-- speech rate < 110 WPM → description MUST include the actual WPM, e.g.: "Speech rate 94 WPM (normal is 130–160 WPM); response was noticeably slow"
-- initial silence > 2s → description MUST include the actual silence duration
-- longest pause > 1.5s → description MUST include the actual pause duration
-These observed_errors are non-negotiable when thresholds are crossed, regardless of content quality.
-Normal conversational range is 130–160 WPM; 110–130 WPM is slightly slow but within grace period; below 110 WPM is penalized.
+ONLY add "response_speed" to observed_errors when the input line contains a ⚠ warning. If there is no ⚠ in the speech timing line, do NOT add response_speed to observed_errors (fast or normal speech is not an error). When you do add it, the description must include the specific values that triggered the warning.
+
+Thresholds that trigger ⚠ (pre-computed in the input — look for the warning text):
+- WPM < 110 AND response was at least 8 words (fewer words = unreliable WPM)
+- Initial silence before speaking > 2s
+- Longest pause > 2s, OR 3+ pauses each exceeding 1s (frequent hesitation)
+A 0.2s pause is completely normal. A single 1.5s pause is borderline. Only flag when pauses are genuinely disruptive.
 
 CEFR SIGNAL: Estimate the level this response suggests given prompt difficulty + quality.
 Values: below_A1, A1, A2, B1, B2, C1, C2
@@ -238,8 +241,15 @@ export async function POST(req: Request) {
             : null,
         ].filter(Boolean).join('\n');
 
+        const wpm = speechMetrics ? Math.round(speechMetrics.wordsPerMinute) : 0;
+        const wpmReliable = speechMetrics ? transcription.words.length >= MIN_WORDS_FOR_WPM : false;
+        const slowWpm = wpmReliable && wpm < 110;
+        const longSilence = speechMetrics ? speechMetrics.initialSilenceSec > 2 : false;
+        const significantPauses = speechMetrics
+          ? speechMetrics.maxPauseSec > 2.0 || speechMetrics.notablePauseCount >= 3
+          : false;
         const speechTimingLine = speechMetrics
-          ? `Speech timing (ALWAYS record in notes_for_profile): initial silence ${speechMetrics.initialSilenceSec.toFixed(1)}s | longest pause ${speechMetrics.maxPauseSec.toFixed(1)}s | speech rate ${Math.round(speechMetrics.wordsPerMinute)} WPM${speechMetrics.wordsPerMinute < 110 ? ' ⚠ BELOW 110 WPM THRESHOLD — add response_speed to observed_errors' : speechMetrics.maxPauseSec > 1.5 ? ' ⚠ PAUSE EXCEEDS 1.5s — add response_speed to observed_errors' : ''}`
+          ? `Speech timing (ALWAYS record in notes_for_profile): initial silence ${speechMetrics.initialSilenceSec.toFixed(1)}s | longest pause ${speechMetrics.maxPauseSec.toFixed(1)}s | pauses >1s: ${speechMetrics.notablePauseCount} | speech rate ${wpmReliable ? `${wpm} WPM` : `${wpm} WPM (unreliable — only ${transcription.words.length} words)`}${slowWpm ? ' ⚠ BELOW 110 WPM — add response_speed to observed_errors' : ''}${longSilence ? ' ⚠ INITIAL SILENCE >2s — add response_speed to observed_errors' : ''}${significantPauses ? ' ⚠ SIGNIFICANT PAUSES — add response_speed to observed_errors' : ''}`
           : null;
 
         const userMessage = `${contextLines}
@@ -273,6 +283,7 @@ Prompt ID to echo back: ${q.prompt_id}`;
             wpm: Math.round(speechMetrics.wordsPerMinute),
             initial_silence_sec: speechMetrics.initialSilenceSec,
             max_pause_sec: speechMetrics.maxPauseSec,
+            notable_pause_count: speechMetrics.notablePauseCount,
           };
         }
 

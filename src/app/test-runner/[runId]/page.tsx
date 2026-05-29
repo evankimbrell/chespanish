@@ -636,11 +636,12 @@ function ScenarioRow({
                   Measured: {scenario.grade.speech_metrics.wpm} WPM
                   {'  ·  '}silence before: {scenario.grade.speech_metrics.initial_silence_sec.toFixed(2)}s
                   {'  ·  '}longest pause: {scenario.grade.speech_metrics.max_pause_sec.toFixed(2)}s
+                  {'  ·  '}pauses {'>'}{'>'}1s: {scenario.grade.speech_metrics.notable_pause_count}
                   {scenario.grade.speech_metrics.wpm < 110 && (
-                    <span style={{ color: 'var(--warm)', marginLeft: 6 }}>⚠ below 110 WPM threshold</span>
+                    <span style={{ color: 'var(--warm)', marginLeft: 6 }}>⚠ slow WPM</span>
                   )}
-                  {scenario.grade.speech_metrics.max_pause_sec > 1.5 && (
-                    <span style={{ color: 'var(--warm)', marginLeft: 6 }}>⚠ pause {'>'} 1.5s</span>
+                  {(scenario.grade.speech_metrics.max_pause_sec > 2.0 || scenario.grade.speech_metrics.notable_pause_count >= 3) && (
+                    <span style={{ color: 'var(--warm)', marginLeft: 6 }}>⚠ significant pauses</span>
                   )}
                 </p>
               )}

@@ -114,6 +114,7 @@ export interface SpeechMetrics {
   wpm: number;
   initial_silence_sec: number;
   max_pause_sec: number;
+  notable_pause_count: number; // pauses > 1s between words
 }
 
 export interface GradeResult {
