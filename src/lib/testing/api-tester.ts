@@ -262,12 +262,27 @@ function labelPasses(scenario: TestScenario, grade: GradeResult): boolean {
   return false;
 }
 
+// Grammar-related error categories that all count as evidence of a grammar error
+const GRAMMAR_EQUIVALENTS = new Set([
+  'grammar', 'verb_conjugation', 'tense_error', 'ser_estar', 'por_para',
+  'gender_agreement', 'number_agreement', 'word_order', 'missing_pronoun',
+  'object_pronoun', 'preposition',
+]);
+
+function categoryMatches(expected: string, actual: string[]): boolean {
+  if (actual.includes(expected)) return true;
+  // For bad_grammar scenarios, any grammar-related category satisfies a "grammar" expectation —
+  // the response generator independently chooses which error type to introduce
+  if (expected === 'grammar') return actual.some((c) => GRAMMAR_EQUIVALENTS.has(c));
+  return false;
+}
+
 function checkAssertions(scenario: TestScenario, grade: GradeResult | null): boolean {
   if (!grade) return false;
 
   const errorCategories = (grade.observed_errors ?? []).map((e) => e.category);
   const categoriesPassed = scenario.expectedErrorCategories.every((cat) =>
-    errorCategories.includes(cat)
+    categoryMatches(cat, errorCategories)
   );
 
   return labelPasses(scenario, grade) && categoriesPassed;
@@ -290,7 +305,7 @@ function buildFailureReason(scenario: TestScenario, grade: GradeResult | null): 
 
   const errorCategories = (grade.observed_errors ?? []).map((e) => e.category);
   const missingCategories = scenario.expectedErrorCategories.filter(
-    (cat) => !errorCategories.includes(cat)
+    (cat) => !categoryMatches(cat, errorCategories)
   );
   if (missingCategories.length > 0) {
     reasons.push(`Missing expected error categories: ${missingCategories.join(', ')}`);
