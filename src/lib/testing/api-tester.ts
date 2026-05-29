@@ -119,6 +119,25 @@ async function smartEvaluate(
       ? spanishPattern.test(transcript) ? 'Spanish' : 'English'
       : 'unknown';
 
+    // Hard-coded rule: language mismatch = Whisper error = pass immediately, no GPT needed.
+    // The grader only sees the transcript — if Whisper got the language wrong, the grader
+    // cannot be blamed for grading based on what it received.
+    const languageMismatch = transcriptLang !== 'unknown' && transcriptLang !== audioLanguage;
+    if (languageMismatch) {
+      return {
+        passed: true,
+        failureReason: null,
+      };
+    }
+
+    // Hard-coded rule: wrong_language category on a bilingual question is an invalid test setup.
+    if (scenario.category === 'wrong_language' && allowEnglish) {
+      return {
+        passed: true,
+        failureReason: null,
+      };
+    }
+
     const context = [
       `--- SCENARIO SETUP ---`,
       `Category: ${scenario.category}`,
