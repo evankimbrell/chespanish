@@ -631,6 +631,19 @@ function ScenarioRow({
                 Speed: {scenario.audioSpeed !== undefined ? `${Math.round(scenario.audioSpeed * 100)}%` : 'default'}
                 {scenario.deliberatePauses && '  ·  Deliberate pauses: yes'}
               </p>
+              {scenario.grade?.speech_metrics && (
+                <p style={{ fontSize: 12, color: 'var(--mute)', margin: '4px 0 0', fontFamily: 'monospace' }}>
+                  Measured: {scenario.grade.speech_metrics.wpm} WPM
+                  {'  ·  '}silence before: {scenario.grade.speech_metrics.initial_silence_sec.toFixed(2)}s
+                  {'  ·  '}longest pause: {scenario.grade.speech_metrics.max_pause_sec.toFixed(2)}s
+                  {scenario.grade.speech_metrics.wpm < 110 && (
+                    <span style={{ color: 'var(--warm)', marginLeft: 6 }}>⚠ below 110 WPM threshold</span>
+                  )}
+                  {scenario.grade.speech_metrics.max_pause_sec > 1.5 && (
+                    <span style={{ color: 'var(--warm)', marginLeft: 6 }}>⚠ pause {'>'} 1.5s</span>
+                  )}
+                </p>
+              )}
             </div>
           )}
 

@@ -110,6 +110,12 @@ export interface ObservedError {
   review_later: boolean;
 }
 
+export interface SpeechMetrics {
+  wpm: number;
+  initial_silence_sec: number;
+  max_pause_sec: number;
+}
+
 export interface GradeResult {
   prompt_id: string;
   overall_score: 0 | 1 | 2 | 3 | 4 | 5;
@@ -119,6 +125,7 @@ export interface GradeResult {
   observed_errors: ObservedError[];
   brief_feedback: string;
   notes_for_profile: string[];
+  speech_metrics?: SpeechMetrics;
 }
 
 export type PromptType =

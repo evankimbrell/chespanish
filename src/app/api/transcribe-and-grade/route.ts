@@ -265,6 +265,13 @@ Prompt ID to echo back: ${q.prompt_id}`;
         parsed.overall_score = score;
         parsed.label = LABELS[score];
         parsed.prompt_id = q.prompt_id;
+        if (speechMetrics) {
+          parsed.speech_metrics = {
+            wpm: Math.round(speechMetrics.wordsPerMinute),
+            initial_silence_sec: speechMetrics.initialSilenceSec,
+            max_pause_sec: speechMetrics.maxPauseSec,
+          };
+        }
 
         send({ type: 'grade', grade: parsed });
       } catch (e) {
