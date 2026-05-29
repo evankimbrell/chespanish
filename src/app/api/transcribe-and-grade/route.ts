@@ -104,11 +104,19 @@ CATEGORY PRIORITY RULES — apply the most specific category first:
 3. hallucinated_or_unrelated_answer: The learner answered a completely different question or said something that has no connection to the prompt. Example: asked about coffee → said "Hola, me llamo Juan." Use this only when the response is clearly off-topic AND not an English response — never combine with too_much_english.
 4. grammar vs wrong_meaning: Use 'grammar' for structural errors including wrong connectors/conjunctions (e.g. "cuando" instead of "porque", "pero" instead of "sino"), wrong prepositions, agreement errors. Reserve 'wrong_meaning' ONLY for vocabulary substitutions where the grammatical structure is correct but a word has the wrong semantic meaning (e.g. said "frío" when context required "caliente"). A wrong connector IS a grammar error, not a wrong_meaning error.
 
-SPEECH TIMING HARD RULES — when speech timing data is present in the input:
-- speech rate < 110 WPM: MUST add "response_speed" to observed_errors (description: "Speech rate of X WPM is below normal conversational pace")
-- initial silence > 2s: MUST add "response_speed" to observed_errors
-- longest pause > 1.5s: MUST add "response_speed" to observed_errors
-These are non-negotiable: if the timing data triggers one of these thresholds, response_speed MUST appear in observed_errors regardless of how good the content was.
+SPEECH TIMING RULES — when speech timing data is present in the input:
+
+ALWAYS add one notes_for_profile entry with the raw timing data, e.g.:
+"Speech timing: 112 WPM, initial silence 0.1s, longest pause 0.3s — within acceptable range" or
+"Speech timing: 94 WPM, initial silence 0.2s, longest pause 1.8s — below normal pace"
+This is required even if speech was perfectly normal, so the data is available for learner progress tracking.
+
+ADDITIONALLY, if any threshold is crossed, MUST add "response_speed" to observed_errors:
+- speech rate < 110 WPM → description MUST include the actual WPM, e.g.: "Speech rate 94 WPM (normal is 130–160 WPM); response was noticeably slow"
+- initial silence > 2s → description MUST include the actual silence duration
+- longest pause > 1.5s → description MUST include the actual pause duration
+These observed_errors are non-negotiable when thresholds are crossed, regardless of content quality.
+Normal conversational range is 130–160 WPM; 110–130 WPM is slightly slow but within grace period; below 110 WPM is penalized.
 
 CEFR SIGNAL: Estimate the level this response suggests given prompt difficulty + quality.
 Values: below_A1, A1, A2, B1, B2, C1, C2
@@ -228,7 +236,7 @@ export async function POST(req: Request) {
         ].filter(Boolean).join('\n');
 
         const speechTimingLine = speechMetrics
-          ? `Speech timing: initial silence ${speechMetrics.initialSilenceSec.toFixed(1)}s | longest pause ${speechMetrics.maxPauseSec.toFixed(1)}s | speech rate ${Math.round(speechMetrics.wordsPerMinute)} WPM`
+          ? `Speech timing (ALWAYS record in notes_for_profile): initial silence ${speechMetrics.initialSilenceSec.toFixed(1)}s | longest pause ${speechMetrics.maxPauseSec.toFixed(1)}s | speech rate ${Math.round(speechMetrics.wordsPerMinute)} WPM${speechMetrics.wordsPerMinute < 110 ? ' ⚠ BELOW 110 WPM THRESHOLD — add response_speed to observed_errors' : speechMetrics.maxPauseSec > 1.5 ? ' ⚠ PAUSE EXCEEDS 1.5s — add response_speed to observed_errors' : ''}`
           : null;
 
         const userMessage = `${contextLines}
