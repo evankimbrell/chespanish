@@ -66,39 +66,39 @@ function parseLesson(transcript: string): Segment[] {
 }
 
 function groupIntoPlays(segments: Segment[]): Play[] {
-  const plays: Play[] = [];
+  // Phase 1: split into raw groups at each <prompt> marker.
+  const groups: { segs: VoiceSegment[]; promptAfter: boolean }[] = [];
   let current: VoiceSegment[] = [];
   for (const seg of segments) {
     if (seg.type === 'prompt') {
       if (current.length > 0) {
-        const raw = current.map((s) => s.text).join(' ');
-        // Find the Spanish segment that immediately follows an English "say/repeat/respond" cue.
-        // That's the model answer the student should replicate. If no such pattern, use first Spanish segment.
-        const spanishText = (() => {
-          for (let i = 1; i < current.length; i++) {
-            if (current[i].type === 'spanish' && current[i - 1].type === 'english') {
-              const cue = current[i - 1].text.toLowerCase();
-              if (/\b(say|repeat|respond|tell|answer|now try|try saying|how do you say)\b/.test(cue)) {
-                return current[i].text.trim();
-              }
-            }
-          }
-          return current.find((s) => s.type === 'spanish')?.text?.trim() || undefined;
-        })();
-        plays.push({ segments: current, promptAfter: true, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), spanishText, sectionName: current[0]?.sectionName });
+        groups.push({ segs: current, promptAfter: true });
         current = [];
       }
     } else {
       current.push(seg as VoiceSegment);
     }
   }
-  if (current.length > 0) {
-    const raw = current.map((s) => s.text).join(' ');
-    const spanishSegments = current.filter((s) => s.type === 'spanish');
-    const spanishText = spanishSegments.at(-1)?.text?.trim() || undefined;
-    plays.push({ segments: current, promptAfter: false, text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(), spanishText, sectionName: current[0]?.sectionName });
-  }
-  return plays;
+  if (current.length > 0) groups.push({ segs: current, promptAfter: false });
+
+  // Phase 2: resolve the model (Spanish) answer for each prompt and build plays.
+  // The expected answer is the Spanish the lesson treats as the target:
+  //   - "listen and repeat" pattern: the target is the last Spanish in THIS group.
+  //   - "anticipation" pattern (narrator asks → prompt → narrator reveals): this
+  //     group has no Spanish, so the answer is the first Spanish of the NEXT group.
+  return groups.map((g, gi) => {
+    const lastSpanish = [...g.segs].reverse().find((s) => s.type === 'spanish')?.text?.trim();
+    const nextFirstSpanish = groups[gi + 1]?.segs.find((s) => s.type === 'spanish')?.text?.trim();
+    const spanishText = lastSpanish || (g.promptAfter ? nextFirstSpanish : undefined) || undefined;
+    const raw = g.segs.map((s) => s.text).join(' ');
+    return {
+      segments: g.segs,
+      promptAfter: g.promptAfter,
+      text: raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim(),
+      spanishText,
+      sectionName: g.segs[0]?.sectionName,
+    };
+  });
 }
 
 function splitAtSentences(text: string, maxChars = 4000): string[] {

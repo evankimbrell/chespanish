@@ -40,6 +40,9 @@ Whenever the student is expected to speak, insert:
 
 The <prompt> tag should appear alone on its own line.
 
+SECTION STRUCTURE (required):
+Wrap related groups of content in <section name="3-5 word label"> and </section> tags. The lesson must have 5–7 sections total — no more, no less. Section names should be 3–5 words describing the theme or activity (e.g. "Café Greeting", "Ordering a Coffee", "Asking for the Bill", "Final Performance Task"). Every <narrator>, <spanish 1>, <spanish 2>, and <prompt> tag must appear inside a section block. Do not nest sections.
+
 Do not include stage directions in brackets. Do not include timing estimates. Do not include markdown tables. Do not include commentary before or after the transcript.
 
 LESSON LENGTH
@@ -89,7 +92,7 @@ PROMPT DENSITY: Use <prompt> frequently — roughly every 20–60 spoken words d
 
 Match Spanish difficulty to the student's level from the design brief.
 
-OUTPUT: Return only the lesson transcript. Start directly with <narrator>.`;
+OUTPUT: Return only the lesson transcript. Start directly with the first <section ...> tag, then <narrator>.`;
 
 export async function generateLessonTranscript(lessonDesignBrief: string): Promise<string> {
   const completion = await getOpenAI().chat.completions.create({
