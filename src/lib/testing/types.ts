@@ -99,6 +99,7 @@ export interface SimulationRun {
   prompts: SimulationPrompt[];
   testReport: TestReport | null;
   educatorReport: string | null;
+  lessonDesignBrief: string | null;
   suggestedLesson: {
     title: string;
     scenario: string;

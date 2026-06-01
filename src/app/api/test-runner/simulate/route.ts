@@ -3,6 +3,7 @@ import path from 'path';
 import OpenAI from 'openai';
 import type { SimulationRun, SimulationPrompt, StudentPersona } from '@/lib/testing/types';
 import type { PromptResult, ComfortLevel } from '@/lib/types';
+import { generateLessonDesignBrief } from '@/lib/lesson-design';
 import {
   initEngine, selectNextQuestion, updateEngine, shouldStopTest,
   generateFinalReport, calculateEvidenceScore,
@@ -112,6 +113,58 @@ Produce the EXACT SPOKEN WORDS this student would say — include their characte
   return completion.choices[0].message.content?.trim() || 'Ehh... no entiendo bien.';
 }
 
+function formatSimulationForDesignBrief(run: SimulationRun): string {
+  const r = run.testReport;
+  const lines: string[] = [
+    `LEVEL TEST RESULTS`,
+    `==================`,
+  ];
+
+  if (r) {
+    lines.push(
+      `Overall Level: ${r.display_level} (CEFR: ${r.cefr_band})`,
+      `Confidence: ${r.confidence} (${r.confidence_range[0].toFixed(1)}–${r.confidence_range[1].toFixed(1)})`,
+      `Summary: ${r.summary}`,
+      ``,
+      `SKILL SCORES (0–10)`,
+      `-------------------`,
+      `Listening comprehension: ${r.skill_scores.listening_comprehension.toFixed(1)}`,
+      `Speaking fluency: ${r.skill_scores.speaking_fluency.toFixed(1)}`,
+      `Grammar control: ${r.skill_scores.grammar_control.toFixed(1)}`,
+      `Vocabulary range: ${r.skill_scores.vocabulary_range.toFixed(1)}`,
+      `Pronunciation: ${r.skill_scores.pronunciation_intelligibility.toFixed(1)}`,
+      `Response speed: ${r.skill_scores.response_speed.toFixed(1)}`,
+      `Argentine style alignment: ${r.skill_scores.target_style_alignment.toFixed(1)}`,
+      `Practical communication: ${r.skill_scores.practical_communication.toFixed(1)}`,
+      ``,
+    );
+    if (r.strengths?.length) lines.push(`Strengths: ${r.strengths.join(', ')}`);
+    if (r.weaknesses?.length) lines.push(`Weaknesses: ${r.weaknesses.join(', ')}`);
+    if (r.most_common_error_categories?.length) lines.push(`Most common errors: ${r.most_common_error_categories.join(', ')}`);
+    lines.push(``);
+  }
+
+  lines.push(`QUESTION-BY-QUESTION BREAKDOWN`, `------------------------------`);
+
+  for (const p of run.prompts) {
+    lines.push(
+      `Q${p.index + 1}: [${p.promptType}] [${p.difficultyBucket}] difficulty ${p.difficulty.toFixed(1)}`,
+      `Prompt: "${p.promptText}"`,
+      `Response: "${p.transcript ?? p.generatedResponse}"`,
+    );
+    if (p.grade) {
+      lines.push(`Grade: ${p.grade.label} (${p.grade.overall_score}/5) | CEFR signal: ${p.grade.cefr_signal}`);
+      if (p.grade.brief_feedback) lines.push(`Feedback: ${p.grade.brief_feedback}`);
+      if (p.grade.observed_errors?.length) {
+        lines.push(`Errors: ${p.grade.observed_errors.map((e) => `${e.category}: ${e.description}`).join('; ')}`);
+      }
+    }
+    lines.push(`Ability: ${p.abilityBefore.toFixed(2)} → ${p.abilityAfter.toFixed(2)}`, ``);
+  }
+
+  return lines.join('\n');
+}
+
 const EDUCATOR_PROMPT = `You're an expert Argentine Spanish tutor reviewing a simulated student's level test. Write a concise educator report (under 400 words, bullet points) covering:
 - Whether the detected level matches the designated level, and what that tells us
 - Key strengths observed in the responses
@@ -177,6 +230,7 @@ export async function POST(req: Request) {
     prompts: [],
     testReport: null,
     educatorReport: null,
+    lessonDesignBrief: null,
     suggestedLesson: null,
     detectedLevel: null,
     levelAccurate: null,
@@ -348,6 +402,12 @@ export async function POST(req: Request) {
 
         send('status', { message: 'Generating educator report…' });
         run.educatorReport = await generateEducatorReport(run);
+        saveRun(run);
+
+        send('status', { message: 'Generating lesson design brief…' });
+        const { fullBrief, displayLesson } = await generateLessonDesignBrief(formatSimulationForDesignBrief(run));
+        run.lessonDesignBrief = fullBrief;
+        run.suggestedLesson = displayLesson;
         run.status = 'complete';
         saveRun(run);
 

@@ -219,6 +219,7 @@ export default function LevelResultPage() {
   const profile = useAppStore((s) => s.profile);
   const setGeneratedLesson = useAppStore((s) => s.setGeneratedLesson);
   const setProfile = useAppStore((s) => s.setProfile);
+  const completeLevelTestSession = useAppStore((s) => s.completeLevelTestSession);
   const [localSession, setLocalSession] = useState<LevelTestSession | null>(null);
   const [reportSaved, setReportSaved] = useState(false);
 
@@ -253,8 +254,14 @@ export default function LevelResultPage() {
             transcript: data.lessonTranscript,
             plays: [],
             generatedAt: new Date().toISOString(),
-            title: data.testReport?.recommended_first_lesson?.title ?? 'Your first lesson',
+            title: data.recommendedLesson?.title ?? data.testReport?.recommended_first_lesson?.title ?? 'Your first lesson',
           });
+        }
+
+        // Persist GPT-generated lesson recommendation into the session report
+        if (data.recommendedLesson && session?.report) {
+          const updatedReport = { ...session.report, recommended_first_lesson: data.recommendedLesson };
+          completeLevelTestSession(updatedReport);
         }
       })
       .catch(() => {});

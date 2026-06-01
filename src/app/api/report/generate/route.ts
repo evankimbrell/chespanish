@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 import type { LevelTestSession } from '@/lib/types';
+import { generateLessonDesignBrief } from '@/lib/lesson-design';
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -152,27 +153,28 @@ export async function POST(req: Request) {
 
   const formattedReport = formatSessionForOpenAI(session, userName ?? 'student');
 
-  const completion = await getOpenAI().chat.completions.create({
+  // Step 1: Educator summary report
+  const educatorCompletion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
     max_completion_tokens: 8000,
-    messages: [
-      { role: 'user', content: EDUCATOR_PROMPT + '\n\n' + formattedReport },
-    ],
+    messages: [{ role: 'user', content: EDUCATOR_PROMPT + '\n\n' + formattedReport }],
   });
+  const educatorReport = educatorCompletion.choices[0]?.message?.content ?? '';
 
-  const educatorReport = completion.choices[0]?.message?.content ?? '';
+  // Step 2: Lesson design brief — full curriculum design + display data
+  const { fullBrief: lessonDesignBrief, displayLesson } = await generateLessonDesignBrief(formattedReport);
 
+  // Step 3: Full lesson transcript — uses design brief as the primary context
   const lessonCompletion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
     max_completion_tokens: 16000,
     messages: [
       {
         role: 'user',
-        content: `${LESSON_PROMPT}\n\n--- EDUCATOR RECOMMENDATIONS ---\n${educatorReport}\n\n--- LEVEL TEST REPORT ---\n${formattedReport}`,
+        content: `${LESSON_PROMPT}\n\n--- LESSON DESIGN BRIEF ---\n${lessonDesignBrief}\n\n--- LEVEL TEST REPORT ---\n${formattedReport}`,
       },
     ],
   });
-
   const lessonTranscript = lessonCompletion.choices[0]?.message?.content ?? '';
 
   const safeUserName = (userName ?? 'student').toLowerCase().replace(/[^a-z0-9]/g, '-');
@@ -187,6 +189,8 @@ export async function POST(req: Request) {
       userName,
       generatedAt: new Date().toISOString(),
       educatorReport,
+      lessonDesignBrief,
+      recommendedLesson: displayLesson,
       testReport: session.report ?? null,
       lessonTranscript,
       session,
@@ -195,6 +199,8 @@ export async function POST(req: Request) {
 
   return Response.json({
     educatorReport,
+    lessonDesignBrief,
+    recommendedLesson: displayLesson,
     testReport: session.report ?? null,
     lessonTranscript,
     savedTo: `data/reports/${filename}`,

@@ -426,6 +426,29 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
         </div>
       )}
 
+      {/* Lesson Design Brief */}
+      {run.lessonDesignBrief && (
+        <div style={{ marginBottom: 28 }}>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Lesson Design Brief</div>
+          <div
+            style={{
+              padding: '20px 24px',
+              background: 'var(--bg-2)',
+              border: '1px solid var(--line)',
+              borderRadius: 6,
+              fontSize: 13,
+              lineHeight: 1.7,
+              color: 'var(--ink)',
+              whiteSpace: 'pre-wrap',
+              maxHeight: 500,
+              overflowY: 'auto',
+            }}
+          >
+            {run.lessonDesignBrief}
+          </div>
+        </div>
+      )}
+
       {/* Educator Report */}
       {run.educatorReport && (
         <div style={{ marginBottom: 28 }}>
