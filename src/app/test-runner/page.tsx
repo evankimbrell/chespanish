@@ -6,6 +6,8 @@ interface RunSummary {
   id: string;
   createdAt: string;
   status: 'pending' | 'running' | 'complete' | 'failed';
+  mode: 'scenario' | 'simulation';
+  // scenario fields
   instructions: string;
   hypothesis: string;
   targetArea: string;
@@ -13,6 +15,12 @@ interface RunSummary {
   scenariosPassed: number;
   bugsFound: number;
   verificationRun: string | null;
+  // simulation fields
+  studentName: string | null;
+  designatedLevel: string | null;
+  detectedLevel: string | null;
+  levelAccurate: boolean | null;
+  promptCount: number;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -28,8 +36,11 @@ export default function TestRunnerPage() {
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [testMode, setTestMode] = useState<'scenario' | 'simulation'>('scenario');
   const [instructions, setInstructions] = useState('');
   const [targetArea, setTargetArea] = useState<string>('grading');
+  const [studentName, setStudentName] = useState('');
+  const [designatedLevel, setDesignatedLevel] = useState('B1');
   const [running, setRunning] = useState(false);
   const [runLog, setRunLog] = useState<string[]>([]);
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
@@ -62,16 +73,23 @@ export default function TestRunnerPage() {
   }
 
   async function startRun() {
-    if (!instructions.trim()) return;
+    const isSimulation = testMode === 'simulation';
+    if (isSimulation ? !studentName.trim() : !instructions.trim()) return;
+
     setRunning(true);
     setRunLog(['Starting test run…']);
     setCurrentRunId(null);
 
+    const endpoint = isSimulation ? '/api/test-runner/simulate' : '/api/test-runner/execute';
+    const body = isSimulation
+      ? JSON.stringify({ studentName: studentName.trim(), designatedLevel })
+      : JSON.stringify({ instructions: instructions.trim(), targetArea });
+
     try {
-      const res = await fetch('/api/test-runner/execute', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instructions: instructions.trim(), targetArea }),
+        body,
       });
 
       if (!res.body) throw new Error('No response body');
@@ -113,12 +131,21 @@ export default function TestRunnerPage() {
                 ...prev,
                 `${icon} ${data.name}: ${data.passed ? 'passed' : data.failureReason}`,
               ]);
+            } else if (eventName === 'prompt_start') {
+              setRunLog((prev) => [...prev, `→ Prompt ${data.index}: [${data.promptType}] ${data.promptText}…`]);
+            } else if (eventName === 'prompt_result') {
+              const icon = data.score >= 3 ? '✓' : data.score >= 2 ? '~' : '✗';
+              setRunLog((prev) => [...prev, `  ${icon} ${data.gradeLabel} (ability: ${data.abilityBefore} → ${data.abilityAfter})`]);
+            } else if (eventName === 'report_ready') {
+              const acc = data.levelAccurate ? '✓ accurate' : '✗ discrepancy';
+              setRunLog((prev) => [...prev, `Level detected: ${data.detectedLevel} (designated: ${data.designatedLevel}) — ${acc}`]);
             } else if (eventName === 'complete') {
               setCurrentRunId(data.runId);
-              setRunLog((prev) => [
-                ...prev,
-                `Done — ${data.passed}/${data.total} passed, ${data.bugsFound} bug(s) found`,
-              ]);
+              if (data.promptCount !== undefined) {
+                setRunLog((prev) => [...prev, `Done — ${data.promptCount} prompts, detected ${data.detectedLevel}`]);
+              } else {
+                setRunLog((prev) => [...prev, `Done — ${data.passed}/${data.total} passed, ${data.bugsFound} bug(s) found`]);
+              }
             } else if (eventName === 'error') {
               setRunLog((prev) => [...prev, `Error: ${data.message}`]);
             } else if (eventName === 'warning') {
@@ -193,63 +220,103 @@ export default function TestRunnerPage() {
             borderRadius: 6,
           }}
         >
-          <div style={{ marginBottom: 16 }}>
-            <label
-              className="mono small"
-              style={{ display: 'block', color: 'var(--mute)', marginBottom: 6 }}
-            >
-              INSTRUCTIONS
-            </label>
-            <textarea
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              placeholder="What should we test? e.g. Test that wrong-language responses are correctly detected as Ouch/Bad"
-              rows={3}
-              style={{
-                width: '100%',
-                background: 'var(--bg)',
-                border: '1px solid var(--line)',
-                borderRadius: 4,
-                padding: '10px 12px',
-                color: 'var(--ink)',
-                fontSize: 14,
-                fontFamily: 'inherit',
-                resize: 'vertical',
-              }}
-            />
+          {/* Mode toggle */}
+          <div className="row gap-2" style={{ marginBottom: 20 }}>
+            {(['scenario', 'simulation'] as const).map((m) => (
+              <button
+                key={m}
+                className={`btn ${testMode === m ? '' : 'btn-ghost'} small`}
+                onClick={() => setTestMode(m)}
+              >
+                {m === 'scenario' ? 'Scenario Test' : 'Student Simulation'}
+              </button>
+            ))}
           </div>
 
-          <div style={{ marginBottom: 20 }}>
-            <label
-              className="mono small"
-              style={{ display: 'block', color: 'var(--mute)', marginBottom: 6 }}
-            >
-              TARGET AREA
-            </label>
-            <select
-              value={targetArea}
-              onChange={(e) => setTargetArea(e.target.value)}
-              style={{
-                background: 'var(--bg)',
-                border: '1px solid var(--line)',
-                borderRadius: 4,
-                padding: '8px 12px',
-                color: 'var(--ink)',
-                fontSize: 14,
-              }}
-            >
-              <option value="grading">Grading accuracy</option>
-              <option value="level-test">Level test flow</option>
-              <option value="lesson-player">Lesson player</option>
-              <option value="full-flow">Full flow</option>
-            </select>
-          </div>
+          {testMode === 'simulation' ? (
+            <>
+              <div style={{ marginBottom: 16 }}>
+                <label className="mono small" style={{ display: 'block', color: 'var(--mute)', marginBottom: 6 }}>STUDENT NAME</label>
+                <input
+                  type="text"
+                  value={studentName}
+                  onChange={(e) => setStudentName(e.target.value)}
+                  placeholder="e.g. Mateo"
+                  style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 4, padding: '10px 12px', color: 'var(--ink)', fontSize: 14 }}
+                />
+              </div>
+              <div style={{ marginBottom: 20 }}>
+                <label className="mono small" style={{ display: 'block', color: 'var(--mute)', marginBottom: 6 }}>DESIGNATED LEVEL</label>
+                <select value={designatedLevel} onChange={(e) => setDesignatedLevel(e.target.value)} style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 4, padding: '8px 12px', color: 'var(--ink)', fontSize: 14 }}>
+                  <option value="A1">A1 — Beginner</option>
+                  <option value="A2">A2 — Elementary</option>
+                  <option value="B1">B1 — Intermediate</option>
+                  <option value="B2">B2 — Upper-intermediate</option>
+                  <option value="C1">C1 — Advanced</option>
+                </select>
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ marginBottom: 16 }}>
+                <label
+                  className="mono small"
+                  style={{ display: 'block', color: 'var(--mute)', marginBottom: 6 }}
+                >
+                  INSTRUCTIONS
+                </label>
+                <textarea
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  placeholder="What should we test? e.g. Test that wrong-language responses are correctly detected as Ouch/Bad"
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--line)',
+                    borderRadius: 4,
+                    padding: '10px 12px',
+                    color: 'var(--ink)',
+                    fontSize: 14,
+                    fontFamily: 'inherit',
+                    resize: 'vertical',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label
+                  className="mono small"
+                  style={{ display: 'block', color: 'var(--mute)', marginBottom: 6 }}
+                >
+                  TARGET AREA
+                </label>
+                <select
+                  value={targetArea}
+                  onChange={(e) => setTargetArea(e.target.value)}
+                  style={{
+                    background: 'var(--bg)',
+                    border: '1px solid var(--line)',
+                    borderRadius: 4,
+                    padding: '8px 12px',
+                    color: 'var(--ink)',
+                    fontSize: 14,
+                  }}
+                >
+                  <option value="grading">Grading accuracy</option>
+                  <option value="level-test">Level test flow</option>
+                  <option value="lesson-player">Lesson player</option>
+                  <option value="full-flow">Full flow</option>
+                </select>
+              </div>
+            </>
+          )}
 
           <div className="row gap-2">
             <button
               className="btn"
               onClick={startRun}
-              disabled={!instructions.trim()}
+              disabled={testMode === 'simulation' ? !studentName.trim() : !instructions.trim()}
             >
               Run Test
             </button>
@@ -258,6 +325,7 @@ export default function TestRunnerPage() {
               onClick={() => {
                 setShowForm(false);
                 setInstructions('');
+                setStudentName('');
               }}
             >
               Cancel
@@ -355,6 +423,22 @@ export default function TestRunnerPage() {
                   className="row gap-2"
                   style={{ alignItems: 'center', marginBottom: 4 }}
                 >
+                  {run.mode === 'simulation' && (
+                    <span
+                      className="mono small"
+                      style={{
+                        background: 'var(--warm)22',
+                        color: 'var(--warm)',
+                        padding: '1px 6px',
+                        borderRadius: 3,
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      SIMULATION
+                    </span>
+                  )}
                   <span
                     className="mono small"
                     style={{
@@ -378,38 +462,69 @@ export default function TestRunnerPage() {
                     </span>
                   )}
                 </div>
-                <p
-                  style={{
-                    fontSize: 13,
-                    color: 'var(--ink)',
-                    margin: '0 0 4px',
-                    fontWeight: 500,
-                  }}
-                >
-                  {run.instructions.slice(0, 100)}
-                  {run.instructions.length > 100 ? '…' : ''}
-                </p>
-                {run.hypothesis && (
-                  <p
-                    className="small"
-                    style={{ color: 'var(--mute)', margin: '0 0 6px', fontStyle: 'italic' }}
-                  >
-                    {run.hypothesis.slice(0, 120)}
-                    {run.hypothesis.length > 120 ? '…' : ''}
-                  </p>
-                )}
-                <span className="small" style={{ color: 'var(--mute)' }}>
-                  {run.scenariosTotal > 0
-                    ? `${run.scenariosPassed}/${run.scenariosTotal} passed`
-                    : run.status === 'failed'
-                      ? 'failed before scenarios — check token limit or API error'
-                      : 'no scenarios'}
-                  {run.bugsFound > 0 && (
-                    <span style={{ color: 'var(--crit)', marginLeft: 8 }}>
-                      {run.bugsFound} bug{run.bugsFound !== 1 ? 's' : ''}
+
+                {run.mode === 'simulation' ? (
+                  <>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: 'var(--ink)',
+                        margin: '0 0 4px',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {run.studentName} · {run.designatedLevel} designated
+                      {run.detectedLevel && (
+                        <span style={{ color: 'var(--mute)', fontWeight: 400 }}>
+                          {' '}→ {run.detectedLevel} detected
+                        </span>
+                      )}
+                      {run.levelAccurate !== null && (
+                        <span style={{ color: run.levelAccurate ? 'var(--leaf)' : 'var(--crit)', marginLeft: 8 }}>
+                          {run.levelAccurate ? '✓ accurate' : '✗ discrepancy'}
+                        </span>
+                      )}
+                    </p>
+                    <span className="small" style={{ color: 'var(--mute)' }}>
+                      {run.promptCount} prompt{run.promptCount !== 1 ? 's' : ''}
                     </span>
-                  )}
-                </span>
+                  </>
+                ) : (
+                  <>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        color: 'var(--ink)',
+                        margin: '0 0 4px',
+                        fontWeight: 500,
+                      }}
+                    >
+                      {run.instructions.slice(0, 100)}
+                      {run.instructions.length > 100 ? '…' : ''}
+                    </p>
+                    {run.hypothesis && (
+                      <p
+                        className="small"
+                        style={{ color: 'var(--mute)', margin: '0 0 6px', fontStyle: 'italic' }}
+                      >
+                        {run.hypothesis.slice(0, 120)}
+                        {run.hypothesis.length > 120 ? '…' : ''}
+                      </p>
+                    )}
+                    <span className="small" style={{ color: 'var(--mute)' }}>
+                      {run.scenariosTotal > 0
+                        ? `${run.scenariosPassed}/${run.scenariosTotal} passed`
+                        : run.status === 'failed'
+                          ? 'failed before scenarios — check token limit or API error'
+                          : 'no scenarios'}
+                      {run.bugsFound > 0 && (
+                        <span style={{ color: 'var(--crit)', marginLeft: 8 }}>
+                          {run.bugsFound} bug{run.bugsFound !== 1 ? 's' : ''}
+                        </span>
+                      )}
+                    </span>
+                  </>
+                )}
               </div>
               <span className="small" style={{ color: 'var(--warm)', whiteSpace: 'nowrap' }}>
                 View →

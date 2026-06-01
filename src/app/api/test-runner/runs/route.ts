@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import type { TestRun } from '@/lib/testing/types';
+import type { TestRun, SimulationRun } from '@/lib/testing/types';
 
 const RUNS_DIR = path.join(process.cwd(), 'data', 'test-runs');
 
@@ -14,23 +14,51 @@ export async function GET() {
     .readdirSync(RUNS_DIR)
     .filter((f) => f.endsWith('.json'))
     .sort()
-    .reverse(); // newest first
+    .reverse();
 
   const runs = files
     .map((f) => {
       try {
-        const run = JSON.parse(fs.readFileSync(path.join(RUNS_DIR, f), 'utf8')) as TestRun;
+        const raw = JSON.parse(fs.readFileSync(path.join(RUNS_DIR, f), 'utf8'));
+        if (raw.mode === 'simulation') {
+          const r = raw as SimulationRun;
+          return {
+            id: r.id,
+            mode: 'simulation' as const,
+            createdAt: r.createdAt,
+            status: r.status,
+            studentName: r.studentName,
+            designatedLevel: r.designatedLevel,
+            detectedLevel: r.detectedLevel,
+            levelAccurate: r.levelAccurate,
+            promptCount: r.prompts.length,
+            verificationRun: null,
+            instructions: '',
+            hypothesis: '',
+            targetArea: 'grading',
+            scenariosTotal: 0,
+            scenariosPassed: 0,
+            bugsFound: 0,
+          };
+        }
+        const r = raw as TestRun;
         return {
-          id: run.id,
-          createdAt: run.createdAt,
-          status: run.status,
-          instructions: run.instructions,
-          hypothesis: run.hypothesis,
-          targetArea: run.targetArea,
-          scenariosTotal: run.scenarios.length,
-          scenariosPassed: run.scenarios.filter((s) => s.passed).length,
-          bugsFound: run.bugs.length,
-          verificationRun: run.verificationRun,
+          id: r.id,
+          mode: 'scenario' as const,
+          createdAt: r.createdAt,
+          status: r.status,
+          instructions: r.instructions,
+          hypothesis: r.hypothesis,
+          targetArea: r.targetArea,
+          scenariosTotal: r.scenarios.length,
+          scenariosPassed: r.scenarios.filter((s) => s.passed).length,
+          bugsFound: r.bugs.length,
+          verificationRun: r.verificationRun,
+          studentName: null,
+          designatedLevel: null,
+          detectedLevel: null,
+          levelAccurate: null,
+          promptCount: 0,
         };
       } catch {
         return null;

@@ -1,4 +1,4 @@
-import type { Question, GradeResult } from '@/lib/types';
+import type { Question, GradeResult, TestReport } from '@/lib/types';
 
 export type ScenarioCategory =
   | 'correct'
@@ -60,4 +60,43 @@ export interface TestRun {
   fixPlan: string | null;
   fixesApplied: boolean;
   verificationRun: string | null;
+}
+
+export interface SimulationPrompt {
+  index: number;
+  questionId: string;
+  promptType: string;
+  promptText: string;
+  audioText?: string;
+  difficulty: number;
+  difficultyBucket: string;
+  generatedResponse: string;
+  audioUrl: string;
+  transcript: string | null;
+  grade: GradeResult | null;
+  abilityBefore: number;
+  abilityAfter: number;
+  durationMs: number;
+  error: string | null;
+}
+
+export interface SimulationRun {
+  id: string;
+  mode: 'simulation';
+  createdAt: string;
+  status: 'pending' | 'running' | 'complete' | 'failed';
+  studentName: string;
+  designatedLevel: string;
+  comfortLevel: number;
+  prompts: SimulationPrompt[];
+  testReport: TestReport | null;
+  educatorReport: string | null;
+  suggestedLesson: {
+    title: string;
+    scenario: string;
+    focus_points: string[];
+    why: string;
+  } | null;
+  detectedLevel: string | null;
+  levelAccurate: boolean | null;
 }

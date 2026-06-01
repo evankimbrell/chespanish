@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import type { TestRun, TestScenario, Bug } from '@/lib/testing/types';
+import type { TestRun, TestScenario, Bug, SimulationRun } from '@/lib/testing/types';
+import { SimulationDetail } from './simulation-detail';
 
 const LABEL_COLORS: Record<string, string> = {
   Excellent: 'var(--warm)',
@@ -33,6 +34,7 @@ export default function TestRunDetailPage() {
   const { runId } = useParams<{ runId: string }>();
   const router = useRouter();
   const [run, setRun] = useState<TestRun | null>(null);
+  const [simRun, setSimRun] = useState<SimulationRun | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedScenarios, setExpandedScenarios] = useState<Set<string>>(new Set());
   const [fixStatus, setFixStatus] = useState<'idle' | 'running' | 'done' | 'error'>('idle');
@@ -45,7 +47,12 @@ export default function TestRunDetailPage() {
     fetch(`/api/test-runner/runs/${runId}`)
       .then((r) => r.json())
       .then((d) => {
-        setRun(d.run ?? null);
+        const raw = d.run ?? null;
+        if (raw?.mode === 'simulation') {
+          setSimRun(raw as SimulationRun);
+        } else {
+          setRun(raw as TestRun | null);
+        }
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -151,6 +158,21 @@ export default function TestRunDetailPage() {
         <p className="small" style={{ color: 'var(--mute)' }}>
           Loading…
         </p>
+      </div>
+    );
+  }
+
+  if (simRun) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', padding: '40px 24px', maxWidth: 900, margin: '0 auto' }}>
+        <button
+          className="btn btn-text small"
+          onClick={() => router.push('/test-runner')}
+          style={{ padding: 0, marginBottom: 20 }}
+        >
+          ← All runs
+        </button>
+        <SimulationDetail run={simRun} />
       </div>
     );
   }
