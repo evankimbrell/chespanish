@@ -43,8 +43,8 @@ export async function POST(req: Request) {
   try {
     const modelAnswer = spanishText || '(not available — infer from context)';
     const completion = await getOpenAI().chat.completions.create({
-      model: 'gpt-5.4-mini',
-      max_tokens: 350,
+      model: 'gpt-5.5',
+      max_completion_tokens: 350,
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM },

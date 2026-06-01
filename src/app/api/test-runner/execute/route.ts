@@ -24,8 +24,8 @@ async function buildResponseText(category: ScenarioCategory, question: Question,
     const guidance = [...(target ? [target] : []), ...examples].filter(Boolean).slice(0, 3).join(' | ');
 
     const completion = await getOpenAI().chat.completions.create({
-      model: 'gpt-4o-mini',
-      max_tokens: 80,
+      model: 'gpt-5.5',
+      max_completion_tokens: 80,
       messages: [{
         role: 'user',
         content: `The student was asked: "${prompt}". ${guidance ? `Acceptable answers include: ${guidance}. ` : ''}Generate ONE complete, natural Argentine Spanish response that fully answers the question. Fill in any blanks (names, numbers, etc.) with realistic values. Return ONLY the spoken text, no quotes, no ellipses.`,
@@ -63,12 +63,47 @@ FORBIDDEN:
 
 Return ONLY the spoken text with the error introduced, nothing else.`,
     incomplete: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}". Generate a Spanish response that is clearly ON-TOPIC (responding to the same question) but leaves out a KEY required element. The response must be recognizably about the same subject — NOT a random or unrelated answer. Examples of good incomplete responses: if asked to order coffee AND say no sugar → say only "Un café, por favor" (on topic, missing the constraint); if asked to introduce yourself with name AND where you're from → say only "Me llamo María" (on topic, missing location). The response should be grammatically correct but structurally incomplete. Return ONLY the spoken text.`,
-    slow: correctAnswer || planResponse,
-    wrong_answer: `The student was asked: "${prompt}". Generate a plausible-sounding Spanish response that completely misunderstands the question — answers something different. Return ONLY the spoken text.`,
+    slow: '',
+    wrong_answer: `The student was asked: "${prompt}". Generate a Spanish response that answers a COMPLETELY DIFFERENT question — about an entirely unrelated topic. The response must NOT address the actual question at all. The student should sound like they misheard or misread the prompt entirely.
+
+EXAMPLES of completely wrong answers:
+- Asked about ordering food → talks about their commute to work
+- Asked to explain a delay diplomatically → describes their weekend plans
+- Asked to introduce themselves → asks for directions to the station
+- Asked about a product problem → talks about the weather
+
+FORBIDDEN: Partially addressing the actual question, giving an incomplete answer on the same topic, or referencing the same subject matter in any way.
+
+Return ONLY the spoken Spanish text.`,
     silence: '...',
+    observational: '',
   };
 
-  if (category === 'slow') return correctAnswer || planResponse;
+  if (category === 'observational') return planResponse;
+
+  if (category === 'slow') {
+    // Bilingual questions (listen_for_meaning, monologue_comprehension) may have English correct
+    // answers. Using English text with the Spanish TTS voice produces garbled audio that Whisper
+    // translates instead of transcribing. Always generate a Spanish response for slow scenarios
+    // so the Spanish TTS voice and Whisper both work correctly.
+    const isBilingual = question.response_language_allowed === 'english_or_spanish';
+    if (isBilingual) {
+      try {
+        const audioContext = question.audio_text ? ` Audio played to student: "${question.audio_text}".` : '';
+        const completion = await getOpenAI().chat.completions.create({
+          model: 'gpt-5.5',
+          max_completion_tokens: 60,
+          messages: [{
+            role: 'user',
+            content: `A student was asked: "${prompt}".${audioContext} Generate ONE natural Argentine Spanish response that correctly answers the question. Return ONLY the spoken Spanish text, nothing else.`,
+          }],
+        });
+        const spanishResponse = completion.choices[0].message.content?.trim();
+        if (spanishResponse) return spanishResponse;
+      } catch {}
+    }
+    return correctAnswer || planResponse;
+  }
   if (category === 'silence') return '...';
 
   const userPrompt = systemMsg[category];
@@ -81,8 +116,8 @@ Return ONLY the spoken text with the error introduced, nothing else.`,
     const maxAttempts = category === 'bad_grammar' ? 2 : 1;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const completion = await getOpenAI().chat.completions.create({
-        model: 'gpt-4o-mini',
-        max_tokens: 80,
+        model: 'gpt-5.5',
+        max_completion_tokens: 80,
         messages: [{ role: 'user', content: userPrompt }],
       });
       const generated = completion.choices[0].message.content?.trim() || '';
@@ -198,10 +233,39 @@ export async function POST(req: Request) {
 
           usedIds.push(question.prompt_id);
 
-          const baseResponseText = await buildResponseText(plan.category, question, plan.responseToGenerate);
+          let baseResponseText = await buildResponseText(plan.category, question, plan.responseToGenerate);
           const deliberatePauses = plan.category === 'slow' && !!plan.deliberatePauses;
           // ElevenLabs does not support SSML break tags — strip any that slipped in via generated text
-          const responseText = baseResponseText.replace(/<break[^>]*\/>/gi, '').replace(/\s{2,}/g, ' ').trim();
+          baseResponseText = baseResponseText.replace(/<break[^>]*\/>/gi, '').replace(/\s{2,}/g, ' ').trim();
+
+          // For deliberate-pause scenarios: ensure response is long enough for WPM to be meaningful
+          // (MIN_WORDS_FOR_WPM = 8) and inject "..." pauses every 3 words so Whisper picks up real gaps
+          let responseText = baseResponseText;
+          if (deliberatePauses) {
+            const words = responseText.split(/\s+/).filter(Boolean);
+            if (words.length < 8) {
+              // Too short — expand to a fuller response so WPM measurement is valid
+              try {
+                const prompt = question.instruction_text ?? question.audio_text ?? '';
+                const audioCtx = question.audio_text ? ` Audio played to student: "${question.audio_text}".` : '';
+                const expanded = await getOpenAI().chat.completions.create({
+                  model: 'gpt-5.5',
+                  max_completion_tokens: 80,
+                  messages: [{ role: 'user', content: `A student was asked: "${prompt}".${audioCtx} Give a complete, natural Argentine Spanish response of at least 3 sentences (12+ words total). Return ONLY the spoken Spanish text.` }],
+                });
+                const expandedText = expanded.choices[0].message.content?.trim();
+                if (expandedText) responseText = expandedText;
+              } catch {}
+            }
+            // Insert "..." every 3 words to create ~0.5–1s audible hesitation pauses in the TTS audio
+            const finalWords = responseText.split(/\s+/).filter(Boolean);
+            const withPauses: string[] = [];
+            finalWords.forEach((word, i) => {
+              withPauses.push(word);
+              if ((i + 1) % 3 === 0 && i < finalWords.length - 1) withPauses.push('...');
+            });
+            responseText = withPauses.join(' ');
+          }
 
           let audioUrl = '';
           let audioBuffer: Buffer;

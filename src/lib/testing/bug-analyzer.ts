@@ -58,9 +58,9 @@ Severity guide:
 If all tests passed, return { "bugs": [], "fixPlan": "All tests passed — no fixes needed." }`;
 
   const completion = await getOpenAI().chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-5.5',
     response_format: { type: 'json_object' },
-    max_tokens: 2000,
+    max_completion_tokens: 2000,
     messages: [
       { role: 'system', content: SYSTEM },
       {

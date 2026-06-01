@@ -629,16 +629,23 @@ function ScenarioRow({
               </span>
               <p style={{ fontSize: 13, color: 'var(--ink)', margin: 0 }}>
                 Speed: {scenario.audioSpeed !== undefined ? `${Math.round(scenario.audioSpeed * 100)}%` : 'default'}
-                {scenario.deliberatePauses && '  ·  Deliberate pauses: yes'}
+                {scenario.deliberatePauses && (() => {
+                  const injected = (scenario.generatedResponse?.match(/\.\.\./g) || []).length;
+                  return `  ·  Deliberate pauses: yes${injected > 0 ? ` (${injected} injected)` : ''}`;
+                })()}
               </p>
               {scenario.grade?.speech_metrics && (
                 <p style={{ fontSize: 12, color: 'var(--mute)', margin: '4px 0 0', fontFamily: 'monospace' }}>
                   Measured: {scenario.grade.speech_metrics.wpm} WPM
                   {'  ·  '}silence before: {scenario.grade.speech_metrics.initial_silence_sec.toFixed(2)}s
                   {'  ·  '}longest pause: {scenario.grade.speech_metrics.max_pause_sec.toFixed(2)}s
+                  {'  ·  '}pauses {'>'}0.5s: {scenario.grade.speech_metrics.medium_pause_count ?? '—'}
                   {'  ·  '}pauses {'>'}{'>'}1s: {scenario.grade.speech_metrics.notable_pause_count}
                   {scenario.grade.speech_metrics.wpm < 110 && (
-                    <span style={{ color: 'var(--warm)', marginLeft: 6 }}>⚠ slow WPM</span>
+                    <span style={{ color: 'var(--crit)', marginLeft: 6 }}>⚠ slow WPM</span>
+                  )}
+                  {scenario.grade.speech_metrics.wpm >= 110 && scenario.grade.speech_metrics.wpm < 125 && (
+                    <span style={{ color: 'var(--warm)', marginLeft: 6 }}>⚠ slightly slow</span>
                   )}
                   {(scenario.grade.speech_metrics.max_pause_sec > 2.0 || scenario.grade.speech_metrics.notable_pause_count >= 3) && (
                     <span style={{ color: 'var(--warm)', marginLeft: 6 }}>⚠ significant pauses</span>

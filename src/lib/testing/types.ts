@@ -7,7 +7,8 @@ export type ScenarioCategory =
   | 'incomplete'
   | 'slow'
   | 'wrong_answer'
-  | 'silence';
+  | 'silence'
+  | 'observational';
 
 export type GradeLabel = 'Excellent' | 'Good' | 'Ok' | 'Ouch' | 'Bad';
 

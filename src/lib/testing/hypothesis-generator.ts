@@ -91,7 +91,9 @@ export async function generateHypothesis(
 Available prompt types: ${availableTypes}
 Difficulty score range: ${diffMin}–${diffMax} (low = beginner A1, high = advanced C1)
 
-Generate a testing hypothesis and 4–6 specific test scenarios. For each scenario, specify the exact text to be converted to speech as the "learner's response". Include a mix of correct and incorrect responses.
+Generate a testing hypothesis and 8–10 specific test scenarios. For each scenario, specify the exact text to be converted to speech as the "learner's response". Include a mix of correct and incorrect responses.
+
+REQUIRED: Every test run must include 3–4 "observational" category scenarios (see OBSERVATIONAL ERROR SCENARIOS below). These test that the grader detects specific learner patterns without over-penalizing them.
 
 For wrong_language scenarios: use English text as responseToGenerate and set voice="english".
 For all other scenarios: use Spanish text and set voice="spanish".
@@ -110,7 +112,11 @@ no_response, skipped, misunderstood_prompt, incomplete_answer, wrong_meaning, gr
 verb_conjugation, tense_error, ser_estar, por_para, gender_agreement, number_agreement,
 word_order, missing_pronoun, object_pronoun, preposition, vocabulary_gap, unnatural_wording,
 pronunciation, response_speed, target_style_vos, target_style_vocabulary,
-target_style_pronunciation, too_much_english, hallucinated_or_unrelated_answer
+target_style_pronunciation, too_much_english, hallucinated_or_unrelated_answer,
+filled_pause, repetition_restart, false_start, article_omission, article_overuse,
+subject_pronoun_overuse, subjunctive_error, conditional_error, negation_error,
+false_cognate, calque, code_switching, register_error, discourse_markers,
+response_shape, one_word_avoidance
 
 CONSTRAINT: Never assign wrong_language to prompt types that allow English responses: mini_dialogue_comprehension, listen_for_meaning, monologue_comprehension. These questions explicitly allow English, so an English response is correct, not wrong. Only assign wrong_language to: say_it_in_spanish, roleplay_response, open_speaking, grammar_in_context, practical_problem, listen_and_respond.
 For wrong_language scenarios: expectedLabel="Bad" (English response that understood the prompt scores Bad; only use "Ouch" if no comprehension is demonstrated), expectedErrorCategories=["too_much_english"]
@@ -119,10 +125,24 @@ For incomplete scenarios: ONLY use this category for prompts that have multiple 
 For wrong_answer scenarios: expectedLabel="Bad" or "Ouch", expectedErrorCategories=["hallucinated_or_unrelated_answer"]
 For slow scenarios: set audioSpeed and optionally deliberatePauses to test different gradations of slowness.
   NOTE: ElevenLabs speed range is 0.7–1.2 — NEVER request audioSpeed below 0.7.
-  - audioSpeed=0.7 → very slow speech (minimum allowed), expectedLabel="Ok"
-  - audioSpeed=0.8 → noticeably slow speech, expectedLabel="Good" or "Ok"
-  - audioSpeed=0.85 + deliberatePauses=true → borderline speed with hesitation pauses injected between phrases, expectedLabel="Good"
+  The grader uses two WPM tiers: <110 WPM = clearly slow (severity 2), 110–124 WPM = slightly below normal (severity 1). Natural conversational Spanish is 130–160 WPM.
+  - audioSpeed=0.7 → very slow speech (~85–95 WPM), expectedLabel="Ok"
+  - audioSpeed=0.8 → noticeably slow speech (~105–115 WPM), expectedLabel="Good" or "Ok"
+  - audioSpeed=0.85 + deliberatePauses=true → borderline speed (~115–125 WPM) with hesitation pauses, expectedLabel="Good"
+  - audioSpeed=0.9 → slightly below normal (~120–130 WPM), expectedLabel="Good" or "Excellent"
   Include at least 2 slow scenarios at different speeds/pause combinations when testing slowness. Always set expectedErrorCategories=["response_speed"].
+
+OBSERVATIONAL ERROR SCENARIOS — include 3–4 of these per test run (REQUIRED). Set category="observational" for all of them. The responseToGenerate demonstrates a specific learner pattern. The expectedLabel reflects overall task quality — a response with one calque but otherwise correct Spanish should be "Excellent" or "Good"; the observational error alone must not cause Bad/Ouch. Examples of what to generate:
+- article_omission: "Voy a tienda hoy" or "Me gusta café por la mañana" (missing required articles)
+- subject_pronoun_overuse: "Yo voy al mercado. Yo compro pan. Yo regreso a casa." (repeating "yo" throughout)
+- false_cognate: Use "actualmente" meaning "actually", or "realizar" to mean "realize", or "embarazada" in a context calling for embarrassed
+- calque: "Hace sentido para mí" or "Quiero tener un buen tiempo" or "Estoy mirando para trabajo"
+- code_switching: "Fui al store ayer" or "Necesito un bowl para la sopa" (English word mid-sentence)
+- subjunctive_error: "Espero que viene mañana" (should be venga) or "Para que sabes la verdad" (should be sepas)
+- negation_error: "Veo nada en la oscuridad" (missing "no") or "Como nunca carne" (word order)
+- register_error: Use "tú" and very informal slang in a roleplay scenario addressing a boss or formal stranger
+- discourse_markers: Generate a response with no connectors — each clause as a blunt separate statement with no pues/entonces/o sea/bueno
+For observational scenarios, set expectedErrorCategories to the specific category being tested (e.g. ["calque"] or ["article_omission"]).
 
 Return only valid JSON:
 {
@@ -130,7 +150,7 @@ Return only valid JSON:
   "scenarios": [
     {
       "name": "short scenario name",
-      "category": "correct|wrong_language|bad_grammar|incomplete|slow|wrong_answer|silence",
+      "category": "correct|wrong_language|bad_grammar|incomplete|slow|wrong_answer|silence|observational",
       "promptTypePreference": "preferred prompt type from the available list",
       "difficultyRange": [min_float, max_float],
       "responseToGenerate": "exact text to TTS as learner response",
@@ -145,9 +165,9 @@ Return only valid JSON:
 }`;
 
   const completion = await getOpenAI().chat.completions.create({
-    model: 'gpt-4o',
+    model: 'gpt-5.5',
     response_format: { type: 'json_object' },
-    max_tokens: 2000,
+    max_completion_tokens: 2000,
     messages: [
       { role: 'system', content: SYSTEM },
       {

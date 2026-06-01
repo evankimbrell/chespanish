@@ -153,7 +153,7 @@ Prompt ID to echo back: ${q.prompt_id}`;
 
   try {
     const completion = await getOpenAI().chat.completions.create({
-      model: 'gpt-5.4-mini',
+      model: 'gpt-5.5',
       response_format: { type: 'json_object' },
       max_completion_tokens: 900,
       messages: [

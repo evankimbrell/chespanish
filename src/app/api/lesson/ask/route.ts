@@ -66,8 +66,8 @@ export async function POST(req: Request) {
   try {
     // Generate answer with voice tags
     const completion = await getOpenAI().chat.completions.create({
-      model: 'gpt-5.4-mini',
-      max_tokens: 600,
+      model: 'gpt-5.5',
+      max_completion_tokens: 600,
       messages: [
         { role: 'system', content: SYSTEM },
         {
