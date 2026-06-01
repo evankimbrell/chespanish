@@ -82,12 +82,12 @@ OVERALL SCORE (0–5):
 0 = No meaningful response OR response that doesn't engage with the prompt at all
 1 = Attempted but meaning is mostly missing, wrong, or fails to address the prompt
 2 = Partial — addresses the prompt in some way but with major gaps or errors
-3 = Understandable and on-topic with noticeable errors (including 2+ grammar errors of any kind)
-4 = Complete and communicates well with at most 1 minor error — meaning is clear and structure is mostly right
-5 = Natural, fluent, complete — flexible phrasing, no meaningful errors
+3 = Complete and on-topic but contains at least one grammar error of any kind
+4 = Complete, on-topic, and grammatically correct — no grammar errors flagged, phrasing sounds natural
+5 = As above, plus particularly fluent, idiomatic, or impressively well-phrased
 
-CRITICAL RULE — MULTIPLE GRAMMAR ERRORS CAP THE SCORE:
-If 2 or more errors from the grammar family are flagged in observed_errors (grammar, verb_conjugation, tense_error, ser_estar, por_para, gender_agreement, number_agreement, word_order, missing_pronoun, object_pronoun, preposition), the overall_score MUST be capped at 3 (Good), even if the response is complete and communicates meaning. A complete answer with multiple grammar mistakes is Good, not Excellent.
+CRITICAL RULE — ANY GRAMMAR ERROR CAPS THE SCORE AT 3:
+If ANY error from the grammar family is flagged in observed_errors (grammar, verb_conjugation, tense_error, ser_estar, por_para, gender_agreement, number_agreement, word_order, missing_pronoun, object_pronoun, preposition, calque), the overall_score MUST be capped at 3 (Good), regardless of how complete or communicative the response is. Excellent (4–5) is reserved exclusively for responses with zero grammar errors.
 
 LABEL MAPPING: 0→"Ouch", 1→"Bad", 2→"Ok", 3→"Good", 4→"Excellent", 5→"Excellent"
 
