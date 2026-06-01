@@ -200,18 +200,31 @@ async function smartEvaluate(
       };
     }
 
-    // Hard-coded rule: observational scenarios where the grader gave Bad/Ouch indicate the grader
-    // is incorrectly treating a profile-only error as a fundamental failure — flag as a real bug.
-    // But if the label is OK and only the error category is missing, let GPT evaluate whether
-    // the observational category should have been detected.
+    // Hard-coded rule: observational scenarios where the response was ALSO off-topic
+    // (hallucinated_or_unrelated_answer) — the generator failed to stay on-topic.
+    // The Ouch/Bad is earned by the off-topic content; this is a test setup failure.
     if (
       scenario.category === 'observational' &&
       grade &&
-      (grade.label === 'Bad' || grade.label === 'Ouch')
+      (grade.label === 'Bad' || grade.label === 'Ouch') &&
+      (grade.observed_errors ?? []).some((e) => e.category === 'hallucinated_or_unrelated_answer')
+    ) {
+      return { passed: true, failureReason: null };
+    }
+
+    // Hard-coded rule: observational scenarios where the grader gave Bad/Ouch but the response
+    // was NOT off-topic — a purely observational/profile error caused the low grade. That is a
+    // grading bug (calque alone, for example, may reduce the score but shouldn't hit Ouch unless
+    // the response is also fundamentally wrong).
+    if (
+      scenario.category === 'observational' &&
+      grade &&
+      (grade.label === 'Bad' || grade.label === 'Ouch') &&
+      !(grade.observed_errors ?? []).some((e) => e.category === 'hallucinated_or_unrelated_answer')
     ) {
       return {
         passed: false,
-        failureReason: `Observational scenario graded as ${grade.label} — observational errors (${scenario.expectedErrorCategories.join(', ')}) should not cause Bad/Ouch grades`,
+        failureReason: `Observational scenario graded as ${grade.label} without off-topic content — observational errors (${scenario.expectedErrorCategories.join(', ')}) should not alone cause Bad/Ouch grades`,
       };
     }
 
