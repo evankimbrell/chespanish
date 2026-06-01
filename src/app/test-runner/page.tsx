@@ -401,7 +401,9 @@ export default function TestRunnerPage() {
                 <span className="small" style={{ color: 'var(--mute)' }}>
                   {run.scenariosTotal > 0
                     ? `${run.scenariosPassed}/${run.scenariosTotal} passed`
-                    : 'no scenarios'}
+                    : run.status === 'failed'
+                      ? 'failed before scenarios — check token limit or API error'
+                      : 'no scenarios'}
                   {run.bugsFound > 0 && (
                     <span style={{ color: 'var(--crit)', marginLeft: 8 }}>
                       {run.bugsFound} bug{run.bugsFound !== 1 ? 's' : ''}
