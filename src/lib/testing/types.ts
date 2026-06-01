@@ -80,6 +80,13 @@ export interface SimulationPrompt {
   error: string | null;
 }
 
+export interface StudentPersona {
+  background: string;
+  errorPatterns: string[];
+  strengths: string[];
+  speechStyle: string;
+}
+
 export interface SimulationRun {
   id: string;
   mode: 'simulation';
@@ -88,6 +95,7 @@ export interface SimulationRun {
   studentName: string;
   designatedLevel: string;
   comfortLevel: number;
+  persona: StudentPersona | null;
   prompts: SimulationPrompt[];
   testReport: TestReport | null;
   educatorReport: string | null;

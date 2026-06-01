@@ -131,6 +131,12 @@ export default function TestRunnerPage() {
                 ...prev,
                 `${icon} ${data.name}: ${data.passed ? 'passed' : data.failureReason}`,
               ]);
+            } else if (eventName === 'persona_ready') {
+              setRunLog((prev) => [
+                ...prev,
+                `Persona: ${data.background}`,
+                `Errors to expect: ${data.errorPatterns?.join(', ')}`,
+              ]);
             } else if (eventName === 'prompt_start') {
               setRunLog((prev) => [...prev, `→ Prompt ${data.index}: [${data.promptType}] ${data.promptText}…`]);
             } else if (eventName === 'prompt_result') {

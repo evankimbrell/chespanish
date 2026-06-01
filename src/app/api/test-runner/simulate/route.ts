@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import OpenAI from 'openai';
-import type { SimulationRun, SimulationPrompt } from '@/lib/testing/types';
+import type { SimulationRun, SimulationPrompt, StudentPersona } from '@/lib/testing/types';
 import type { PromptResult, ComfortLevel } from '@/lib/types';
 import {
   initEngine, selectNextQuestion, updateEngine, shouldStopTest,
@@ -27,38 +27,89 @@ const LEVEL_TO_COMFORT: Record<string, ComfortLevel> = {
   A1: 1, A2: 2, B1: 3, B2: 4, C1: 5,
 };
 
-const LEVEL_GUIDES: Record<string, string> = {
-  A1: 'You are a true beginner. Use 1–3 word answers, major grammar errors, may mix in English, struggle to form sentences. Often say "no sé" or guess randomly.',
-  A2: 'You are an elementary learner. Short simple sentences, common errors (ser/estar confusion, wrong verb endings), limited vocabulary. Sometimes understand but respond incorrectly.',
-  B1: 'You are an intermediate learner. Complete sentences, some grammar errors (wrong tense, missing agreement), decent vocabulary, can communicate meaning even with errors.',
-  B2: 'You are an upper-intermediate learner. Good fluency, occasional subtle errors, strong comprehension, can handle complex prompts with minor vocabulary gaps.',
-  C1: 'You are an advanced learner. Near-native fluency, rare errors, sophisticated vocabulary, vos conjugation mostly correct, natural Argentine-style phrasing.',
+const LEVEL_PERSONA_GUIDE: Record<string, string> = {
+  A1: `A1 (absolute beginner). Knows only isolated words and memorized phrases. Cannot form original sentences. Heavy English interference. Vocabulary under 200 words. Common patterns: single-word answers, "no sé", random English words, mispronounced Spanish with no structure.`,
+  A2: `A2 (elementary). Can make simple statements about familiar topics with noticeable errors. Knows present tense mostly, struggles with ser/estar, uses wrong gender/number endings. Mixes in English when stuck. Can understand simple questions if spoken slowly. Common errors: ser/estar confusion, gender disagreement, missing articles, English filler words.`,
+  B1: `B1 (intermediate). Can handle everyday topics in complete sentences. Uses present, past (preterite/imperfect mixed up), and immediate future. Vocabulary is functional but gaps appear for precise words. Makes agreement errors, wrong tense choices, and misses vos conjugations. Understands most questions at normal speed. Common errors: wrong tense (preterite vs imperfect), ser/estar confusion on states, vos conjugation mistakes, calque expressions from English, missing subjunctive triggers.`,
+  B2: `B2 (upper-intermediate). Speaks with reasonable fluency on a wide range of topics. Can handle hypothetical and complex ideas. Main issues: subtle grammar (subjunctive, conditional in si-clauses), occasional false cognates, register mismatches, and unnatural Argentine expressions. Common errors: indicative instead of subjunctive, conditional tense errors, false cognates like "actualmente"/"realizar", overly formal vocabulary.`,
+  C1: `C1 (advanced). Near-fluent, sounds natural most of the time. Handles sophisticated topics, idiomatic vos usage, Argentine slang. Rare but characteristic errors: occasional subjunctive slip in complex clauses, overly literal translation of an idiom, minor pronunciation polish. Responses feel native-like with occasional tells.`,
 };
+
+async function generateStudentPersona(name: string, level: string): Promise<StudentPersona> {
+  const levelGuide = LEVEL_PERSONA_GUIDE[level] ?? LEVEL_PERSONA_GUIDE['B1'];
+
+  const completion = await getOpenAI().chat.completions.create({
+    model: 'gpt-5.5',
+    max_completion_tokens: 800,
+    messages: [{
+      role: 'user',
+      content: `Create a realistic Argentine Spanish learner profile for a student named "${name}" at ${level} level.
+
+Level description: ${levelGuide}
+
+Return a JSON object with exactly these fields:
+{
+  "background": "2-3 sentences: who they are, why they're learning Spanish, how long they've been studying, their exposure to Argentine culture",
+  "errorPatterns": ["3-5 specific recurring errors this student consistently makes, tied to their level"],
+  "strengths": ["2-3 areas where this student performs relatively well for their level"],
+  "speechStyle": "1-2 sentences describing HOW this student speaks: pace, hesitation patterns, confidence, filler words they use, tendency to avoid hard structures or attempt them anyway"
+}
+
+Make the profile distinct and specific — not generic. Give them a real story. Return ONLY the JSON object.`,
+    }],
+  });
+
+  try {
+    const raw = completion.choices[0].message.content?.trim() ?? '{}';
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    return JSON.parse(cleaned) as StudentPersona;
+  } catch {
+    return {
+      background: `${name} is a ${level}-level student learning Argentine Spanish.`,
+      errorPatterns: ['verb conjugation errors', 'ser/estar confusion'],
+      strengths: ['listening comprehension', 'vocabulary recall'],
+      speechStyle: 'Speaks with moderate confidence, pauses to search for words.',
+    };
+  }
+}
 
 async function generateStudentResponse(
   promptText: string,
   audioText: string | undefined,
   acceptableExamples: string[],
   designatedLevel: string,
+  persona: StudentPersona | null,
 ): Promise<string> {
-  const guide = LEVEL_GUIDES[designatedLevel] ?? LEVEL_GUIDES['B1'];
+  const levelGuide = LEVEL_PERSONA_GUIDE[designatedLevel] ?? LEVEL_PERSONA_GUIDE['B1'];
   const audioCtx = audioText ? `\nAudio played to student: "${audioText}"` : '';
   const examples = acceptableExamples.slice(0, 2).join(' | ');
+
+  const personaCtx = persona
+    ? `STUDENT PROFILE:
+Background: ${persona.background}
+Speech style: ${persona.speechStyle}
+Recurring errors this student makes: ${persona.errorPatterns.join('; ')}
+Strengths: ${persona.strengths.join('; ')}`
+    : `LEVEL: ${levelGuide}`;
 
   const completion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
     max_completion_tokens: 500,
     messages: [{
       role: 'user',
-      content: `${guide}
+      content: `You are roleplaying as this specific Spanish learner. Stay completely in character.
+
+${personaCtx}
+
+Level benchmark: ${levelGuide}
 
 The student was asked: "${promptText}"${audioCtx}
-${examples ? `A correct answer would be: "${examples}"` : ''}
+${examples ? `A fully correct answer would be: "${examples}"` : ''}
 
-Generate the SPOKEN response this student would actually produce — with errors and limitations matching their level. Argentine Spanish dialect. Return ONLY the spoken words, nothing else.`,
+Produce the EXACT SPOKEN WORDS this student would say — include their characteristic errors, hesitations, and limitations. Do NOT give a perfect answer unless they are C1. Do NOT say "no sé" unless the question is genuinely incomprehensible at their level. Always attempt the question in some form matching their ability. Argentine Spanish dialect. Return ONLY the spoken words.`,
     }],
   });
-  return completion.choices[0].message.content?.trim() || 'No sé.';
+  return completion.choices[0].message.content?.trim() || 'Ehh... no entiendo bien.';
 }
 
 const EDUCATOR_PROMPT = `You're an expert Argentine Spanish tutor reviewing a simulated student's level test. Write a concise educator report (under 400 words, bullet points) covering:
@@ -122,6 +173,7 @@ export async function POST(req: Request) {
     studentName: studentName.trim(),
     designatedLevel,
     comfortLevel,
+    persona: null,
     prompts: [],
     testReport: null,
     educatorReport: null,
@@ -142,6 +194,17 @@ export async function POST(req: Request) {
       try {
         run.status = 'running';
         saveRun(run);
+
+        send('status', { message: `Generating student persona for ${run.studentName} (${designatedLevel})…` });
+        const persona = await generateStudentPersona(run.studentName, designatedLevel);
+        run.persona = persona;
+        saveRun(run);
+        send('persona_ready', {
+          background: persona.background,
+          errorPatterns: persona.errorPatterns,
+          strengths: persona.strengths,
+          speechStyle: persona.speechStyle,
+        });
 
         let engine = initEngine(comfortLevel);
         const promptResults: PromptResult[] = [];
@@ -175,6 +238,7 @@ export async function POST(req: Request) {
               question.audio_text,
               question.acceptable_response_examples ?? [],
               designatedLevel,
+              persona,
             );
 
             const audioBuffer = await generateTestAudio(generatedResponse, 'spanish', 1.0);

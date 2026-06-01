@@ -238,6 +238,41 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
         </div>
       </div>
 
+      {/* Student Persona */}
+      {run.persona && (
+        <div
+          style={{
+            padding: '20px 24px',
+            background: 'var(--bg-2)',
+            border: '1px solid var(--line)',
+            borderRadius: 6,
+            marginBottom: 20,
+          }}
+        >
+          <div className="mono small" style={{ color: 'var(--warm)', marginBottom: 10, fontSize: 10, letterSpacing: '0.08em' }}>STUDENT PERSONA</div>
+          <p style={{ fontSize: 13, color: 'var(--ink)', margin: '0 0 14px', lineHeight: 1.6 }}>{run.persona.background}</p>
+          <p style={{ fontSize: 13, color: 'var(--mute)', margin: '0 0 14px', fontStyle: 'italic', lineHeight: 1.5 }}>{run.persona.speechStyle}</p>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+            <div>
+              <div className="mono small" style={{ color: 'var(--mute)', marginBottom: 6, fontSize: 10 }}>ERROR PATTERNS</div>
+              <ul style={{ margin: 0, paddingLeft: 16 }}>
+                {run.persona.errorPatterns.map((e, i) => (
+                  <li key={i} style={{ fontSize: 12, color: 'var(--crit)', marginBottom: 3 }}>{e}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <div className="mono small" style={{ color: 'var(--mute)', marginBottom: 6, fontSize: 10 }}>STRENGTHS</div>
+              <ul style={{ margin: 0, paddingLeft: 16 }}>
+                {run.persona.strengths.map((s, i) => (
+                  <li key={i} style={{ fontSize: 12, color: 'var(--leaf)', marginBottom: 3 }}>{s}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Level accuracy card */}
       <div
         style={{
