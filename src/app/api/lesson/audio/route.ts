@@ -17,9 +17,11 @@ type Segment = VoiceSegment | { type: 'prompt'; text: '' };
 type Play = { segments: VoiceSegment[]; promptAfter: boolean; text: string; spanishText?: string; sectionName?: string };
 
 function parseLesson(transcript: string): Segment[] {
-  // Handles both old format (<English voice>, <Spanish voice>) and
-  // new format (<narrator>, <spanish 1>, <spanish 2>, <spanish 3>, <spanish 4>)
-  const TAG_RE = /(<narrator>|<spanish\s+\d+>|<\/?English voice>|<\/?Spanish voice>|<\/?prompt>|<section[^>]*>|<\/section>)/gi;
+  // Handles both old format (<English voice>, <Spanish voice>) and new format
+  // (<narrator>, <spanish 1>..<spanish 4>). Tolerant of GPT drift: optional voice
+  // numbers (<spanish>), missing spaces (<spanish1>), and stray closing tags
+  // (</narrator>, </spanish 1>) — none of which must ever reach TTS.
+  const TAG_RE = /(<\/?narrator\s*>|<\/?spanish\s*\d*\s*>|<\/?English voice>|<\/?Spanish voice>|<\/?prompt>|<section[^>]*>|<\/section>)/gi;
   const parts = transcript.split(TAG_RE);
   let currentType: 'english' | 'spanish' | null = null;
   let currentVoiceIndex = 1;
@@ -30,21 +32,20 @@ function parseLesson(transcript: string): Segment[] {
     const clean = part.trim();
     if (!clean) continue;
 
-    // New format tags
-    if (/^<narrator>$/i.test(clean)) {
+    // New format opening tags
+    if (/^<narrator\s*>$/i.test(clean)) {
       currentType = 'english'; currentVoiceIndex = 1;
-    } else if (/^<spanish\s+(\d+)>$/i.test(clean)) {
-      const m = clean.match(/^<spanish\s+(\d+)>$/i);
+    } else if (/^<spanish\s*(\d*)\s*>$/i.test(clean)) {
+      const m = clean.match(/^<spanish\s*(\d*)\s*>$/i);
+      const n = m && m[1] ? Number(m[1]) : 1;
       currentType = 'spanish';
-      currentVoiceIndex = m ? Math.max(1, Math.min(4, Number(m[1]))) : 1;
+      currentVoiceIndex = Math.max(1, Math.min(4, n));
     }
-    // Old format tags
+    // Old format opening tags
     else if (/^<English voice>$/i.test(clean)) {
       currentType = 'english'; currentVoiceIndex = 1;
     } else if (/^<Spanish voice>$/i.test(clean)) {
       currentType = 'spanish'; currentVoiceIndex = 1;
-    } else if (/^<\/(?:English|Spanish) voice>$/i.test(clean)) {
-      // closing tag — skip
     }
     // Section tags
     else if (/^<section/i.test(clean)) {
@@ -53,13 +54,19 @@ function parseLesson(transcript: string): Segment[] {
     } else if (/^<\/section>/i.test(clean)) {
       currentSection = undefined;
     }
-    // Prompt tag
+    // Prompt tag (open or close)
     else if (/^<\/?prompt>$/i.test(clean)) {
       segs.push({ type: 'prompt', text: '' });
     }
-    // Content
+    // Any stray closing tag (</narrator>, </spanish 1>, </English voice>, …) — skip
+    else if (/^<\//.test(clean)) {
+      // content for the current voice continues after it
+    }
+    // Content — strip any residual angle-bracket tags as a final safety net so a
+    // malformed tag is never spoken aloud, then skip if nothing meaningful remains.
     else if (currentType) {
-      segs.push({ type: currentType, voiceIndex: currentVoiceIndex, text: clean, sectionName: currentSection });
+      const text = clean.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (text) segs.push({ type: currentType, voiceIndex: currentVoiceIndex, text, sectionName: currentSection });
     }
   }
   return segs;
@@ -152,38 +159,64 @@ function charAlignmentToWordTimings(alignment: ElevenLabsAlignment, offsetSec: n
   return timings;
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 async function textToBufferWithTimings(
   text: string,
   voiceId: string,
   offsetSec: number
 ): Promise<{ buffer: Buffer; wordTimings: WordTiming[]; durationSec: number }> {
-  const res = await fetch(
-    `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps`,
-    {
-      method: 'POST',
-      headers: {
-        'xi-api-key': process.env.ELEVENLABS_API_KEY!,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        text,
-        model_id: 'eleven_multilingual_v2',
-        output_format: 'mp3_44100_128',
-      }),
+  // Retry transient failures (429 rate limits, 5xx) with exponential backoff.
+  // With 100+ plays at concurrency 4, occasional rate-limit blips are expected —
+  // a single un-retried failure would otherwise abort the whole batch.
+  const MAX_ATTEMPTS = 3;
+  let lastErr = '';
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/with-timestamps`,
+        {
+          method: 'POST',
+          headers: {
+            'xi-api-key': process.env.ELEVENLABS_API_KEY!,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            text,
+            model_id: 'eleven_multilingual_v2',
+            output_format: 'mp3_44100_128',
+          }),
+        }
+      );
+    } catch (e) {
+      // Network error — retry
+      lastErr = e instanceof Error ? e.message : String(e);
+      if (attempt < MAX_ATTEMPTS) { await sleep(500 * 2 ** (attempt - 1)); continue; }
+      throw new Error(`ElevenLabs network error after ${MAX_ATTEMPTS} attempts: ${lastErr}`);
     }
-  );
 
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`ElevenLabs /with-timestamps error ${res.status}: ${err}`);
+    if (!res.ok) {
+      lastErr = `${res.status}: ${await res.text()}`;
+      // Retry only on rate-limit / server errors; fail fast on 4xx (bad request, auth)
+      if ((res.status === 429 || res.status >= 500) && attempt < MAX_ATTEMPTS) {
+        await sleep(500 * 2 ** (attempt - 1));
+        continue;
+      }
+      throw new Error(`ElevenLabs /with-timestamps error ${lastErr}`);
+    }
+
+    const data = await res.json();
+    if (!data?.audio_base64) {
+      throw new Error('ElevenLabs returned no audio');
+    }
+    const buffer = Buffer.from(data.audio_base64, 'base64');
+    // Alignment can occasionally be absent; degrade to no word timings rather than crash.
+    const wordTimings = data.alignment ? charAlignmentToWordTimings(data.alignment, offsetSec) : [];
+    const durationSec = data.alignment?.character_end_times_seconds?.at(-1) ?? 0;
+    return { buffer, wordTimings, durationSec };
   }
-
-  const data = await res.json();
-  const buffer = Buffer.from(data.audio_base64, 'base64');
-  const wordTimings = charAlignmentToWordTimings(data.alignment, offsetSec);
-  const durationSec = data.alignment.character_end_times_seconds.at(-1) ?? 0;
-
-  return { buffer, wordTimings, durationSec };
+  throw new Error(`ElevenLabs failed after ${MAX_ATTEMPTS} attempts: ${lastErr}`);
 }
 
 async function generatePlayAudio(

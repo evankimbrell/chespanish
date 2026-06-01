@@ -41,7 +41,9 @@ async function generateStudentPersona(name: string, level: string): Promise<Stud
 
   const completion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
-    max_completion_tokens: 800,
+    // Reasoning tokens come out of this budget before the JSON; too low → empty →
+    // generic fallback persona for everyone. Keep headroom.
+    max_completion_tokens: 1400,
     messages: [{
       role: 'user',
       content: `Create a realistic Argentine Spanish learner profile for a student named "${name}" at ${level} level.
@@ -95,7 +97,9 @@ Strengths: ${persona.strengths.join('; ')}`
 
   const completion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
-    max_completion_tokens: 500,
+    // Too low truncates to empty → the fallback fires for EVERY prompt, making all
+    // simulated responses identical (the original "no sé" bug). Keep headroom.
+    max_completion_tokens: 1200,
     messages: [{
       role: 'user',
       content: `You are roleplaying as this specific Spanish learner. Stay completely in character.

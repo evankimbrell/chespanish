@@ -67,7 +67,9 @@ export async function POST(req: Request) {
     // Generate answer with voice tags
     const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-5.5',
-      max_completion_tokens: 600,
+      // gpt-5.5 spends reasoning tokens from this budget before emitting the answer;
+      // 600 risked truncating to empty. 1500 leaves room for an 80–180 word reply.
+      max_completion_tokens: 1500,
       messages: [
         { role: 'system', content: SYSTEM },
         {

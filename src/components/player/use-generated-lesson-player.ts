@@ -5,6 +5,13 @@ import type { FakePlayer } from './use-fake-player';
 import type { PlayerState } from '@/lib/types';
 import { useRecording } from '@/hooks/use-recording';
 
+// Shown if grading fails or returns nothing — keeps the UI from hanging on "Grading…".
+const GRADE_FALLBACK: LessonGrade = {
+  label: 'Ok',
+  brief_feedback: 'Grading was unavailable — you can continue.',
+  observed_errors: [],
+};
+
 export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const plays = lesson.plays;
   const totalCount = lesson.totalCount ?? plays.length;
@@ -25,6 +32,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const isAskRef = useRef(false);
   const savedAskPositionRef = useRef<{ playIdx: number; fraction: number } | null>(null);
   const answerAudioRef = useRef<HTMLAudioElement | null>(null);
+  const pendingPlayIdxRef = useRef<number | null>(null); // target to resume once buffer catches up
 
   const {
     startRecording, stopRecording,
@@ -38,13 +46,25 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     if (idx + 1 >= totalCount) {
       setState('complete');
     } else if (idx + 1 >= plays.length) {
-      // Ran out of loaded audio — lesson continues but next batch isn't ready yet
+      // Ran out of loaded audio — lesson continues but next batch isn't ready yet.
+      // Remember the target so we auto-resume once the background load delivers it.
+      pendingPlayIdxRef.current = idx + 1;
       setState('idle');
     } else {
       setPlayIdx(idx + 1);
       setState('playing');
     }
   }, [totalCount, plays.length]);
+
+  // Resume from a buffer stall when the next batch of plays arrives.
+  useEffect(() => {
+    if (pendingPlayIdxRef.current !== null && pendingPlayIdxRef.current < plays.length) {
+      const target = pendingPlayIdxRef.current;
+      pendingPlayIdxRef.current = null;
+      setPlayIdx(target);
+      setState('playing');
+    }
+  }, [plays.length]);
 
   // Resume lesson at saved position after ask-answer finishes or fails
   const resumeAfterAsk = useCallback(() => {
@@ -99,8 +119,8 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
         body: JSON.stringify({ transcript: recordTranscript, playText: currentPlay.text, spanishText: currentPlay.spanishText }),
       })
         .then((r) => r.json())
-        .then((data) => setGrade(data))
-        .catch(() => {});
+        .then((data) => setGrade(data && data.label ? data : GRADE_FALLBACK))
+        .catch(() => setGrade(GRADE_FALLBACK));
     }
   }, [recordTranscript]);
 
@@ -177,6 +197,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const play = useCallback(() => setState('playing'), []);
 
   const pause = useCallback(() => {
+    pendingPlayIdxRef.current = null; // deliberate pause — don't auto-resume on next batch
     audioRef.current?.pause();
     clearSub();
     setState('idle');
@@ -245,6 +266,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   }, [plays, playIdx, grade]);
 
   const seek = useCallback((t: number) => {
+    pendingPlayIdxRef.current = null; // a manual seek overrides any pending buffer-resume
     const clamped = Math.max(0, Math.min(1, t));
     const fractionalIdx = clamped * totalCount;
     const targetIdx = Math.min(Math.floor(fractionalIdx), Math.max(0, plays.length - 1));
