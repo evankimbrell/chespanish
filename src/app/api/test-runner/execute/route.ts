@@ -93,7 +93,31 @@ Return ONLY the spoken Spanish text.`,
     observational: '',
   };
 
-  if (category === 'observational') return planResponse;
+  if (category === 'observational') {
+    // Generate an on-topic correct response with the specific observational error injected.
+    // planResponse contains the error description/target from the hypothesis generator.
+    const audioCtx = question.audio_text ? ` Audio played to student: "${question.audio_text}".` : '';
+    const obsGuidance = [...(question.target_answer ? [question.target_answer] : []), ...(question.acceptable_response_examples ?? [])].filter(Boolean).slice(0, 2).join(' | ');
+    try {
+      const completion = await getOpenAI().chat.completions.create({
+        model: 'gpt-5.5',
+        max_completion_tokens: 120,
+        messages: [{
+          role: 'user',
+          content: `A student was asked: "${prompt}".${audioCtx}${obsGuidance ? ` Acceptable answers include: ${obsGuidance}.` : ''}
+
+Generate ONE natural Argentine Spanish response that:
+1. Directly and fully answers the question — stay exactly on topic
+2. Contains this specific learner error naturally embedded in the answer: ${planResponse}
+
+The response must answer the actual question. Return ONLY the spoken text.`,
+        }],
+      });
+      const generated = completion.choices[0].message.content?.trim();
+      if (generated) return generated;
+    } catch {}
+    return planResponse;
+  }
 
   if (category === 'slow') {
     // Bilingual questions (listen_for_meaning, monologue_comprehension) may have English correct
