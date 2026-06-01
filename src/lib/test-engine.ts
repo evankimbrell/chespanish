@@ -6,12 +6,12 @@ import type {
 // ── Ability scale mapping ──────────────────────────────────────────────────
 
 const COMFORT_TO_ABILITY: Record<number, number> = {
-  0: 0.5,  // brand new → skip test
-  1: 1.5,  // few words
-  2: 2.8,  // studied a little
-  3: 4.2,  // basic conversations
-  4: 5.8,  // pretty comfortable
-  5: 7.2,  // advanced
+  0: 0.5,  // brand new → skip test (Pre-A1)
+  1: 2.2,  // few words → A1
+  2: 4.2,  // studied a little → A2
+  3: 6.2,  // basic conversations → B1
+  4: 8.2,  // pretty comfortable → B2
+  5: 9.5,  // advanced → C1
 };
 
 // Float 0–10 → display level string

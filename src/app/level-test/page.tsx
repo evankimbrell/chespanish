@@ -133,6 +133,13 @@ export default function LevelTestPage() {
 
   // Init on mount
   useEffect(() => {
+    // Comfort level 0 = "brand new" → skip test, place at Pre-A1
+    if (profile.comfortLevel === 0) {
+      startLevelTestSession(0);
+      completeLevelTestSession(null);
+      router.replace('/level-result');
+      return;
+    }
     startLevelTestSession(profile.comfortLevel);
     const eng = initEngine(profile.comfortLevel);
     const first = selectNextQuestion(eng, QUESTION_BANK);
