@@ -62,7 +62,21 @@ FORBIDDEN:
 - Spelling-only changes
 
 Return ONLY the spoken text with the error introduced, nothing else.`,
-    incomplete: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}". Generate a Spanish response that is clearly ON-TOPIC (responding to the same question) but leaves out a KEY required element. The response must be recognizably about the same subject — NOT a random or unrelated answer. Examples of good incomplete responses: if asked to order coffee AND say no sugar → say only "Un café, por favor" (on topic, missing the constraint); if asked to introduce yourself with name AND where you're from → say only "Me llamo María" (on topic, missing location). The response should be grammatically correct but structurally incomplete. Return ONLY the spoken text.`,
+    incomplete: `The student was asked: "${prompt}". A correct answer would be: "${correctAnswer}".
+
+Generate a Spanish response that addresses the SAME SITUATION but leaves out ONE required element.
+
+CRITICAL: The response must be about EXACTLY the same topic as the prompt. If the prompt is about missing a work meeting, the response must be about missing a work meeting. If the prompt is about ordering food, the response must be about ordering food. NEVER switch topics.
+
+Good examples of incomplete responses:
+- Asked to explain being late AND suggest a solution → say only "Lo siento, llegué tarde al trabajo" (explains but no solution)
+- Asked to order coffee AND say no sugar → say only "Un café, por favor" (orders but no dietary constraint)
+- Asked to introduce yourself AND say where you're from → say only "Me llamo María" (name but no location)
+- Asked to apologize AND offer to reschedule → say only "Disculpe, no pude asistir a la reunión" (apology but no reschedule offer)
+
+FORBIDDEN: Switching to a different topic entirely, talking about something unrelated to what was asked.
+
+Return ONLY the spoken Spanish text.`,
     slow: '',
     wrong_answer: `The student was asked: "${prompt}". Generate a Spanish response that answers a COMPLETELY DIFFERENT question — about an entirely unrelated topic. The response must NOT address the actual question at all. The student should sound like they misheard or misread the prompt entirely.
 

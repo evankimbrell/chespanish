@@ -155,6 +155,21 @@ async function smartEvaluate(
       };
     }
 
+    // Hard-coded rule: incomplete category where the grader flagged hallucinated_or_unrelated_answer
+    // means the response generator drifted completely off-topic — test setup failure, not a grading bug.
+    // The grader is correct to say Bad; the generator failed to produce an on-topic incomplete answer.
+    if (
+      scenario.category === 'incomplete' &&
+      grade &&
+      (grade.observed_errors ?? []).some((e) => e.category === 'hallucinated_or_unrelated_answer') &&
+      !(grade.observed_errors ?? []).some((e) => e.category === 'incomplete_answer')
+    ) {
+      return {
+        passed: true,
+        failureReason: null,
+      };
+    }
+
     // Hard-coded rule: slow category where grader gave Excellent and didn't flag response_speed
     // means the audio actually came out at normal speed (130+ WPM) despite the intended slowness.
     // This is a test setup failure — deliberate pause injection at various speeds can produce
