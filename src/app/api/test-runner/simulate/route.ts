@@ -47,7 +47,7 @@ async function generateStudentResponse(
 
   const completion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
-    max_completion_tokens: 80,
+    max_completion_tokens: 500,
     messages: [{
       role: 'user',
       content: `${guide}
@@ -90,7 +90,7 @@ async function generateEducatorReport(run: SimulationRun): Promise<string> {
 
   const completion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
-    max_completion_tokens: 700,
+    max_completion_tokens: 1200,
     messages: [
       { role: 'system', content: EDUCATOR_PROMPT },
       { role: 'user', content: lines.join('\n') },
