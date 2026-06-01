@@ -297,7 +297,7 @@ Prompt ID to echo back: ${q.prompt_id}`;
         const completion = await getOpenAI().chat.completions.create({
           model: 'gpt-5.5',
           response_format: { type: 'json_object' },
-          max_completion_tokens: 900,
+          max_completion_tokens: 1500,
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: userMessage },
@@ -305,7 +305,16 @@ Prompt ID to echo back: ${q.prompt_id}`;
         });
 
         const raw = completion.choices[0]?.message?.content ?? '{}';
-        const parsed = JSON.parse(raw);
+        // eslint-disable-next-line prefer-const
+        let parsed: Record<string, unknown> = {};
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          // Truncated JSON (token limit hit) — emit what we can and bail gracefully
+          console.error('[transcribe-and-grade] JSON parse failed (token limit?), raw:', raw.slice(0, 200));
+          send({ type: 'error', message: 'Grading response was truncated — increase max_completion_tokens or simplify prompt' });
+          return;
+        }
         const score = Math.max(0, Math.min(5, Number(parsed.overall_score) || 0)) as 0 | 1 | 2 | 3 | 4 | 5;
         parsed.overall_score = score;
         parsed.label = LABELS[score];
