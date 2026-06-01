@@ -222,14 +222,15 @@ export async function POST(req: Request) {
 
       try {
         // Step 1: Transcribe
-        let transcription = await runTranscription(audio, undefined, allowEnglish);
-        // Retry with forced Spanish ONLY for Slavic character artifacts (a real Whisper
-        // transcription bug where Spanish audio gets garbled into Slavic chars).
-        // We do NOT retry on detectedLanguage === 'english' because forcing language='es'
-        // causes Whisper to TRANSLATE English audio into Spanish instead of transcribing
-        // verbatim — an English response would then appear as correct Spanish.
-        // The grader handles genuine English responses via the too_much_english error category.
-        if (!allowEnglish && SLAVIC_RE.test(transcription.text)) {
+        // Force language='es' for Spanish-only prompts to prevent Whisper from
+        // auto-translating Spanish audio into English. For bilingual prompts
+        // (allowEnglish=true), let Whisper detect freely so English responses
+        // are preserved verbatim.
+        const forcedLang = allowEnglish ? undefined : 'es';
+        let transcription = await runTranscription(audio, forcedLang, allowEnglish);
+        // Retry without language lock only for Slavic character artifacts when already
+        // forcing Spanish (shouldn't occur but guard against it).
+        if (forcedLang && SLAVIC_RE.test(transcription.text)) {
           transcription = await runTranscription(audio, 'es');
         }
         const transcriptText = transcription.text;
