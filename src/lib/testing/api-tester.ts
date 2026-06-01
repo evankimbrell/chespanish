@@ -49,7 +49,9 @@ export async function runScenario(
         if (msg.type === 'grade') grade = msg.grade;
         if (msg.type === 'error') throw new Error(msg.message);
       } catch (parseErr) {
-        if (parseErr instanceof Error && parseErr.message !== 'Unexpected token') {
+        // Ignore SyntaxErrors from JSON.parse (truncated/non-JSON lines are normal in streaming)
+        // Re-throw anything else — e.g. the Error thrown above when msg.type === 'error'
+        if (!(parseErr instanceof SyntaxError)) {
           throw parseErr;
         }
       }
