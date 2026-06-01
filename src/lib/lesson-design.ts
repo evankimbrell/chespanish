@@ -6,6 +6,100 @@ function getOpenAI(): OpenAI {
   return _openai;
 }
 
+export const LESSON_PROMPT = `You are a master Spanish tutor, audio lesson designer, and curriculum writer. You are creating the first personalized Spanish audio lesson for a student after a level test.
+
+The student has already completed a placement test. A separate diagnostic prompt has produced a first-lesson design brief explaining the student's estimated level, strengths, weaknesses, highest-ROI lesson focus, target language, grading priorities, adaptive branching, and final performance task.
+
+Your job is to use that design brief to generate the full audio lesson transcript.
+
+The lesson should use the core mechanics of Pimsleur-style instruction while also taking advantage of modern AI lesson functionality: real-time grading, adaptive responses, pronunciation scoring, dynamic correction, comprehension checks, open spoken responses, and the student's ability to ask questions during the lesson.
+
+The lesson should feel highly engaging, personal, practical, and conversational. It should not feel like a grammar lecture.
+
+Here is the first-lesson design brief:
+
+[DESIGN_BRIEF]
+
+Now generate the complete audio lesson transcript.
+
+LESSON FORMAT REQUIREMENTS
+
+Use:
+<narrator> for the English-speaking narrator.
+<spanish 1> for the main Spanish voice.
+<spanish 2> for a second Spanish voice if useful for mini-dialogues.
+<spanish 3> and <spanish 4> only if truly useful.
+
+Use no more than 4 total voices.
+
+The narrator speaks in English and gives all instructions, explanations, transitions, corrections, and encouragement.
+The Spanish voices only speak Spanish and should only speak full Spanish sentences or natural Spanish phrases used as part of the lesson.
+
+Whenever the student is expected to speak, insert:
+<prompt>
+
+The <prompt> tag should appear alone on its own line.
+
+Do not include stage directions in brackets. Do not include timing estimates. Do not include markdown tables. Do not include commentary before or after the transcript.
+
+LESSON LENGTH
+
+The default target length is 20–30 minutes.
+Aim for approximately 3,000–5,000 spoken words, not counting <prompt> tags or structural labels.
+Do not make the lesson too short.
+
+PEDAGOGICAL REQUIREMENTS
+
+1. Active recall — student produces Spanish before hearing the model answer.
+2. Graduated interval recall — phrases return repeatedly at expanding intervals.
+3. Anticipation — narrator prompts student to say something before the Spanish voice reveals the answer.
+4. Organic grammar acquisition — teach through use, not explanation.
+5. Core vocabulary — introduce a focused, high-value set only.
+6. Recombination — transform known material across question/answer, positive/negative, tense, time, register.
+7. Pronunciation modeling — listen-and-repeat moments, rhythm, difficult phrase breakdowns.
+8. Real conversation preparation — student should be able to use this Spanish immediately.
+
+ACTIVITY TYPES TO INCLUDE (choose what fits the lesson):
+Narration and instruction | Brief concept explanation | Listen and repeat | Translation prompt (English → student produces Spanish → model answer) | Answering questions in Spanish | Fill-in-the-blank | Vocabulary recall | Minimal pair or pronunciation drill | Listening to a short conversation | Comprehension questions about that conversation | Open-ended spoken response | Final performance task
+
+GRADING-AWARE DESIGN
+
+The app grades responses: Ouch / Bad / Ok / Good / Excellent.
+Include prompts that test: pronunciation, meaning success, completeness, response speed, grammar accuracy, fluency, naturalness, listening comprehension.
+For closed prompts, provide a clear expected Spanish answer immediately after.
+For open prompts, explain what is acceptable, then give model examples.
+
+DIALECT: Argentine/Rioplatense Spanish by default. Use vos, querés, tenés, podés, sos, dale, che, viste naturally.
+
+LESSON STRUCTURE:
+1. Brief English introduction
+2. Warm-up (material the student can handle)
+3. Core phrase introduction
+4. Listen-and-repeat practice
+5. Active recall
+6. Recombination drills
+7. Mini-dialogue (two Spanish voices)
+8. Comprehension check
+9. Guided conversation practice
+10. Open-ended response
+11. Final performance task
+12. Closing with preview of next lesson
+
+PROMPT DENSITY: Use <prompt> frequently — roughly every 20–60 spoken words during active practice. Less frequent during explanations.
+
+Match Spanish difficulty to the student's level from the design brief.
+
+OUTPUT: Return only the lesson transcript. Start directly with <narrator>.`;
+
+export async function generateLessonTranscript(lessonDesignBrief: string): Promise<string> {
+  const completion = await getOpenAI().chat.completions.create({
+    model: 'gpt-5.5',
+    max_completion_tokens: 16000,
+    messages: [{ role: 'user', content: LESSON_PROMPT.replace('[DESIGN_BRIEF]', lessonDesignBrief) }],
+  });
+  return completion.choices[0]?.message?.content ?? '';
+}
+
 export interface DisplayLesson {
   title: string;
   scenario: string;

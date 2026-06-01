@@ -2,7 +2,7 @@ import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 import type { LevelTestSession } from '@/lib/types';
-import { generateLessonDesignBrief } from '@/lib/lesson-design';
+import { generateLessonDesignBrief, generateLessonTranscript } from '@/lib/lesson-design';
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -16,19 +16,6 @@ Imagine you're going to write a report and hand that to another educator who's g
 
 Make the report less than 500 words and use bullet points to clearly map their strengths, weaknesses, gaps, and logical things to incorporate next. Make the report specific and to the point.`;
 
-const LESSON_PROMPT = `You're a master Spanish tutor designing the first lesson for a student learning spanish. You've been handed a report explaining the students strengths and weaknesses based off a basic preliminary level test. You'll also receive the level test report that shows the questions they were asked and their answers as well as a grade of how well they did for each question.
-
-Create an audio lesson based off the report recommendations. The target length of the audio lesson is 2000 words.
-
-The lesson should have an English language narrator that briefly explains at the beginning what we'll be doing in the lesson. The English language narrator also will be used in the lesson when the user is instructed to do something. It will also be used an outro saying that the lesson is now over and giving the user some basic encouragement.
-
-IMPORTANT: The audio lesson should use the core tenets of Pimsleur lessons. Pimsleur is built around active recall under light pressure. Instead of passively listening or repeating, the learner is prompted to produce the answer before hearing it. The lesson pauses, the learner responds out loud, then the native speaker gives the correct version. This trains retrieval, pronunciation, and speaking automaticity rather than recognition alone. Its other core mechanic is graduated interval recall: words and phrases return at carefully spaced intervals, just as the learner is starting to forget them. Lessons use a small set of high-value vocabulary and phrase patterns, then recombine them in different ways: statement to question, positive to negative, now to later, "I want" to "do you want." Grammar is learned organically through use, not through long explanations.
-
-Each portion of the lesson needs to be labeled as <English voice> and <Spanish voice>. When the user is expected to respond with an answer, put <prompt>. Use <prompts> frequently to maintain engagement.
-
-Generate the lesson. Do not include any other text other than the lesson transcript. The user does not hear the word <prompt> because this is just a signal for the audio transcriber to read. The English voice should never read Spanish.
-
-Wrap related groups of content in <section name="3-5 word label"> and </section> tags. Each lesson must have 5–7 sections total. Section names should be 3–5 words describing the theme or activity (e.g. "Café Greeting", "Ordering Coffee", "Asking for the Bill"). All <English voice>, <Spanish voice>, and <prompt> tags must appear inside a section block.`;
 
 function formatSessionForOpenAI(session: LevelTestSession, userName: string): string {
   const report = session.report;
@@ -165,17 +152,7 @@ export async function POST(req: Request) {
   const { fullBrief: lessonDesignBrief, displayLesson } = await generateLessonDesignBrief(formattedReport);
 
   // Step 3: Full lesson transcript — uses design brief as the primary context
-  const lessonCompletion = await getOpenAI().chat.completions.create({
-    model: 'gpt-5.5',
-    max_completion_tokens: 16000,
-    messages: [
-      {
-        role: 'user',
-        content: `${LESSON_PROMPT}\n\n--- LESSON DESIGN BRIEF ---\n${lessonDesignBrief}\n\n--- LEVEL TEST REPORT ---\n${formattedReport}`,
-      },
-    ],
-  });
-  const lessonTranscript = lessonCompletion.choices[0]?.message?.content ?? '';
+  const lessonTranscript = await generateLessonTranscript(lessonDesignBrief);
 
   const safeUserName = (userName ?? 'student').toLowerCase().replace(/[^a-z0-9]/g, '-');
   const timestamp = (session.completedAt ?? new Date().toISOString()).replace(/[:.]/g, '-');

@@ -1,5 +1,7 @@
 'use client';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAppStore } from '@/lib/store';
 import type { SimulationRun, SimulationPrompt } from '@/lib/testing/types';
 import type { SkillScores } from '@/lib/types';
 
@@ -187,6 +189,52 @@ function AbilityGauge({ value, label }: { value: number; label: string }) {
 }
 
 export function SimulationDetail({ run }: { run: SimulationRun }) {
+  const router = useRouter();
+  const setGeneratedLesson = useAppStore((s) => s.setGeneratedLesson);
+  const [briefOpen, setBriefOpen] = useState(false);
+  const [lessonStatus, setLessonStatus] = useState<'idle' | 'transcript' | 'audio' | 'error'>('idle');
+  const [lessonError, setLessonError] = useState<string | null>(null);
+
+  const generateLesson = async () => {
+    if (!run.lessonDesignBrief) return;
+    setLessonStatus('transcript');
+    setLessonError(null);
+    try {
+      const transcriptRes = await fetch('/api/lesson/transcript', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonDesignBrief: run.lessonDesignBrief }),
+      });
+      const transcriptData = await transcriptRes.json();
+      if (!transcriptRes.ok) throw new Error(transcriptData.error ?? 'Transcript generation failed');
+      const { lessonTranscript } = transcriptData;
+
+      setLessonStatus('audio');
+      const safeUser = run.studentName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      const audioRes = await fetch('/api/lesson/audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: lessonTranscript, userName: safeUser, startIdx: 0, count: 12 }),
+      });
+      const audioData = await audioRes.json();
+      if (!audioRes.ok) throw new Error(audioData.error ?? 'Audio generation failed');
+
+      setGeneratedLesson({
+        transcript: lessonTranscript,
+        plays: audioData.plays,
+        generatedAt: new Date().toISOString(),
+        title: run.suggestedLesson?.title ?? 'Lesson',
+        totalCount: audioData.totalCount,
+        allPlayMeta: audioData.allPlayMeta,
+      });
+
+      router.push('/player');
+    } catch (e) {
+      setLessonError(String(e));
+      setLessonStatus('error');
+    }
+  };
+
   const r = run.testReport;
   const skills: [keyof SkillScores, string][] = r ? [
     ['listening_comprehension', 'Listening'],
@@ -237,6 +285,83 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
           </span>
         </div>
       </div>
+
+      {/* Action buttons */}
+      {run.lessonDesignBrief && (
+        <div className="row gap-2" style={{ marginBottom: 24 }}>
+          <button
+            className="btn btn-ghost"
+            onClick={() => setBriefOpen(true)}
+          >
+            See Design Brief
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={generateLesson}
+            disabled={lessonStatus === 'transcript' || lessonStatus === 'audio'}
+          >
+            {lessonStatus === 'transcript' ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} />
+                Generating transcript…
+              </span>
+            ) : lessonStatus === 'audio' ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} />
+                Generating audio…
+              </span>
+            ) : (
+              'Generate Lesson'
+            )}
+          </button>
+          {lessonStatus === 'transcript' && (
+            <span className="small" style={{ color: 'var(--mute)', alignSelf: 'center' }}>
+              Writing lesson transcript (~30–60s)…
+            </span>
+          )}
+          {lessonStatus === 'audio' && (
+            <span className="small" style={{ color: 'var(--mute)', alignSelf: 'center' }}>
+              Generating first 2 min of audio (~15s)…
+            </span>
+          )}
+          {lessonStatus === 'error' && lessonError && (
+            <span className="small" style={{ color: 'var(--crit)', alignSelf: 'center' }}>
+              {lessonError}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Design Brief Modal */}
+      {briefOpen && run.lessonDesignBrief && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: 24,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setBriefOpen(false); }}
+        >
+          <div style={{
+            background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8,
+            padding: '28px 32px', maxWidth: 820, width: '100%', maxHeight: '85vh',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <span className="eyebrow">Lesson Design Brief</span>
+              <button className="btn btn-text small" onClick={() => setBriefOpen(false)} style={{ padding: '4px 10px' }}>
+                ✕ Close
+              </button>
+            </div>
+            <div style={{
+              overflowY: 'auto', flex: 1, whiteSpace: 'pre-wrap',
+              fontSize: 13, lineHeight: 1.75, color: 'var(--ink)',
+            }}>
+              {run.lessonDesignBrief}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Student Persona */}
       {run.persona && (

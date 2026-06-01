@@ -5,32 +5,62 @@ import type { WordTiming, PlayMeta } from '@/lib/types';
 export const maxDuration = 300; // 5-minute timeout for long lessons
 
 const ENGLISH_VOICE = 'nzFihrBIvB34imQBuxub';
-const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm'; // Facundo
-const CONCURRENCY = 4; // parallel ElevenLabs calls (plan limit is 5, use 4 for safety)
+const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm';  // Facundo — spanish 1 / 3
+const SPANISH_VOICE_2 = '1WXz8v08ntDcSTeVXMN2'; // spanish 2 / 4
+const CONCURRENCY = 4;
 
-type VoiceSegment = { type: 'english' | 'spanish'; text: string; sectionName?: string };
+// voiceIndex 1–4 maps to: Facundo, Alt, Facundo, Alt
+const SPANISH_VOICES = [SPANISH_VOICE, SPANISH_VOICE_2, SPANISH_VOICE, SPANISH_VOICE_2];
+
+type VoiceSegment = { type: 'english' | 'spanish'; voiceIndex: number; text: string; sectionName?: string };
 type Segment = VoiceSegment | { type: 'prompt'; text: '' };
 type Play = { segments: VoiceSegment[]; promptAfter: boolean; text: string; spanishText?: string; sectionName?: string };
 
 function parseLesson(transcript: string): Segment[] {
-  const parts = transcript.split(/(<\/?English voice>|<\/?Spanish voice>|<\/?prompt>|<section[^>]*>|<\/section>)/gi);
-  let current: 'english' | 'spanish' | null = null;
+  // Handles both old format (<English voice>, <Spanish voice>) and
+  // new format (<narrator>, <spanish 1>, <spanish 2>, <spanish 3>, <spanish 4>)
+  const TAG_RE = /(<narrator>|<spanish\s+\d+>|<\/?English voice>|<\/?Spanish voice>|<\/?prompt>|<section[^>]*>|<\/section>)/gi;
+  const parts = transcript.split(TAG_RE);
+  let currentType: 'english' | 'spanish' | null = null;
+  let currentVoiceIndex = 1;
   let currentSection: string | undefined = undefined;
   const segs: Segment[] = [];
+
   for (const part of parts) {
     const clean = part.trim();
     if (!clean) continue;
-    if (/^<English voice>$/i.test(clean)) { current = 'english'; }
-    else if (/^<Spanish voice>$/i.test(clean)) { current = 'spanish'; }
-    else if (/^<\/(?:English|Spanish) voice>$/i.test(clean)) { /* closing tag — skip */ }
+
+    // New format tags
+    if (/^<narrator>$/i.test(clean)) {
+      currentType = 'english'; currentVoiceIndex = 1;
+    } else if (/^<spanish\s+(\d+)>$/i.test(clean)) {
+      const m = clean.match(/^<spanish\s+(\d+)>$/i);
+      currentType = 'spanish';
+      currentVoiceIndex = m ? Math.max(1, Math.min(4, Number(m[1]))) : 1;
+    }
+    // Old format tags
+    else if (/^<English voice>$/i.test(clean)) {
+      currentType = 'english'; currentVoiceIndex = 1;
+    } else if (/^<Spanish voice>$/i.test(clean)) {
+      currentType = 'spanish'; currentVoiceIndex = 1;
+    } else if (/^<\/(?:English|Spanish) voice>$/i.test(clean)) {
+      // closing tag — skip
+    }
+    // Section tags
     else if (/^<section/i.test(clean)) {
       const m = clean.match(/name="([^"]+)"/i);
       currentSection = m ? m[1] : undefined;
+    } else if (/^<\/section>/i.test(clean)) {
+      currentSection = undefined;
     }
-    else if (/^<\/section>/i.test(clean)) { currentSection = undefined; }
-    else if (/^<prompt>$/i.test(clean)) { segs.push({ type: 'prompt', text: '' }); }
-    else if (/^<\/prompt>$/i.test(clean)) { /* closing prompt tag — skip */ }
-    else if (current) { segs.push({ type: current, text: clean, sectionName: currentSection }); }
+    // Prompt tag
+    else if (/^<\/?prompt>$/i.test(clean)) {
+      segs.push({ type: 'prompt', text: '' });
+    }
+    // Content
+    else if (currentType) {
+      segs.push({ type: currentType, voiceIndex: currentVoiceIndex, text: clean, sectionName: currentSection });
+    }
   }
   return segs;
 }
@@ -164,7 +194,7 @@ async function generatePlayAudio(
   let offsetSec = 0;
 
   for (const seg of play.segments) {
-    const voiceId = seg.type === 'english' ? ENGLISH_VOICE : SPANISH_VOICE;
+    const voiceId = seg.type === 'english' ? ENGLISH_VOICE : (SPANISH_VOICES[(seg.voiceIndex ?? 1) - 1] ?? SPANISH_VOICE);
     const chunks = splitAtSentences(seg.text);
     for (const chunk of chunks) {
       const { buffer, wordTimings, durationSec } = await textToBufferWithTimings(chunk, voiceId, offsetSec);
