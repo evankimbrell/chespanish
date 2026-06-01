@@ -46,7 +46,7 @@ async function generateStudentResponse(
   const examples = acceptableExamples.slice(0, 2).join(' | ');
 
   const completion = await getOpenAI().chat.completions.create({
-    model: 'gpt-4.5-preview',
+    model: 'gpt-5.5',
     max_completion_tokens: 80,
     messages: [{
       role: 'user',
@@ -89,7 +89,7 @@ async function generateEducatorReport(run: SimulationRun): Promise<string> {
   ];
 
   const completion = await getOpenAI().chat.completions.create({
-    model: 'gpt-4.5-preview',
+    model: 'gpt-5.5',
     max_completion_tokens: 700,
     messages: [
       { role: 'system', content: EDUCATOR_PROMPT },
