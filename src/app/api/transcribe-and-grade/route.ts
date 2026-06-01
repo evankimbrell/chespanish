@@ -8,7 +8,7 @@ function getOpenAI(): OpenAI {
 }
 
 const WHISPER_PROMPT =
-  'Transcribe VERBATIM in the exact language spoken. Do NOT translate. Do NOT correct or improve what was said. Write exactly what the speaker said, including any errors, in the language they used.';
+  'Transcribe VERBATIM in whatever language the speaker used. Do NOT translate under any circumstances. If the speaker said Spanish words, write Spanish. If the speaker said English words, write English. If mixed, write exactly what was spoken. Never convert or translate between languages. Preserve all errors, hesitations, and imperfections exactly as spoken.';
 
 const SLAVIC_RE = /[ČčŠšŽžĚěŘřŮů]/;
 
@@ -222,15 +222,14 @@ export async function POST(req: Request) {
 
       try {
         // Step 1: Transcribe
-        // Force language='es' for Spanish-only prompts to prevent Whisper from
-        // auto-translating Spanish audio into English. For bilingual prompts
-        // (allowEnglish=true), let Whisper detect freely so English responses
-        // are preserved verbatim.
-        const forcedLang = allowEnglish ? undefined : 'es';
-        let transcription = await runTranscription(audio, forcedLang, allowEnglish);
-        // Retry without language lock only for Slavic character artifacts when already
-        // forcing Spanish (shouldn't occur but guard against it).
-        if (forcedLang && SLAVIC_RE.test(transcription.text)) {
+        // Never force a language — Whisper should transcribe whatever the speaker
+        // actually said. Forcing language='es' would cause genuine English responses
+        // to be garbled or fake-translated into Spanish, masking wrong-language errors.
+        // The WHISPER_PROMPT explicitly instructs no translation.
+        let transcription = await runTranscription(audio, undefined, allowEnglish);
+        // Retry with forced Spanish ONLY for Slavic character artifacts (a Whisper
+        // bug where Spanish audio gets garbled into Slavic chars).
+        if (SLAVIC_RE.test(transcription.text)) {
           transcription = await runTranscription(audio, 'es');
         }
         const transcriptText = transcription.text;
