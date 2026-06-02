@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import type { LevelTestSession } from '@/lib/types';
 import { generateLessonDesignBrief, generateLessonTranscript } from '@/lib/lesson-design';
+import { buildDiagnosticInput, generateDiagnosticReport, diagnosticFallback } from '@/lib/diagnostic-report';
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -147,6 +148,14 @@ export async function POST(req: Request) {
   });
   const educatorReport = educatorCompletion.choices[0]?.message?.content ?? '';
 
+  // Step 1b: Learner-facing verbal diagnostic report (numeric scores stay internal)
+  const diagnosticReport =
+    (session.report
+      ? await generateDiagnosticReport(
+          buildDiagnosticInput(session.prompts, session.report.display_level, session.report.confidence),
+        )
+      : null) ?? diagnosticFallback(session.report ?? null);
+
   // Step 2: Lesson design brief — full curriculum design + display data
   const { fullBrief: lessonDesignBrief, displayLesson } = await generateLessonDesignBrief(formattedReport);
 
@@ -168,6 +177,7 @@ export async function POST(req: Request) {
       lessonDesignBrief,
       recommendedLesson: displayLesson,
       testReport: session.report ?? null,
+      diagnosticReport,
       lessonTranscript,
       session,
     }, null, 2),
@@ -178,6 +188,7 @@ export async function POST(req: Request) {
     lessonDesignBrief,
     recommendedLesson: displayLesson,
     testReport: session.report ?? null,
+    diagnosticReport,
     lessonTranscript,
     savedTo: `data/reports/${filename}`,
   });

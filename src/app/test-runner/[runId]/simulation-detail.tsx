@@ -2,6 +2,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
+import { DiagnosticReportView } from '@/components/report/diagnostic-report-view';
 import type { SimulationRun, SimulationPrompt } from '@/lib/testing/types';
 import type { SkillScores } from '@/lib/types';
 
@@ -575,10 +576,18 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
         </div>
       )}
 
-      {/* Test Report */}
+      {/* Learner-facing verbal diagnostic report */}
+      {run.diagnosticReport && (
+        <div style={{ marginBottom: 28 }}>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Diagnostic Report (learner-facing)</div>
+          <DiagnosticReportView report={run.diagnosticReport} />
+        </div>
+      )}
+
+      {/* Test Report — internal numeric scores (not shown to the learner) */}
       {r && (
         <div style={{ marginBottom: 28 }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>Test Report</div>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Internal Scores (not shown to learner)</div>
           <div
             style={{
               padding: '20px 24px',

@@ -4,6 +4,7 @@ import OpenAI from 'openai';
 import type { SimulationRun, SimulationPrompt, StudentPersona } from '@/lib/testing/types';
 import type { PromptResult, ComfortLevel } from '@/lib/types';
 import { generateLessonDesignBrief } from '@/lib/lesson-design';
+import { buildDiagnosticInput, generateDiagnosticReport, diagnosticFallback } from '@/lib/diagnostic-report';
 import {
   initEngine, selectNextQuestion, updateEngine, shouldStopTest,
   generateFinalReport, calculateEvidenceScore,
@@ -232,6 +233,7 @@ export async function POST(req: Request) {
     persona: null,
     prompts: [],
     testReport: null,
+    diagnosticReport: null,
     educatorReport: null,
     lessonDesignBrief: null,
     suggestedLesson: null,
@@ -407,6 +409,13 @@ export async function POST(req: Request) {
 
         send('status', { message: 'Generating educator report…' });
         run.educatorReport = await generateEducatorReport(run);
+        saveRun(run);
+
+        send('status', { message: 'Generating diagnostic report…' });
+        run.diagnosticReport =
+          (await generateDiagnosticReport(
+            buildDiagnosticInput(promptResults, testReport.display_level, testReport.confidence),
+          )) ?? diagnosticFallback(testReport);
         saveRun(run);
 
         send('status', { message: 'Generating lesson design brief…' });

@@ -1,6 +1,6 @@
 'use client';
 import { create } from 'zustand';
-import type { BuilderState, ComfortLevel, GeneratedLesson, LessonPlay, LevelTestSession, PlayerVariant, ProfileState, PromptResult, TestReport } from './types';
+import type { BuilderState, ComfortLevel, DiagnosticReport, GeneratedLesson, LessonPlay, LevelTestSession, PlayerVariant, ProfileState, PromptResult, TestReport } from './types';
 
 function lessonKey(name: string): string {
   return `che_lesson_${name.toLowerCase().replace(/[^a-z0-9]/g, '-')}`;
@@ -29,6 +29,7 @@ interface AppStore {
   startLevelTestSession: (comfortLevel?: ComfortLevel | null) => void;
   addPromptResult: (result: PromptResult) => void;
   completeLevelTestSession: (report: TestReport | null) => void;
+  setDiagnosticReport: (diagnosticReport: DiagnosticReport | null) => void;
 
   generatedLesson: GeneratedLesson | null;
   setGeneratedLesson: (lesson: GeneratedLesson) => void;
@@ -113,6 +114,16 @@ export const useAppStore = create<AppStore>((set) => ({
         localStorage.setItem('che_spanish_level_test', JSON.stringify(completed, null, 2));
       } catch {}
       return { levelTestSession: completed };
+    }),
+
+  setDiagnosticReport: (diagnosticReport) =>
+    set((s) => {
+      if (!s.levelTestSession) return s;
+      const updated: LevelTestSession = { ...s.levelTestSession, diagnosticReport };
+      try {
+        localStorage.setItem('che_spanish_level_test', JSON.stringify(updated, null, 2));
+      } catch {}
+      return { levelTestSession: updated };
     }),
 
   generatedLesson: loadLesson('Mateo'),

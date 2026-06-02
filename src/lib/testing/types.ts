@@ -1,4 +1,4 @@
-import type { Question, GradeResult, TestReport } from '@/lib/types';
+import type { Question, GradeResult, TestReport, DiagnosticReport } from '@/lib/types';
 
 export type ScenarioCategory =
   | 'correct'
@@ -98,6 +98,7 @@ export interface SimulationRun {
   persona: StudentPersona | null;
   prompts: SimulationPrompt[];
   testReport: TestReport | null;
+  diagnosticReport: DiagnosticReport | null;
   educatorReport: string | null;
   lessonDesignBrief: string | null;
   suggestedLesson: {

@@ -253,6 +253,88 @@ export interface LevelTestSession {
   comfortLevel: ComfortLevel | null;
   prompts: PromptResult[];
   report: TestReport | null;
+  diagnosticReport?: DiagnosticReport | null;
+}
+
+// ── Verbal diagnostic report (learner-facing; numeric scores stay internal) ──
+
+export type RelativeStatus =
+  | 'above_expectations'
+  | 'on_track'
+  | 'slightly_below_expectations'
+  | 'below_expectations'
+  | 'not_enough_evidence'
+  | 'not_measured';
+
+export type EvidenceStrength = 'strong' | 'medium' | 'light' | 'not_enough' | 'not_measured';
+
+export type LessonPriority = 'high' | 'medium' | 'low' | 'monitor' | 'not_applicable';
+
+export type DiagnosticCategoryId =
+  | 'listening_comprehension'
+  | 'practical_communication'
+  | 'grammar_control'
+  | 'vocabulary_range'
+  | 'sentence_flow'
+  | 'response_speed'
+  | 'argentine_spanish_fit'
+  | 'pronunciation';
+
+export interface DiagnosticExample {
+  promptId: string;
+  promptText?: string;
+  learnerAnswer?: string;
+  observation: string;
+  errorTags?: string[];
+}
+
+export interface PlacementResult {
+  estimatedLevel: string;
+  confidence: 'high' | 'medium' | 'low';
+  shortSummary: string;
+  detailedRationale: string;
+  evidenceSummary: {
+    strongestPositiveSignals: string[];
+    strongestNegativeSignals: string[];
+    limitingFactors: string[];
+  };
+}
+
+export interface CategoryDiagnostic {
+  categoryId: DiagnosticCategoryId;
+  displayName: string;
+  relativeStatus: RelativeStatus;
+  evidenceStrength: EvidenceStrength;
+  lessonPriority: LessonPriority;
+  userFacingSummary: string;
+  observedEvidence: string[];
+  examples?: DiagnosticExample[];
+  shouldDisplay: boolean;
+}
+
+export interface DiagnosticCommonError {
+  tag: string;
+  displayName: string;
+  frequency: number;
+  severity: 'low' | 'medium' | 'high';
+  userFacingExplanation: string;
+  example?: DiagnosticExample;
+}
+
+export interface FirstLessonRecommendation {
+  title: string;
+  level: string;
+  focusSummary: string;
+  targetSkills: string[];
+  avoidForNow: string[];
+}
+
+export interface DiagnosticReport {
+  placement: PlacementResult;
+  categories: CategoryDiagnostic[];
+  commonErrors: DiagnosticCommonError[];
+  firstLessonRecommendation: FirstLessonRecommendation;
+  reportVersion: string;
 }
 
 export interface WordTiming {

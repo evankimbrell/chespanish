@@ -5,8 +5,8 @@ import { BrandBar } from '@/components/ui/top-nav';
 import { Tag } from '@/components/ui/tag';
 import { Icons } from '@/components/ui/icons';
 import { useAppStore } from '@/lib/store';
-import { QUESTION_BANK } from '@/lib/question-bank';
-import type { LevelTestSession, PromptResult, PromptType, TestReport } from '@/lib/types';
+import { DiagnosticReportView } from '@/components/report/diagnostic-report-view';
+import type { DiagnosticReport, LevelTestSession, PromptResult, PromptType, TestReport } from '@/lib/types';
 
 // ── Fallback level derivation (when report is null) ───────────────────────────
 
@@ -58,66 +58,6 @@ function staticLesson(level: string) {
   return STATIC_LESSONS[cefr] ?? STATIC_LESSONS['B1'];
 }
 
-// ── Error / skill labels ──────────────────────────────────────────────────────
-
-const ERROR_LABELS: Record<string, string> = {
-  verb_conjugation: 'Verb conjugation',
-  tense_error: 'Tense selection',
-  target_style_vos: 'Vos forms (tenés / querés)',
-  target_style_vocabulary: 'Argentine vocabulary',
-  grammar: 'Grammar accuracy',
-  word_order: 'Word order',
-  object_pronoun: 'Object pronouns',
-  missing_pronoun: 'Missing pronouns',
-  preposition: 'Prepositions',
-  gender_agreement: 'Gender agreement',
-  number_agreement: 'Number agreement',
-  vocabulary_gap: 'Vocabulary gaps',
-  response_speed: 'Response speed',
-  incomplete_answer: 'Incomplete answers',
-  unnatural_wording: 'Unnatural phrasing',
-  too_much_english: 'Switching to English',
-  pronunciation: 'Pronunciation',
-  ser_estar: 'Ser vs estar',
-  por_para: 'Por vs para',
-};
-
-const SKILL_LABELS: Record<string, string> = {
-  greetings: 'Greetings and introductions',
-  basic_listening: 'Listening comprehension',
-  basic_response: 'Short responses',
-  vos: 'Vos conjugation',
-  vos_recognition: 'Understanding vos forms',
-  near_future: 'Near future (voy a)',
-  past_tense: 'Past tense (pretérito)',
-  preterite: 'Past tense (pretérito)',
-  food_drink: 'Food and drink vocabulary',
-  directions: 'Directions and locations',
-  restaurant: 'Restaurant interactions',
-  service_interaction: 'Service interactions',
-  daily_life: 'Everyday conversation',
-  personal_info: 'Personal information',
-  opinion: 'Expressing opinions',
-  listening: 'Audio comprehension',
-  natural_speed: 'Natural-speed audio',
-  dialogue_comprehension: 'Dialogue comprehension',
-  subjunctive: 'Subjunctive mood',
-  conditional: 'Conditional structures',
-  extended_speaking: 'Extended speaking',
-  problem_explanation: 'Explaining problems',
-  formal_register: 'Formal register',
-};
-
-const SKILL_SCORE_LABELS: Record<string, string> = {
-  listening_comprehension: 'Listening',
-  speaking_fluency: 'Fluency',
-  grammar_control: 'Grammar',
-  vocabulary_range: 'Vocabulary',
-  response_speed: 'Speed',
-  target_style_alignment: 'Argentine style',
-  practical_communication: 'Communication',
-};
-
 const TYPE_LABEL: Record<PromptType, string> = {
   listen_and_respond: 'Listen & respond',
   say_it_in_spanish: 'Say it in Spanish',
@@ -153,57 +93,6 @@ function GradeBadge({ score, label }: { score: number; label: string }) {
   );
 }
 
-// ── Derived insights (fallback when no TestReport) ────────────────────────────
-
-const bankById = Object.fromEntries(QUESTION_BANK.map((q) => [q.prompt_id, q]));
-
-function deriveInsights(prompts: PromptResult[]) {
-  const errorCounts: Record<string, number> = {};
-  const strongSkills = new Set<string>();
-
-  for (const p of prompts) {
-    if (!p.grade) continue;
-    for (const e of p.grade.observed_errors) {
-      if (e.category in ERROR_LABELS) {
-        errorCounts[e.category] = (errorCounts[e.category] ?? 0) + 1;
-      }
-    }
-    if ((p.grade.overall_score ?? 0) >= 4) {
-      const q = bankById[p.questionId];
-      if (q) {
-        for (const s of q.skill_targets) {
-          if (s in SKILL_LABELS) strongSkills.add(s);
-        }
-      }
-    }
-  }
-
-  const needsWork = Object.entries(errorCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 4)
-    .map(([cat]) => ERROR_LABELS[cat]);
-
-  const strongWith = [...strongSkills].slice(0, 4).map((s) => SKILL_LABELS[s]);
-  return { needsWork, strongWith };
-}
-
-// ── Skill scores bar ─────────────────────────────────────────────────────────
-
-function SkillBar({ label, score }: { label: string; score: number }) {
-  const pct = Math.round((score / 10) * 100);
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-      <div className="row between">
-        <span className="small" style={{ color: 'var(--ink-2)' }}>{label}</span>
-        <span className="mono small" style={{ color: 'var(--mute)' }}>{score.toFixed(1)}</span>
-      </div>
-      <div style={{ height: 4, background: 'var(--bg-2)', borderRadius: 2 }}>
-        <div style={{ height: 4, width: `${pct}%`, background: 'var(--warm)', borderRadius: 2 }} />
-      </div>
-    </div>
-  );
-}
-
 // ── Confidence indicator ──────────────────────────────────────────────────────
 
 const CONFIDENCE_COLOR: Record<string, string> = {
@@ -219,8 +108,10 @@ export default function LevelResultPage() {
   const setGeneratedLesson = useAppStore((s) => s.setGeneratedLesson);
   const setProfile = useAppStore((s) => s.setProfile);
   const completeLevelTestSession = useAppStore((s) => s.completeLevelTestSession);
+  const setDiagnosticReport = useAppStore((s) => s.setDiagnosticReport);
   const [localSession, setLocalSession] = useState<LevelTestSession | null>(null);
   const [reportSaved, setReportSaved] = useState(false);
+  const [fetchedDiag, setFetchedDiag] = useState<DiagnosticReport | null>(null);
 
   useEffect(() => {
     if (!storeSession) {
@@ -233,6 +124,8 @@ export default function LevelResultPage() {
 
   const session = storeSession ?? localSession;
   const prompts = session?.prompts ?? [];
+  // Prefer a freshly-generated report; fall back to one persisted on the session.
+  const diag = fetchedDiag ?? session?.diagnosticReport ?? null;
 
   useEffect(() => {
     if (!session?.completedAt || reportSaved) return;
@@ -247,6 +140,11 @@ export default function LevelResultPage() {
         // Update profile level from the test result
         const newLevel = data.testReport?.display_level ?? data.testReport?.cefr_band;
         if (newLevel) setProfile({ level: newLevel });
+
+        if (data.diagnosticReport) {
+          setFetchedDiag(data.diagnosticReport);
+          setDiagnosticReport(data.diagnosticReport);
+        }
 
         if (data.lessonTranscript) {
           setGeneratedLesson({
@@ -265,24 +163,18 @@ export default function LevelResultPage() {
       })
       .catch(() => {});
   }, [session, reportSaved, profile.name]);
+
+  // Spinner shows once generation has been kicked off until the report arrives.
+  const diagPending = reportSaved && !diag;
   const report: TestReport | null = session?.report ?? null;
 
   // Derived display values
-  const displayLevel = report?.display_level ?? deriveLevel(prompts);
-  const blurb = report?.summary ?? (LEVEL_BLURBS[displayLevel] ?? LEVEL_BLURBS['A2']);
-  const cefrBand = report?.cefr_band ?? displayLevel.replace(/[-+]/g, '').replace('Pre-A1', 'A1');
+  const displayLevel = diag?.placement.estimatedLevel ?? report?.display_level ?? deriveLevel(prompts);
+  const blurb = diag?.placement.shortSummary ?? report?.summary ?? (LEVEL_BLURBS[displayLevel] ?? LEVEL_BLURBS['A2']);
+  const confidence = diag?.placement.confidence ?? report?.confidence ?? null;
   const lesson = report?.recommended_first_lesson
     ? { title: report.recommended_first_lesson.title, desc: report.recommended_first_lesson.why }
     : staticLesson(displayLevel);
-
-  const { needsWork: derivedNeeds, strongWith: derivedStrong } = deriveInsights(prompts);
-  const strongWith = report?.strengths?.length ? report.strengths : derivedStrong;
-  const needsWork = report?.weaknesses?.length
-    ? report.weaknesses
-    : derivedNeeds;
-
-  const displayStrong = strongWith.length ? strongWith : ['Attempted all prompts', 'Engaged with audio'];
-  const displayNeeds = needsWork.length ? needsWork : ['Complete more prompts for detailed feedback'];
 
   return (
     <>
@@ -295,57 +187,25 @@ export default function LevelResultPage() {
             <span className="eyebrow">Level test complete · {prompts.length || 0} prompts</span>
             <h1 className="h-display">Your level is <em>{displayLevel}.</em></h1>
             <p className="lede" style={{ maxWidth: 560 }}>{blurb}</p>
-            {report && (
+            {confidence && (
               <div className="row gap-2" style={{ alignItems: 'center', marginTop: 4 }}>
-                <span className="mono small" style={{ color: 'var(--mute)' }}>Confidence:</span>
-                <span className="mono small" style={{ color: CONFIDENCE_COLOR[report.confidence] ?? 'var(--mute)', fontWeight: 600 }}>
-                  {report.confidence}
-                </span>
-                <span className="mono small" style={{ color: 'var(--mute-2)' }}>
-                  ({report.confidence_range[0].toFixed(1)}–{report.confidence_range[1].toFixed(1)})
+                <span className="mono small" style={{ color: 'var(--mute)' }}>Placement confidence:</span>
+                <span className="mono small" style={{ color: CONFIDENCE_COLOR[confidence] ?? 'var(--mute)', fontWeight: 600, textTransform: 'capitalize' }}>
+                  {confidence}
                 </span>
               </div>
             )}
           </div>
 
-          {/* Skill scores (only if report available) */}
-          {report?.skill_scores && (
-            <div style={{ border: '1px solid var(--line)', padding: '24px 28px' }}>
-              <span className="eyebrow" style={{ display: 'block', marginBottom: 16 }}>Skill scores</span>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 32px' }}>
-                {Object.entries(report.skill_scores).map(([key, score]) => (
-                  <SkillBar
-                    key={key}
-                    label={SKILL_SCORE_LABELS[key] ?? key}
-                    score={score as number}
-                  />
-                ))}
-              </div>
-              {report.next_level_gap && (
-                <p className="small" style={{ color: 'var(--mute)', marginTop: 16 }}>{report.next_level_gap}</p>
-              )}
+          {/* Verbal diagnostic report (replaces numeric skill scores) */}
+          {diag ? (
+            <DiagnosticReportView report={diag} showPlacementHeader={false} />
+          ) : diagPending ? (
+            <div style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '28px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+              <span className="small" style={{ color: 'var(--mute)' }}>Analyzing your responses and writing your diagnostic report…</span>
             </div>
-          )}
-
-          {/* Strong / Needs work */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0, border: '1px solid var(--line)' }}>
-            {[
-              { eb: 'Strong with', items: displayStrong, warm: false },
-              { eb: 'Needs work',  items: displayNeeds,  warm: true  },
-            ].map((col, i) => (
-              <div key={i} style={{ padding: '28px 28px', borderLeft: i ? '1px solid var(--line)' : 'none' }}>
-                <span className={'eyebrow' + (col.warm ? ' eyebrow-warm' : '')}>{col.eb}</span>
-                <ul style={{ margin: '14px 0 0', padding: 0, listStyle: 'none' }}>
-                  {col.items.map((item, j) => (
-                    <li key={j} className="row gap-3" style={{ padding: '10px 0', borderTop: j ? '1px solid var(--line)' : 'none', alignItems: 'baseline' }}>
-                      <span className="mono" style={{ fontSize: 11, color: 'var(--mute-2)', width: 24 }}>{String(j + 1).padStart(2, '0')}</span>
-                      <span className="serif" style={{ fontSize: 18, color: col.warm ? 'var(--ink)' : 'var(--ink-2)' }}>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+          ) : null}
 
           {/* Per-prompt responses */}
           {prompts.length > 0 && (
