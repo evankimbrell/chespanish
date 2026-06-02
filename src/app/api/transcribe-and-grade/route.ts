@@ -7,16 +7,19 @@ function getOpenAI(): OpenAI {
   return _openai;
 }
 
-const WHISPER_PROMPT =
-  'Transcribe VERBATIM in whatever language the speaker used. Do NOT translate under any circumstances. If the speaker said Spanish words, write Spanish. If the speaker said English words, write English. If mixed, write exactly what was spoken. Never convert or translate between languages. Preserve all errors, hesitations, and imperfections exactly as spoken.';
-
 const SLAVIC_RE = /[ČčŠšŽžĚěŘřŮů]/;
 
 interface WordTiming { word: string; start: number; end: number; }
 interface TranscriptionResult { text: string; words: WordTiming[]; detectedLanguage?: string; }
 
-async function runTranscription(audio: File, forceLang?: string, noPrompt?: boolean): Promise<TranscriptionResult> {
-  // Build base params then add optional fields imperatively to avoid union-type overload issues
+async function runTranscription(audio: File, forceLang?: string): Promise<TranscriptionResult> {
+  // IMPORTANT: never pass a `prompt`. Whisper's prompt is a context/continuation prime
+  // that it expects to MATCH the audio language — it is NOT an instruction. An English
+  // prompt makes Whisper assume the context is English and continue in English, i.e.
+  // translate Spanish audio into English. We rely on pure auto-detect so the transcript
+  // is always literal (Spanish→Spanish, English→English, mixed→mixed), which also
+  // preserves genuine wrong-language detection. `language` is only forced on the
+  // Slavic-garble retry.
   const params: Record<string, unknown> = {
     file: audio,
     model: 'whisper-1',
@@ -25,8 +28,6 @@ async function runTranscription(audio: File, forceLang?: string, noPrompt?: bool
   };
   if (forceLang) {
     params.language = forceLang;
-  } else if (!noPrompt) {
-    params.prompt = WHISPER_PROMPT;
   }
   // SDK return type is narrowed by response_format at runtime; cast needed
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -221,14 +222,14 @@ export async function POST(req: Request) {
       };
 
       try {
-        // Step 1: Transcribe
-        // Never force a language — Whisper should transcribe whatever the speaker
-        // actually said. Forcing language='es' would cause genuine English responses
-        // to be garbled or fake-translated into Spanish, masking wrong-language errors.
-        // The WHISPER_PROMPT explicitly instructs no translation.
-        let transcription = await runTranscription(audio, undefined, allowEnglish);
+        // Step 1: Transcribe — pure auto-detect, no prompt, no forced language.
+        // Whisper transcribes literally whatever was said (Spanish→Spanish,
+        // English→English). Passing a prompt or forcing a language would bias the
+        // output language and either translate Spanish or mask wrong-language errors.
+        let transcription = await runTranscription(audio);
         // Retry with forced Spanish ONLY for Slavic character artifacts (a Whisper
-        // bug where Spanish audio gets garbled into Slavic chars).
+        // bug where Spanish audio gets garbled into Slavic chars — never happens on
+        // clean English, so this can't misfire on a genuine English response).
         if (SLAVIC_RE.test(transcription.text)) {
           transcription = await runTranscription(audio, 'es');
         }
@@ -247,6 +248,7 @@ export async function POST(req: Request) {
           `CEFR band: ${q.cefr_band}`,
           q.audio_text ? `Audio prompt: "${q.audio_text}"` : null,
           `Instruction: "${q.instruction_text}"`,
+          `Response language allowed: ${allowEnglish ? 'English or Spanish — English is acceptable here, do NOT flag too_much_english' : 'Spanish only — an English response is wrong-language (flag too_much_english)'}`,
           q.target_answer ? `Target answer: "${q.target_answer}"` : null,
           q.acceptable_response_examples?.length
             ? `Acceptable responses: ${q.acceptable_response_examples.join(' | ')}`

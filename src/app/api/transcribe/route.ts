@@ -3,22 +3,19 @@ import type { TranscriptionCreateParams } from 'openai/resources/audio/transcrip
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-const WHISPER_PROMPT =
-  'Transcribe exactly what the speaker said, preserving the exact language they spoke — if they spoke English, transcribe in English; if they spoke Spanish, transcribe in Spanish with all grammatical errors intact. Do not translate, correct, or normalise anything.';
-
 // Diacritics that appear in Czech/Slovak/Slovenian but never in Spanish.
 // If Whisper returns these, it misidentified the language.
 const SLAVIC_RE = /[ČčŠšŽžĚěŘřŮů]/;
 
-async function runTranscription(audio: File, forceLang?: string, noPrompt?: boolean): Promise<string> {
+async function runTranscription(audio: File, forceLang?: string): Promise<string> {
+  // Never pass a `prompt`. Whisper's prompt is a language-matching context prime, not
+  // an instruction — an English prompt biases Whisper into emitting English, i.e.
+  // translating Spanish audio. Pure auto-detect transcribes literally in whatever
+  // language was actually spoken. `language` is only forced on the Slavic-garble retry.
   const params: TranscriptionCreateParams = {
     file: audio,
     model: 'whisper-1',
-    ...(forceLang
-      ? { language: forceLang }
-      : noPrompt
-        ? {}
-        : { prompt: WHISPER_PROMPT }),
+    ...(forceLang ? { language: forceLang } : {}),
   };
   const result = await openai.audio.transcriptions.create(params);
   return result.text;
@@ -37,7 +34,7 @@ export async function POST(req: Request) {
   if (!audio) return new Response('audio required', { status: 400 });
 
   try {
-    let text = await runTranscription(audio, undefined, allowEnglish);
+    let text = await runTranscription(audio);
 
     // If Slavic characters appear, Whisper mis-detected the language — retry forced to Spanish
     if (!allowEnglish && SLAVIC_RE.test(text)) {
