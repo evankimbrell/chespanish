@@ -49,7 +49,6 @@ function formatSessionForOpenAI(session: LevelTestSession, userName: string): st
       `Speaking fluency: ${report.skill_scores.speaking_fluency.toFixed(1)}`,
       `Grammar control: ${report.skill_scores.grammar_control.toFixed(1)}`,
       `Vocabulary range: ${report.skill_scores.vocabulary_range.toFixed(1)}`,
-      `Pronunciation: ${report.skill_scores.pronunciation_intelligibility.toFixed(1)}`,
       `Response speed: ${report.skill_scores.response_speed.toFixed(1)}`,
       `Argentine style alignment: ${report.skill_scores.target_style_alignment.toFixed(1)}`,
       `Practical communication: ${report.skill_scores.practical_communication.toFixed(1)}`,

@@ -78,14 +78,29 @@ const PROMPT_TYPE_TO_SKILL: Record<PromptType, keyof SkillCoverage> = {
   practical_problem:           'roleplay_practical',
 };
 
+// ── Speed score from words-per-minute ─────────────────────────────────────
+// Speed is measured ABSOLUTELY against a native conversational baseline, NOT
+// relative to the learner's CEFR level. Native Rioplatense conversational pace
+// is ~150 WPM (natural range 130–160). WPM maps linearly onto 0–10 so each
+// ~10 WPM ≈ 1 point: 150+ WPM = 10 (native), 50 WPM = 0 (extremely halting).
+// Bands: 150→10, 130→8, 110→6 (slightly slow), 90→4 (clearly slow), 70→2.
+// This makes an A2 at 150 WPM score higher than a C1 at 140 WPM.
+const NATIVE_WPM = 150;
+const FLOOR_WPM = 50;
+const NEUTRAL_SPEED = 5; // shown until enough speech has been measured
+
+export function wpmToSpeedScore(wpm: number): number {
+  return Math.max(0, Math.min(10, ((wpm - FLOOR_WPM) / (NATIVE_WPM - FLOOR_WPM)) * 10));
+}
+
 function emptySkillScores(base: number): SkillScores {
   return {
     listening_comprehension: base,
     speaking_fluency: base,
     grammar_control: base,
     vocabulary_range: base,
-    pronunciation_intelligibility: base,
-    response_speed: base,
+    // Speed is WPM-measured, not level-seeded — start neutral until measured.
+    response_speed: NEUTRAL_SPEED,
     target_style_alignment: base,
     practical_communication: base,
   };
@@ -200,15 +215,16 @@ export function updateEngine(
   const newSkillScores = { ...state.skillScores };
   const w = lastQuestion.dimension_weighting ?? {};
 
-  // Map dimension_weighting keys to skill score keys
+  // Map dimension_weighting keys to skill score keys.
+  // Note: `response_speed` is intentionally NOT here — Speed is measured directly
+  // from words-per-minute below, not from the grader's level-influenced dimension.
+  // `pronunciation_intelligibility` is omitted because we don't measure pronunciation.
   const dimToSkill: Partial<Record<string, keyof SkillScores>> = {
     comprehension: 'listening_comprehension',
     task_completion: 'practical_communication',
     grammar: 'grammar_control',
     vocabulary: 'vocabulary_range',
     fluency: 'speaking_fluency',
-    pronunciation_intelligibility: 'pronunciation_intelligibility',
-    response_speed: 'response_speed',
     target_style_alignment: 'target_style_alignment',
   };
 
@@ -223,6 +239,17 @@ export function updateEngine(
         newSkillScores[sk] = Math.max(0, Math.min(10, newSkillScores[sk]));
       }
     }
+  }
+
+  // Speed skill — measured directly from words-per-minute against the native
+  // baseline (level-independent), not from the grader. Only update on responses
+  // long enough to give a reliable rate; EMA to smooth single-response noise.
+  const wpm = promptResult.wordsPerMinute;
+  const wordCount = promptResult.transcript ? promptResult.transcript.trim().split(/\s+/).filter(Boolean).length : 0;
+  if (wpm != null && wpm > 0 && wordCount >= 4) {
+    const speedTarget = wpmToSpeedScore(wpm);
+    newSkillScores.response_speed = Math.max(0, Math.min(10,
+      newSkillScores.response_speed * 0.5 + speedTarget * 0.5));
   }
 
   // Update skill coverage
@@ -380,7 +407,6 @@ export function generateFinalReport(state: TestEngineState, results: PromptResul
     speaking_fluency: 'Speaking fluency',
     grammar_control: 'Grammar control',
     vocabulary_range: 'Vocabulary range',
-    pronunciation_intelligibility: 'Pronunciation / intelligibility',
     response_speed: 'Response speed',
     target_style_alignment: 'Argentine style alignment',
     practical_communication: 'Practical communication',

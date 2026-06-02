@@ -136,7 +136,6 @@ function formatSimulationForDesignBrief(run: SimulationRun): string {
       `Speaking fluency: ${r.skill_scores.speaking_fluency.toFixed(1)}`,
       `Grammar control: ${r.skill_scores.grammar_control.toFixed(1)}`,
       `Vocabulary range: ${r.skill_scores.vocabulary_range.toFixed(1)}`,
-      `Pronunciation: ${r.skill_scores.pronunciation_intelligibility.toFixed(1)}`,
       `Response speed: ${r.skill_scores.response_speed.toFixed(1)}`,
       `Argentine style alignment: ${r.skill_scores.target_style_alignment.toFixed(1)}`,
       `Practical communication: ${r.skill_scores.practical_communication.toFixed(1)}`,
@@ -185,7 +184,7 @@ async function generateEducatorReport(run: SimulationRun): Promise<string> {
     `Designated level: ${run.designatedLevel} | Detected: ${r.display_level} (${r.cefr_band}) | Accurate: ${run.levelAccurate ? 'YES' : 'NO'}`,
     `Ability estimate: ${r.overall_score.toFixed(2)} | Confidence: ${r.confidence}`,
     ``,
-    `SKILL SCORES (0–10): Listening ${r.skill_scores.listening_comprehension.toFixed(1)} | Fluency ${r.skill_scores.speaking_fluency.toFixed(1)} | Grammar ${r.skill_scores.grammar_control.toFixed(1)} | Vocabulary ${r.skill_scores.vocabulary_range.toFixed(1)} | Pronunciation ${r.skill_scores.pronunciation_intelligibility.toFixed(1)} | Speed ${r.skill_scores.response_speed.toFixed(1)} | Argentine style ${r.skill_scores.target_style_alignment.toFixed(1)} | Practical ${r.skill_scores.practical_communication.toFixed(1)}`,
+    `SKILL SCORES (0–10): Listening ${r.skill_scores.listening_comprehension.toFixed(1)} | Fluency ${r.skill_scores.speaking_fluency.toFixed(1)} | Grammar ${r.skill_scores.grammar_control.toFixed(1)} | Vocabulary ${r.skill_scores.vocabulary_range.toFixed(1)} | Speed ${r.skill_scores.response_speed.toFixed(1)} | Argentine style ${r.skill_scores.target_style_alignment.toFixed(1)} | Practical ${r.skill_scores.practical_communication.toFixed(1)}`,
     ``,
     `PROMPT RESULTS:`,
     ...run.prompts.map((p, i) =>
@@ -346,7 +345,9 @@ export async function POST(req: Request) {
             skipped: false,
             responseTimeSeconds: 3.0,
             speakingDurationSeconds: 2.0,
-            wordsPerMinute: null,
+            // Use the WPM the grader measured from the synthetic audio so Speed
+            // reflects the actual spoken rate, not the student's CEFR level.
+            wordsPerMinute: grade?.speech_metrics?.wpm ?? null,
             overallScore,
             evidenceScore,
             abilityEstimateBefore: abilityBefore,

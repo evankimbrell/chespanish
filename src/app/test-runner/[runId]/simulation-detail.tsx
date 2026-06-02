@@ -272,7 +272,6 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
     ['speaking_fluency', 'Fluency'],
     ['grammar_control', 'Grammar'],
     ['vocabulary_range', 'Vocabulary'],
-    ['pronunciation_intelligibility', 'Pronunciation'],
     ['response_speed', 'Speed'],
     ['target_style_alignment', 'Argentine Style'],
     ['practical_communication', 'Practical'],

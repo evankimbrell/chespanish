@@ -113,7 +113,6 @@ const SKILL_SCORE_LABELS: Record<string, string> = {
   speaking_fluency: 'Fluency',
   grammar_control: 'Grammar',
   vocabulary_range: 'Vocabulary',
-  pronunciation_intelligibility: 'Pronunciation',
   response_speed: 'Speed',
   target_style_alignment: 'Argentine style',
   practical_communication: 'Communication',

@@ -173,7 +173,6 @@ export interface SkillScores {
   speaking_fluency: number;
   grammar_control: number;
   vocabulary_range: number;
-  pronunciation_intelligibility: number;
   response_speed: number;
   target_style_alignment: number;
   practical_communication: number;
