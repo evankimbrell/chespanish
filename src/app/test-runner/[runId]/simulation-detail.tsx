@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAppStore } from '@/lib/store';
 import type { SimulationRun, SimulationPrompt } from '@/lib/testing/types';
@@ -195,19 +195,50 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
   const [lessonStatus, setLessonStatus] = useState<'idle' | 'transcript' | 'audio' | 'error'>('idle');
   const [lessonError, setLessonError] = useState<string | null>(null);
 
+  // Transcript is generated once and cached, then reused by both the "View
+  // Transcript" modal and the "Generate Lesson" (audio + play) flow.
+  const [transcript, setTranscript] = useState<string | null>(null);
+  const [transcriptStatus, setTranscriptStatus] = useState<'idle' | 'generating' | 'ready' | 'error'>('idle');
+  const [transcriptError, setTranscriptError] = useState<string | null>(null);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  const transcriptRef = useRef<string | null>(null);
+
+  const ensureTranscript = useCallback(async (): Promise<string | null> => {
+    if (transcriptRef.current) return transcriptRef.current;
+    if (!run.lessonDesignBrief) return null;
+    setTranscriptStatus('generating');
+    setTranscriptError(null);
+    try {
+      const res = await fetch('/api/lesson/transcript', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lessonDesignBrief: run.lessonDesignBrief }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? 'Transcript generation failed');
+      transcriptRef.current = data.lessonTranscript;
+      setTranscript(data.lessonTranscript);
+      setTranscriptStatus('ready');
+      return data.lessonTranscript;
+    } catch (e) {
+      setTranscriptError(String(e));
+      setTranscriptStatus('error');
+      return null;
+    }
+  }, [run.lessonDesignBrief]);
+
+  const viewTranscript = useCallback(() => {
+    setTranscriptOpen(true);
+    void ensureTranscript();
+  }, [ensureTranscript]);
+
   const generateLesson = async () => {
     if (!run.lessonDesignBrief) return;
     setLessonStatus('transcript');
     setLessonError(null);
     try {
-      const transcriptRes = await fetch('/api/lesson/transcript', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lessonDesignBrief: run.lessonDesignBrief }),
-      });
-      const transcriptData = await transcriptRes.json();
-      if (!transcriptRes.ok) throw new Error(transcriptData.error ?? 'Transcript generation failed');
-      const { lessonTranscript } = transcriptData;
+      const lessonTranscript = await ensureTranscript();
+      if (!lessonTranscript) throw new Error(transcriptError ?? 'Transcript generation failed');
 
       setLessonStatus('audio');
       const safeUser = run.studentName.toLowerCase().replace(/[^a-z0-9]/g, '-');
@@ -296,9 +327,25 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
             See Design Brief
           </button>
           <button
+            className="btn btn-ghost"
+            onClick={viewTranscript}
+            disabled={transcriptStatus === 'generating' || lessonStatus === 'transcript' || lessonStatus === 'audio'}
+          >
+            {transcriptStatus === 'generating' ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <span className="spinner" style={{ width: 13, height: 13, borderWidth: 2 }} />
+                Generating transcript…
+              </span>
+            ) : transcript ? (
+              'View Transcript'
+            ) : (
+              'Generate Transcript'
+            )}
+          </button>
+          <button
             className="btn btn-primary"
             onClick={generateLesson}
-            disabled={lessonStatus === 'transcript' || lessonStatus === 'audio'}
+            disabled={lessonStatus === 'transcript' || lessonStatus === 'audio' || transcriptStatus === 'generating'}
           >
             {lessonStatus === 'transcript' ? (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -311,7 +358,7 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
                 Generating audio…
               </span>
             ) : (
-              'Generate Lesson'
+              'Generate Lesson & Play →'
             )}
           </button>
           {lessonStatus === 'transcript' && (
@@ -359,6 +406,57 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
             }}>
               {run.lessonDesignBrief}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transcript Modal */}
+      {transcriptOpen && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: 24,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setTranscriptOpen(false); }}
+        >
+          <div style={{
+            background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 8,
+            padding: '28px 32px', maxWidth: 820, width: '100%', maxHeight: '85vh',
+            display: 'flex', flexDirection: 'column',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <span className="eyebrow">Lesson Transcript</span>
+              <div className="row gap-2" style={{ alignItems: 'center' }}>
+                {transcript && (
+                  <button
+                    className="btn btn-text small"
+                    onClick={() => navigator.clipboard?.writeText(transcript).catch(() => {})}
+                    style={{ padding: '4px 10px' }}
+                  >
+                    Copy
+                  </button>
+                )}
+                <button className="btn btn-text small" onClick={() => setTranscriptOpen(false)} style={{ padding: '4px 10px' }}>
+                  ✕ Close
+                </button>
+              </div>
+            </div>
+            {transcriptStatus === 'generating' && !transcript ? (
+              <div className="row gap-2" style={{ alignItems: 'center', color: 'var(--mute)', padding: '24px 0' }}>
+                <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                <span className="small">Writing the full lesson transcript — usually 30–60 seconds…</span>
+              </div>
+            ) : transcriptStatus === 'error' ? (
+              <span className="small" style={{ color: 'var(--crit)' }}>{transcriptError}</span>
+            ) : (
+              <div style={{
+                overflowY: 'auto', flex: 1, whiteSpace: 'pre-wrap',
+                fontFamily: 'monospace', fontSize: 12, lineHeight: 1.7, color: 'var(--ink)',
+              }}>
+                {transcript}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -551,29 +649,6 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
         </div>
       )}
 
-      {/* Lesson Design Brief */}
-      {run.lessonDesignBrief && (
-        <div style={{ marginBottom: 28 }}>
-          <div className="eyebrow" style={{ marginBottom: 10 }}>Lesson Design Brief</div>
-          <div
-            style={{
-              padding: '20px 24px',
-              background: 'var(--bg-2)',
-              border: '1px solid var(--line)',
-              borderRadius: 6,
-              fontSize: 13,
-              lineHeight: 1.7,
-              color: 'var(--ink)',
-              whiteSpace: 'pre-wrap',
-              maxHeight: 500,
-              overflowY: 'auto',
-            }}
-          >
-            {run.lessonDesignBrief}
-          </div>
-        </div>
-      )}
-
       {/* Educator Report */}
       {run.educatorReport && (
         <div style={{ marginBottom: 28 }}>
@@ -593,6 +668,29 @@ export function SimulationDetail({ run }: { run: SimulationRun }) {
             }}
           >
             {run.educatorReport}
+          </div>
+        </div>
+      )}
+
+      {/* Lesson Design Brief */}
+      {run.lessonDesignBrief && (
+        <div style={{ marginBottom: 28 }}>
+          <div className="eyebrow" style={{ marginBottom: 10 }}>Lesson Design Brief</div>
+          <div
+            style={{
+              padding: '20px 24px',
+              background: 'var(--bg-2)',
+              border: '1px solid var(--line)',
+              borderRadius: 6,
+              fontSize: 13,
+              lineHeight: 1.7,
+              color: 'var(--ink)',
+              whiteSpace: 'pre-wrap',
+              maxHeight: 500,
+              overflowY: 'auto',
+            }}
+          >
+            {run.lessonDesignBrief}
           </div>
         </div>
       )}
