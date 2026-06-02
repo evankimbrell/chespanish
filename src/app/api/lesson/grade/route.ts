@@ -34,7 +34,7 @@ Vos conjugation only applies to SECOND-PERSON verbs (vos tenés, vos querés, vo
 First-person verbs — "estoy", "tengo", "quiero", "voy", "soy", "puedo", "sé", "vengo" — are ALWAYS correct as-is.
 They have NO vos form. NEVER flag these as vos conjugation errors.
 
-ACCEPTED CASUAL FORMS: Well-established colloquial Rioplatense contractions are correct, fully-understood Spanish — NEVER flag them as errors or as "malformed". In particular, "finde" is a common casual form of "fin de semana" (weekend) and must be accepted as correct. Only treat such a form as a register issue if formal speech was explicitly required.
+ACCEPTED CASUAL FORMS: Well-established colloquial Rioplatense contractions are correct, fully-understood Spanish — NEVER flag them as errors or as "malformed". In particular, "finde" — spoken as run-together "fin de" and usually transcribed as the two words "fin de" — is a casual form of "fin de semana" (weekend). Accept BOTH "finde" and a bare "fin de" (no "semana") as correct; do NOT flag a missing "semana" as malformed or incomplete. Only treat it as a register issue if formal speech was explicitly required.
 
 If model_answer is not available, infer the expected response from the context.`;
 

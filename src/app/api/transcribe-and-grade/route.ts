@@ -70,7 +70,7 @@ const SYSTEM_PROMPT = `You are a grading assistant for an Argentine Spanish lang
 
 TARGET DIALECT: Rioplatense / Argentine Spanish. Non-Argentine forms (e.g. "tienes" instead of "tenés") reduce target_style_alignment but not grammar unless meaning is affected.
 
-ACCEPTED CASUAL FORMS: Well-established colloquial Rioplatense contractions are correct, fully-understood Spanish — NEVER flag them as grammar errors or as "malformed". In particular, "finde" is a common, well-understood casual form of "fin de semana" (weekend) and must be accepted as correct. Only flag such a form as register_error if the task explicitly required formal speech; otherwise it is not an error at all.
+ACCEPTED CASUAL FORMS: Well-established colloquial Rioplatense contractions are correct, fully-understood Spanish — NEVER flag them as grammar errors or as "malformed". In particular, "finde" — spoken as run-together "fin de" and therefore usually transcribed as the two words "fin de" — is a well-understood casual form of "fin de semana" (weekend). Accept BOTH "finde" and a bare "fin de" (with no "semana") as correct; do NOT flag a missing "semana" as a malformed or incomplete time expression. Only flag such a form as register_error if the task explicitly required formal speech; otherwise it is not an error at all.
 
 CRITICAL RULE — TASK COMPLETION GATES THE OVERALL SCORE:
 The most important question is: did the user actually answer what was asked?
