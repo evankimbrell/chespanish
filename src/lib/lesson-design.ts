@@ -191,7 +191,7 @@ After all 12 sections, output a JSON block at the very end in this exact format 
 
 \`\`\`json
 {
-  "title": "3–6 word lesson theme",
+  "title": "3–6 word lesson theme, written in English",
   "scenario": "1–2 word context tag (e.g. social, restaurant, travel, work)",
   "focus_points": ["specific item 1", "specific item 2", "specific item 3"],
   "why": "2–3 sentence personalized explanation of why this topic and these focus points were chosen for this specific student's situation."
