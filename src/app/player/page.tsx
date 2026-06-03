@@ -22,6 +22,7 @@ function GeneratedLessonPlayerPage() {
   const total = generatedLesson.totalCount ?? plays.length;
 
   const loadingRef = useRef(false);
+  const requestedStartsRef = useRef<Set<number>>(new Set()); // startIdx values already fetched — never double-append a batch
 
   // Always-current ref to avoid stale closures in save/cleanup
   const saveHistoryRef = useRef<(playIdx: number, completed: boolean) => void>(() => {});
@@ -80,6 +81,10 @@ function GeneratedLessonPlayerPage() {
     if (loadingRef.current) return;
     if (loadedCount >= total) return;
     if (p.promptIdx + PRELOAD_AHEAD < loadedCount) return;
+    // Never request the same batch twice — a double-append would duplicate audio
+    // and misalign plays[] from the section/prompt metadata.
+    if (requestedStartsRef.current.has(loadedCount)) return;
+    requestedStartsRef.current.add(loadedCount);
 
     loadingRef.current = true;
     const safeUser = userName.toLowerCase().replace(/[^a-z0-9]/g, '-');

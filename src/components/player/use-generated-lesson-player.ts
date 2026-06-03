@@ -330,7 +330,10 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
 
   const totalSeconds = playSecs.reduce((a, b) => a + b, 0);
   const completedSecs = playSecs.slice(0, playIdx).reduce((a, b) => a + b, 0);
-  const elapsedSeconds = completedSecs + audioCurrentTime;
+  // Add the current play's elapsed portion. audioProgress is 1 once a play has
+  // finished (e.g. while we're at a prompt), so the timer reflects the finished
+  // play instead of dropping back to the start of it.
+  const elapsedSeconds = completedSecs + audioProgress * (playSecs[playIdx] ?? 0);
 
   return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, elapsedSeconds, totalSeconds, play, pause, record, next, retry, seek, ask, submitQuestion, playCorrect, grade };
 }

@@ -22,6 +22,10 @@ Grade the learner's response and return JSON:
   "suggested_answer": "the correct phrasing if the learner was notably wrong — omit this field entirely if label is Excellent or Good"
 }
 
+LANGUAGE OF FEEDBACK: Write brief_feedback, every observed_errors description, and any explanation in ENGLISH. Use Spanish ONLY to quote the actual Spanish word or phrase you are referring to (e.g. brief_feedback: "Good, but the lesson asked you to say \\"¿Podemos vernos mañana?\\""). Never write the explanation itself in Spanish.
+
+WHAT WAS ASKED — read the context first: The "context" contains the narrator's instruction plus the Spanish that was modeled. FIRST determine from that context what the learner was actually asked to produce in THIS step. The "model_answer" is only a hint and may be imperfect or pulled from a nearby step — if it conflicts with what the context clearly asked for, trust the context, not model_answer. Grade whether the learner accomplished what THIS step asked.
+
 Label guide:
 - Excellent: essentially matches the model answer; minor accent marker differences are fine
 - Good: minor variation that does not change meaning (one extra word, slight vocabulary swap)
@@ -36,7 +40,7 @@ They have NO vos form. NEVER flag these as vos conjugation errors.
 
 ACCEPTED CASUAL FORMS: Well-established colloquial Rioplatense contractions are correct, fully-understood Spanish — NEVER flag them as errors or as "malformed". In particular, "finde" — spoken as run-together "fin de" and usually transcribed as the two words "fin de" — is a casual form of "fin de semana" (weekend). Accept BOTH "finde" and a bare "fin de" (no "semana") as correct; do NOT flag a missing "semana" as malformed or incomplete. Only treat it as a register issue if formal speech was explicitly required.
 
-If model_answer is not available, infer the expected response from the context.`;
+If model_answer is not available, infer the expected response from the context. All explanations remain in English regardless.`;
 
 const VALID_LABELS = ['Excellent', 'Good', 'Ok', 'Almost', 'Ouch'];
 

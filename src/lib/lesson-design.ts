@@ -35,6 +35,18 @@ Use no more than 4 total voices.
 The narrator speaks in English and gives all instructions, explanations, transitions, corrections, and encouragement.
 The Spanish voices only speak Spanish and should only speak full Spanish sentences or natural Spanish phrases used as part of the lesson.
 
+CRITICAL — NEVER PUT SPANISH IN THE NARRATOR: The narrator voice is an English TTS voice and will badly mispronounce any Spanish word (e.g. it says "dale" with English phonetics, unrecognizably). Therefore NO Spanish word may ever appear inside <narrator> text — not even a single word the narrator is naming, teaching, or quoting. Whenever the narrator needs to reference a Spanish word or phrase, switch to a <spanish N> tag for just that word/phrase, then switch back to <narrator>. For example, do NOT write:
+<narrator>
+To agree, use the word dale.
+Instead write:
+<narrator>
+To agree, use the word
+<spanish 1>
+dale
+<narrator>
+That's it.
+This applies to every Spanish word the narrator mentions, however short.
+
 Whenever the student is expected to speak, insert:
 <prompt>
 
@@ -100,7 +112,10 @@ OUTPUT: Return only the lesson transcript. Start directly with the first <sectio
 export async function generateLessonTranscript(lessonDesignBrief: string): Promise<string> {
   const completion = await getOpenAI().chat.completions.create({
     model: 'gpt-5.5',
-    max_completion_tokens: 16000,
+    // ~9000 tokens caps the transcript near a 20–30 min / 2,500–3,500-word lesson
+    // (plus gpt-5.5 reasoning headroom). The old 16000 left room for the model to
+    // loop and repeat the whole lesson, producing 200+ minute audio.
+    max_completion_tokens: 9000,
     messages: [{ role: 'user', content: LESSON_PROMPT.replace('[DESIGN_BRIEF]', lessonDesignBrief) }],
   });
   return completion.choices[0]?.message?.content ?? '';
