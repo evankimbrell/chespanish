@@ -7,15 +7,22 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 // If Whisper returns these, it misidentified the language.
 const SLAVIC_RE = /[ČčŠšŽžĚěŘřŮů]/;
 
+// Answer-AGNOSTIC Rioplatense anchor. Passed only when we already know the audio is
+// Spanish (forceLang='es'). It sets the language/accent context (steering away from
+// non-Argentine outputs like the Mexican "quiúbole") WITHOUT seeding any specific
+// phrase, so it can't bias the transcript toward a particular expected answer.
+const ES_PRIME = 'Lo siguiente es una frase corta en español rioplatense de Argentina.';
+
 async function runTranscription(audio: File, forceLang?: string): Promise<string> {
-  // Never pass a `prompt`. Whisper's prompt is a language-matching context prime, not
-  // an instruction — an English prompt biases Whisper into emitting English, i.e.
-  // translating Spanish audio. Pure auto-detect transcribes literally in whatever
-  // language was actually spoken. `language` is only forced on the Slavic-garble retry.
+  // temperature 0 = greedy decoding, which avoids the temperature-fallback escalation
+  // that makes Whisper hallucinate confident wrong words on short clips. A `prompt`
+  // is only added with a known Spanish language hint (an English prompt would bias
+  // toward English / translation; a Spanish prompt under language='es' is safe).
   const params: TranscriptionCreateParams = {
     file: audio,
     model: 'whisper-1',
-    ...(forceLang ? { language: forceLang } : {}),
+    temperature: 0,
+    ...(forceLang ? { language: forceLang, prompt: ES_PRIME } : {}),
   };
   const result = await openai.audio.transcriptions.create(params);
   return result.text;
