@@ -39,7 +39,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const pendingPlayIdxRef = useRef<number | null>(null); // target to resume once buffer catches up
 
   const {
-    startRecording, stopRecording,
+    startRecording, stopRecording, primeMic,
     reset: resetRecording,
     transcript: recordTranscript,
   } = useRecording();
@@ -162,6 +162,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       setAudioCurrentTime(0);
       if (plays[currentIdx]?.promptAfter) {
         setState('prompting');
+        primeMic(); // warm the mic now so the spacebar press records the first word
       } else {
         advanceOrComplete(currentIdx);
       }

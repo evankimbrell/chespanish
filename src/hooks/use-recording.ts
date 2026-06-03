@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 
 export function useRecording() {
   const [isRecording, setIsRecording]       = useState(false);
@@ -12,6 +12,8 @@ export function useRecording() {
   const mrRef          = useRef<MediaRecorder | null>(null);
   const chunks         = useRef<Blob[]>([]);
   const streamRef      = useRef<MediaStream | null>(null);
+  const ctxRef         = useRef<AudioContext | null>(null);
+  const analyserRef    = useRef<AnalyserNode | null>(null);
   const rafRef         = useRef<number | null>(null);
   const timerRef       = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedAtRef   = useRef<number>(0);
@@ -44,6 +46,39 @@ export function useRecording() {
     rafRef.current = requestAnimationFrame(tick);
   }, []);
 
+  // Acquire the mic ONCE and keep it warm. Re-acquiring getUserMedia on every recording
+  // (the old behavior) made the mic cold each time and clipped the first word(s). The
+  // stream + AudioContext are kept alive for the session and released on unmount.
+  const ensureStream = useCallback(async (): Promise<MediaStream> => {
+    const existing = streamRef.current;
+    if (existing && existing.getAudioTracks().some((t) => t.readyState === 'live')) {
+      return existing;
+    }
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    streamRef.current = stream;
+
+    // Build the (persistent) analysis graph for this stream.
+    if (!ctxRef.current) {
+      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      ctxRef.current = new AudioCtx();
+    }
+    const ctx = ctxRef.current;
+    if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+    const source = ctx.createMediaStreamSource(stream);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    analyserRef.current = analyser;
+    return stream;
+  }, []);
+
+  // Pre-warm the mic the moment we know the user is about to answer (best effort).
+  // If permission isn't granted yet it throws — that's fine, the next real
+  // startRecording() runs from a user gesture and will acquire it.
+  const primeMic = useCallback(() => {
+    ensureStream().catch(() => {});
+  }, [ensureStream]);
+
   const stopRecording = useCallback(() => {
     if (!mrRef.current || mrRef.current.state === 'inactive') return;
     stopVolume();
@@ -53,7 +88,8 @@ export function useRecording() {
       const duration = Date.now() - startedAtRef.current;
       setRecordingDurationMs(duration);
       setIsRecording(false);
-      streamRef.current?.getTracks().forEach((t) => t.stop());
+      // NOTE: intentionally do NOT stop the stream tracks here — keep the mic warm so the
+      // next prompt records instantly. Tracks are released on unmount.
 
       const blob = new Blob(chunks.current, { type: 'audio/webm' });
       chunks.current = [];
@@ -96,15 +132,10 @@ export function useRecording() {
     startedAtRef.current = Date.now();
     chunks.current = [];
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    streamRef.current = stream;
-
-    const ctx = new AudioContext();
-    const src = ctx.createMediaStreamSource(stream);
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 256;
-    src.connect(analyser);
-    trackVolume(analyser);
+    // Reuse the warm stream + analyser (acquired here only on the very first use).
+    const stream = await ensureStream();
+    if (ctxRef.current?.state === 'suspended') ctxRef.current.resume().catch(() => {});
+    if (analyserRef.current) trackVolume(analyserRef.current);
 
     const mr = new MediaRecorder(stream);
     mr.ondataavailable = (e) => { if (e.data.size > 0) chunks.current.push(e.data); };
@@ -113,7 +144,7 @@ export function useRecording() {
     setIsRecording(true);
 
     timerRef.current = setTimeout(stopRecording, opts?.maxDurationMs ?? 120_000);
-  }, [stopRecording, trackVolume]);
+  }, [ensureStream, stopRecording, trackVolume]);
 
   const reset = useCallback(() => {
     setTranscript(null);
@@ -125,8 +156,20 @@ export function useRecording() {
     onsetDetected.current = false;
   }, []);
 
+  // Release the mic + audio context when the component using this hook unmounts
+  // (e.g. leaving the lesson/level test) so the mic indicator turns off.
+  useEffect(() => () => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    ctxRef.current?.close().catch(() => {});
+    ctxRef.current = null;
+    analyserRef.current = null;
+  }, []);
+
   return {
-    startRecording, stopRecording,
+    startRecording, stopRecording, primeMic,
     isRecording, isTranscribing, transcript, volume,
     speechOnsetMs, recordingDurationMs,
     reset,

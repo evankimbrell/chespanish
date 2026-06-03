@@ -121,7 +121,7 @@ export default function LevelTestPage() {
 
   const { play, stop: stopTTS, isLoading: ttsLoading, isPlaying } = useTTS();
   const {
-    startRecording, stopRecording,
+    startRecording, stopRecording, primeMic,
     isRecording, volume,
     speechOnsetMs, recordingDurationMs,
     reset,
@@ -160,6 +160,7 @@ export default function LevelTestPage() {
     setShowText(false);
     setUsedTranscriptHelp(false);
     reset();
+    primeMic(); // warm the mic while the question/audio plays so the answer isn't clipped
     if (question.audio_text) {
       play(question.audio_text);
     }
