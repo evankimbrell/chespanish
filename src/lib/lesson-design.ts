@@ -47,20 +47,23 @@ Do not include stage directions in brackets. Do not include timing estimates. Do
 
 LESSON LENGTH
 
-The default target length is 20–30 minutes.
-Aim for approximately 3,000–5,000 spoken words, not counting <prompt> tags or structural labels.
-Do not make the lesson too short.
+Hard target: 20–30 minutes of spoken audio. At natural narration pace that is roughly
+2,500–3,500 spoken words TOTAL (narrator + all Spanish voices combined), not counting
+<prompt> tags or section labels. Do NOT exceed ~3,500 words. Staying within 20–30 minutes
+matters more than covering more material — when in doubt, make it shorter, not longer.
 
 PEDAGOGICAL REQUIREMENTS
 
 1. Active recall — student produces Spanish before hearing the model answer.
-2. Graduated interval recall — phrases return repeatedly at expanding intervals.
+2. Spaced recall — bring a key phrase back once or twice later in the lesson, each time WITH VARIATION (new subject, tense, or context). Never repeat the same sentence verbatim more than twice in the whole lesson, and never drill the identical line back-to-back.
 3. Anticipation — narrator prompts student to say something before the Spanish voice reveals the answer.
 4. Organic grammar acquisition — teach through use, not explanation.
-5. Core vocabulary — introduce a focused, high-value set only.
-6. Recombination — transform known material across question/answer, positive/negative, tense, time, register.
-7. Pronunciation modeling — listen-and-repeat moments, rhythm, difficult phrase breakdowns.
+5. Core vocabulary — introduce a small, focused, high-value set only.
+6. Recombination — transform known material across question/answer, positive/negative, tense, time, register. Recombination means CHANGING the material, not repeating it.
+7. Pronunciation modeling — a few listen-and-repeat moments, not endless drilling.
 8. Real conversation preparation — student should be able to use this Spanish immediately.
+
+ANTI-REPETITION RULE: Do not pad the lesson by repeating the same content. Every section must teach or practice something new. If you find yourself restating a phrase you already covered, either vary it meaningfully or move on.
 
 ACTIVITY TYPES TO INCLUDE (choose what fits the lesson):
 Narration and instruction | Brief concept explanation | Listen and repeat | Translation prompt (English → student produces Spanish → model answer) | Answering questions in Spanish | Fill-in-the-blank | Vocabulary recall | Minimal pair or pronunciation drill | Listening to a short conversation | Comprehension questions about that conversation | Open-ended spoken response | Final performance task

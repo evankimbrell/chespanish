@@ -1,9 +1,13 @@
 'use client';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type { GeneratedLesson, LessonGrade } from '@/lib/types';
 import type { FakePlayer } from './use-fake-player';
 import type { PlayerState } from '@/lib/types';
 import { useRecording } from '@/hooks/use-recording';
+
+// Natural narration pace (English narrator + Spanish voices blended) for estimating
+// the duration of plays whose audio hasn't been generated/measured yet.
+const SPOKEN_WPM = 150;
 
 // Shown if grading fails or returns nothing — keeps the UI from hanging on "Grading…".
 const GRADE_FALLBACK: LessonGrade = {
@@ -308,18 +312,25 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
 
   const progress = totalCount > 0 ? (playIdx + audioProgress) / totalCount : 0;
 
-  // Compute actual elapsed time from recorded play durations + current play position
-  const completedSecs = playDurationsRef.current
-    .slice(0, playIdx)
-    .reduce((sum, d) => sum + (d || 0), 0);
-  const elapsedSeconds = completedSecs + audioCurrentTime;
+  // Per-play duration estimate: exact from ElevenLabs word timings when the play is
+  // loaded, otherwise estimated from the play's word count at a natural speaking pace.
+  // (The old `totalCount × 30s` assumption massively overstated the lesson length.)
+  const playSecs = useMemo(() => {
+    const meta = lesson.allPlayMeta ?? plays;
+    const arr: number[] = [];
+    for (let i = 0; i < totalCount; i++) {
+      const wt = plays[i]?.wordTimings;
+      if (wt && wt.length) { arr.push(wt[wt.length - 1].end); continue; }
+      const text = meta[i]?.text ?? plays[i]?.text ?? '';
+      const words = text ? text.trim().split(/\s+/).filter(Boolean).length : 0;
+      arr.push((words / SPOKEN_WPM) * 60);
+    }
+    return arr;
+  }, [plays, totalCount, lesson.allPlayMeta]);
 
-  // Estimate total lesson duration from average of recorded plays
-  const recordedDurations = playDurationsRef.current.filter(Boolean);
-  const avgPlaySecs = recordedDurations.length > 0
-    ? recordedDurations.reduce((a, b) => a + b, 0) / recordedDurations.length
-    : 30;
-  const totalSeconds = totalCount * avgPlaySecs;
+  const totalSeconds = playSecs.reduce((a, b) => a + b, 0);
+  const completedSecs = playSecs.slice(0, playIdx).reduce((a, b) => a + b, 0);
+  const elapsedSeconds = completedSecs + audioCurrentTime;
 
   return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, elapsedSeconds, totalSeconds, play, pause, record, next, retry, seek, ask, submitQuestion, playCorrect, grade };
 }
