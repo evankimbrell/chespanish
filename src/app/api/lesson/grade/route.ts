@@ -94,6 +94,9 @@ export async function POST(req: Request) {
       // before any JSON is emitted, so keep ample headroom or the output truncates
       // to empty and grading silently fails.
       max_completion_tokens: 2000,
+      // Grading a short phrase against a known answer needs little reasoning. Low effort
+      // keeps the model fast (~5-6s → ~1s) without hurting judgment on this simple task.
+      reasoning_effort: 'low',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM },

@@ -305,6 +305,9 @@ Prompt ID to echo back: ${q.prompt_id}`;
           model: 'gpt-5.5',
           response_format: { type: 'json_object' },
           max_completion_tokens: 1500,
+          // Low reasoning keeps per-answer grading fast. This rubric is more nuanced than
+          // the lesson grader — if grading quality dips, raise this to 'medium'.
+          reasoning_effort: 'low',
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
             { role: 'user', content: userMessage },
