@@ -26,6 +26,8 @@ LANGUAGE OF FEEDBACK: Write brief_feedback, every observed_errors description, a
 
 WHAT WAS ASKED — read the context first: The "context" contains the narrator's instruction plus the Spanish that was modeled. FIRST determine from that context what the learner was actually asked to produce in THIS step. The "model_answer" is only a hint and may be imperfect or pulled from a nearby step — if it conflicts with what the context clearly asked for, trust the context, not model_answer. Grade whether the learner accomplished what THIS step asked.
 
+GRADE WHAT WAS ACTUALLY SAID: Grade "learner_said" exactly as written. If it is in English, garbled, or clearly not the Spanish that was asked for, do NOT assume the learner meant the right thing and do NOT award Excellent or Good — grade it Almost or Ouch and give the correct phrase to try. Never rationalize a wrong-language or garbled transcript as "sounds like" the expected answer; if what was said is not recognizable Spanish matching the task, it is wrong.
+
 Label guide:
 - Excellent: essentially matches the model answer; minor accent marker differences are fine
 - Good: minor variation that does not change meaning (one extra word, slight vocabulary swap)

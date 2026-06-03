@@ -30,11 +30,15 @@ export async function POST(req: Request) {
   const fd = await req.formData();
   const audio = fd.get('audio') as File | null;
   const allowEnglish = fd.get('allowEnglish') === '1';
+  // Optional language hint (e.g. 'es' for lesson prompts that ask for a specific Spanish
+  // phrase). Short clips auto-detect unreliably, so the caller can tell Whisper the
+  // language. Absent (level test, ask-a-question) → pure auto-detect.
+  const language = (fd.get('language') as string | null) || undefined;
 
   if (!audio) return new Response('audio required', { status: 400 });
 
   try {
-    let text = await runTranscription(audio);
+    let text = await runTranscription(audio, language);
 
     // If Slavic characters appear, Whisper mis-detected the language — retry forced to Spanish
     if (!allowEnglish && SLAVIC_RE.test(text)) {

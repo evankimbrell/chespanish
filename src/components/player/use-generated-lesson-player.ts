@@ -222,7 +222,9 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       isAskRef.current = false;
       setTranscript(null);
       resetRecording();
-      startRecording();
+      // Lesson prompts ask for a specific Spanish phrase — tell Whisper the audio is
+      // Spanish so short answers (e.g. "¿A qué hora?") aren't mis-heard as English.
+      startRecording({ language: 'es' });
       setState('recording');
     }
   }, [state, startRecording, stopRecording, resetRecording]);
