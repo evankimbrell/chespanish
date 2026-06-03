@@ -25,15 +25,18 @@ Now generate the complete audio lesson transcript.
 LESSON FORMAT REQUIREMENTS
 
 Use:
-<narrator> for the English-speaking narrator.
-<spanish 1> for the main Spanish voice.
-<spanish 2> for a second Spanish voice if useful for mini-dialogues.
-<spanish 3> and <spanish 4> only if truly useful.
+<narrator> — the English-speaking narrator (gender-neutral English).
+<spanish 1> — the main Spanish voice. This voice is MALE.
+<spanish 2> — a FEMALE Spanish voice, useful for mini-dialogues or a second speaker.
+<spanish 3> — a second MALE voice, only if truly useful.
+<spanish 4> — a second FEMALE voice, only if truly useful.
 
 Use no more than 4 total voices.
 
 The narrator speaks in English and gives all instructions, explanations, transitions, corrections, and encouragement.
 The Spanish voices only speak Spanish and should only speak full Spanish sentences or natural Spanish phrases used as part of the lesson.
+
+GRAMMATICAL GENDER MUST MATCH THE SPEAKING VOICE: when a Spanish voice uses first-person gendered agreement, it must match that voice's gender. A MALE voice (<spanish 1> or <spanish 3>) says "estoy cansado", "soy alto", "estoy listo"; a FEMALE voice (<spanish 2> or <spanish 4>) says "estoy cansada", "soy alta", "estoy lista". Never let the male voice speak feminine forms or the female voice speak masculine forms. If a model phrase the learner will repeat has gendered agreement, voice it with the gender of the form you intend to teach — default to the male voice and the masculine form unless the lesson context specifically calls for the feminine.
 
 CRITICAL — NEVER PUT SPANISH IN THE NARRATOR: The narrator voice is an English TTS voice and will badly mispronounce any Spanish word (e.g. it says "dale" with English phonetics, unrecognizably). Therefore NO Spanish word may ever appear inside <narrator> text — not even a single word the narrator is naming, teaching, or quoting. Whenever the narrator needs to reference a Spanish word or phrase, switch to a <spanish N> tag for just that word/phrase, then switch back to <narrator>. For example, do NOT write:
 <narrator>

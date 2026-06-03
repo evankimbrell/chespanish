@@ -5,11 +5,13 @@ import type { WordTiming, PlayMeta } from '@/lib/types';
 export const maxDuration = 300; // 5-minute timeout for long lessons
 
 const ENGLISH_VOICE = 'nzFihrBIvB34imQBuxub';
-const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm';  // Facundo — spanish 1 / 3
-const SPANISH_VOICE_2 = '1WXz8v08ntDcSTeVXMN2'; // spanish 2 / 4
+const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm';  // Facundo (MALE) — spanish 1 / 3
+const SPANISH_VOICE_2 = '1WXz8v08ntDcSTeVXMN2'; // FEMALE — spanish 2 / 4
 const CONCURRENCY = 4;
 
-// voiceIndex 1–4 maps to: Facundo, Alt, Facundo, Alt
+// voiceIndex 1–4 maps to: male, female, male, female.
+// The lesson prompt labels these genders so GPT writes matching gendered agreement
+// (e.g. the male voice says "estoy cansado", the female voice "estoy cansada").
 const SPANISH_VOICES = [SPANISH_VOICE, SPANISH_VOICE_2, SPANISH_VOICE, SPANISH_VOICE_2];
 
 type VoiceSegment = { type: 'english' | 'spanish'; voiceIndex: number; text: string; sectionName?: string };
