@@ -239,11 +239,15 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   }, [playIdx, advanceOrComplete, resetRecording]);
 
   const retry = useCallback(() => {
+    // Jump straight back into recording rather than the idle "your turn" prompt,
+    // so the learner doesn't have to press the mic again.
     setGrade(null);
     setTranscript(null);
+    isAskRef.current = false;
     resetRecording();
-    setState('prompting');
-  }, [resetRecording]);
+    startRecording({ language: 'es' });
+    setState('recording');
+  }, [resetRecording, startRecording]);
 
   const playCorrect = useCallback(() => {
     const play = plays[playIdx];
