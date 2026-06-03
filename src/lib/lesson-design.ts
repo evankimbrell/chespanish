@@ -33,6 +33,8 @@ Use:
 
 Use no more than 4 total voices.
 
+USE A SINGLE SPANISH VOICE BY DEFAULT: Use <spanish 1> for ALL ordinary teaching — every model phrase, listen-and-repeat, vocabulary item, translation answer, and example the learner practices. Introduce a second voice (<spanish 2>, and only if truly needed <spanish 3>/<spanish 4>) ONLY when there are genuinely two different people speaking: a mini-dialogue, a back-and-forth conversation, or a role-play where you switch to a clearly different character (a waiter, a friend, etc.). Never switch the Spanish voice for variety or in the middle of teaching. If the learner is hearing or talking to one person, keep ONE voice — switching voices while it is still the same speaker is confusing.
+
 The narrator speaks in English and gives all instructions, explanations, transitions, corrections, and encouragement.
 The Spanish voices only speak Spanish and should only speak full Spanish sentences or natural Spanish phrases used as part of the lesson.
 

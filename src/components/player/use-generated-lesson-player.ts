@@ -252,9 +252,10 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const playCorrect = useCallback(() => {
     const play = plays[playIdx];
     if (!play) return;
-    // Prefer the grader's suggested_answer (GPT knows exactly what the student should say),
-    // then fall back to spanishText from the lesson, then full audio
-    const text = (grade?.suggested_answer ?? play.spanishText)?.trim();
+    // Prefer the grader's correct_answer for THIS step (it reads the prompt context and
+    // isn't subject to the spanishText look-ahead heuristic that can pull a phrase from a
+    // different part of the lesson), then suggested_answer, then the lesson's spanishText.
+    const text = (grade?.correct_answer ?? grade?.suggested_answer ?? play.spanishText)?.trim();
     if (!text) {
       new Audio(play.audioUrl).play().catch(() => {});
       return;

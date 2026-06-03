@@ -17,6 +17,7 @@ You are given:
 Grade the learner's response and return JSON:
 {
   "label": "Excellent" | "Good" | "Ok" | "Almost" | "Ouch",
+  "correct_answer": "the exact Spanish phrase the learner was supposed to say for THIS step — ALWAYS provide this, in Spanish only, even when the learner was correct. Determine it from what the context/instruction asked for in this step (not from a nearby step).",
   "brief_feedback": "one concise sentence",
   "observed_errors": [{ "category": string, "description": string }],
   "suggested_answer": "the correct phrasing if the learner was notably wrong — omit this field entirely if label is Excellent or Good"
@@ -62,8 +63,11 @@ function normalizeGrade(raw: unknown): {
         .filter((e): e is Record<string, unknown> => !!e && typeof e === 'object')
         .map((e) => ({ category: String(e.category ?? 'note'), description: String(e.description ?? '') }))
     : [];
-  const out: { label: string; brief_feedback: string; observed_errors: { category: string; description: string }[]; suggested_answer?: string } =
+  const out: { label: string; brief_feedback: string; observed_errors: { category: string; description: string }[]; correct_answer?: string; suggested_answer?: string } =
     { label, brief_feedback, observed_errors };
+  if (typeof r.correct_answer === 'string' && r.correct_answer.trim()) {
+    out.correct_answer = r.correct_answer.trim();
+  }
   if (typeof r.suggested_answer === 'string' && r.suggested_answer.trim()) {
     out.suggested_answer = r.suggested_answer;
   }

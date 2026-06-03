@@ -362,6 +362,7 @@ export interface LessonGrade {
   label: 'Excellent' | 'Good' | 'Ok' | 'Almost' | 'Ouch';
   brief_feedback: string;
   observed_errors: { category: string; description: string }[];
+  correct_answer?: string;     // the Spanish the learner should say for THIS step — used by "Hear correct version"
   suggested_answer?: string;   // shown when label is not Excellent/Good
 }
 
