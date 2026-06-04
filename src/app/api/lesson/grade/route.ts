@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { normalizeGrade, buildGradeUserMessage } from './grading';
 
 let _openai: OpenAI | null = null;
 function getOpenAI() {
@@ -56,35 +57,6 @@ ACCEPTED CASUAL FORMS: Well-established colloquial Rioplatense contractions are 
 
 If model_answer is not available, infer the expected response from the context. All explanations remain in English regardless.`;
 
-const VALID_LABELS = ['Excellent', 'Good', 'Ok', 'Almost', 'Ouch'];
-
-// Always return a valid LessonGrade shape so the player never shows a blank
-// feedback card or hangs on "Grading…", even if the model output is malformed.
-function normalizeGrade(raw: unknown): {
-  label: string;
-  brief_feedback: string;
-  observed_errors: { category: string; description: string }[];
-  suggested_answer?: string;
-} {
-  const r = (raw ?? {}) as Record<string, unknown>;
-  const label = typeof r.label === 'string' && VALID_LABELS.includes(r.label) ? r.label : 'Ok';
-  const brief_feedback = typeof r.brief_feedback === 'string' ? r.brief_feedback : '';
-  const observed_errors = Array.isArray(r.observed_errors)
-    ? r.observed_errors
-        .filter((e): e is Record<string, unknown> => !!e && typeof e === 'object')
-        .map((e) => ({ category: String(e.category ?? 'note'), description: String(e.description ?? '') }))
-    : [];
-  const out: { label: string; brief_feedback: string; observed_errors: { category: string; description: string }[]; correct_answer?: string; suggested_answer?: string } =
-    { label, brief_feedback, observed_errors };
-  if (typeof r.correct_answer === 'string' && r.correct_answer.trim()) {
-    out.correct_answer = r.correct_answer.trim();
-  }
-  if (typeof r.suggested_answer === 'string' && r.suggested_answer.trim()) {
-    out.suggested_answer = r.suggested_answer;
-  }
-  return out;
-}
-
 const FALLBACK_GRADE = {
   label: 'Ok',
   brief_feedback: 'Grading was unavailable for this response — you can continue.',
@@ -113,13 +85,7 @@ export async function POST(req: Request) {
         { role: 'system', content: SYSTEM },
         {
           role: 'user',
-          content:
-            `model_answer: "${modelAnswer}"\n` +
-            (altAnswer ? `alt_model_answer: "${altAnswer}"\n` : '') +
-            `learner_said: "${transcript}"\n` +
-            (prevText ? `context_before: "${prevText}"\n` : '') +
-            `this_step: "${playText}"\n` +
-            (nextText ? `context_after: "${nextText}"` : ''),
+          content: buildGradeUserMessage({ modelAnswer, altAnswer, transcript, prevText, playText, nextText }),
         },
       ],
     });
