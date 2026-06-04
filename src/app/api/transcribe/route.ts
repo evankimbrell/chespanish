@@ -22,13 +22,18 @@ async function runTranscription(audio: File, forceLang?: string): Promise<Transc
   // is only added with a known Spanish language hint (an English prompt would bias
   // toward English / translation; a Spanish prompt under language='es' is safe).
   // verbose_json + word granularity also gives us per-word timestamps for pause analysis.
+  // The Spanish accent prime must ONLY accompany a Spanish forced language. Adding it
+  // under language:'en' (a "respond in English" comprehension prompt) would bias Whisper
+  // toward Spanish and mangle the English answer.
+  const isSpanish = !!forceLang && forceLang.toLowerCase().startsWith('es');
   const params: Record<string, unknown> = {
     file: audio,
     model: 'whisper-1',
     temperature: 0,
     response_format: 'verbose_json',
     timestamp_granularities: ['word'],
-    ...(forceLang ? { language: forceLang, prompt: ES_PRIME } : {}),
+    ...(forceLang ? { language: forceLang } : {}),
+    ...(isSpanish ? { prompt: ES_PRIME } : {}),
   };
   // SDK return type is narrowed by response_format at runtime; cast needed
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

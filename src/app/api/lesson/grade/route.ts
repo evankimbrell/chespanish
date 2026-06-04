@@ -33,7 +33,9 @@ ANSWER vs ASK — never mistake a posed question for the target: The Spanish mod
 - If the instruction asks the learner to ASK or SAY a question, then producing that question is the target and is correct.
 When "model_answer" is itself a question but the learner produced a well-formed answer consistent with the instruction, prefer the instruction — grade the answer, do not demand the question.
 
-GRADE WHAT WAS ACTUALLY SAID: Grade "learner_said" exactly as written. If it is in English, garbled, or clearly not the Spanish that was asked for, do NOT assume the learner meant the right thing and do NOT award Excellent or Good — grade it Almost or Ouch and give the correct phrase to try. Never rationalize a wrong-language or garbled transcript as "sounds like" the expected answer; if what was said is not recognizable Spanish matching the task, it is wrong.
+RESPONSE LANGUAGE — usually Spanish, but some steps require ENGLISH: Most steps require a Spanish response. EXCEPTION: when "this_step" explicitly instructs the learner to answer IN ENGLISH (e.g. a listening-comprehension check: "in English, explain what he said"), an English answer is EXPECTED and CORRECT. For those steps, grade the comprehension/accuracy of the English answer, write "correct_answer" as the expected ENGLISH answer, and do NOT add a wrong-language / "answered in Spanish" error or lower the label for replying in English. The Spanish-vs-English penalty below applies ONLY when the step asked for Spanish.
+
+GRADE WHAT WAS ACTUALLY SAID: Grade "learner_said" exactly as written. If a Spanish response was asked for and it is in English, garbled, or clearly not the Spanish that was asked for, do NOT assume the learner meant the right thing and do NOT award Excellent or Good — grade it Almost or Ouch and give the correct phrase to try. Never rationalize a wrong-language or garbled transcript as "sounds like" the expected answer; if what was said is not recognizable Spanish matching the task, it is wrong.
 
 Label guide:
 - Excellent: essentially matches the model answer; minor accent marker differences are fine

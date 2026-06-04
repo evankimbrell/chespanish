@@ -5,6 +5,15 @@ import type { FakePlayer } from './use-fake-player';
 import type { PlayerState } from '@/lib/types';
 import { useRecording } from '@/hooks/use-recording';
 import { useAppStore } from '@/lib/store';
+import { expectsEnglishResponse } from '@/lib/prompt-language';
+
+// Choose the transcription language for a prompt. Default is Spanish (forced, so short
+// answers aren't mis-heard as English). When the instruction explicitly asks for an
+// English answer (listening comprehension), expect English so Whisper transcribes the
+// spoken English instead of rendering it as Spanish.
+function recordingOptsForPrompt(playText: string | undefined): { language: string; allowEnglish?: boolean } {
+  return expectsEnglishResponse(playText) ? { language: 'en', allowEnglish: true } : { language: 'es' };
+}
 
 // Fire-and-forget durable log of an in-lesson response or question (for progress
 // tracking + tailoring future lessons). Failures must never disrupt the lesson.
@@ -273,12 +282,10 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       isAskRef.current = false;
       setTranscript(null);
       resetRecording();
-      // Lesson prompts ask for a specific Spanish phrase — tell Whisper the audio is
-      // Spanish so short answers (e.g. "¿A qué hora?") aren't mis-heard as English.
-      startRecording({ language: 'es' });
+      startRecording(recordingOptsForPrompt(plays[playIdx]?.text));
       setState('recording');
     }
-  }, [state, startRecording, stopRecording, resetRecording]);
+  }, [state, startRecording, stopRecording, resetRecording, plays, playIdx]);
 
   const next = useCallback(() => {
     setGrade(null);
@@ -296,9 +303,9 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     setTranscript(null);
     isAskRef.current = false;
     resetRecording();
-    startRecording({ language: 'es' });
+    startRecording(recordingOptsForPrompt(plays[playIdx]?.text));
     setState('recording');
-  }, [resetRecording, startRecording]);
+  }, [resetRecording, startRecording, plays, playIdx]);
 
   const playCorrect = useCallback(() => {
     const play = plays[playIdx];
