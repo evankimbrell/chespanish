@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import type { LessonActivityRecord } from '@/lib/types';
 
 interface PromptResult {
   promptIndex: number;
@@ -84,6 +85,14 @@ export default function AdminUserPage() {
   const [loading, setLoading] = useState(true);
   const [showPrompts, setShowPrompts] = useState(false);
   const [showEducator, setShowEducator] = useState(false);
+  const [activity, setActivity] = useState<LessonActivityRecord[]>([]);
+
+  useEffect(() => {
+    fetch(`/api/lesson/activity?user=${encodeURIComponent(user)}`)
+      .then(r => r.json())
+      .then(d => setActivity(Array.isArray(d.records) ? d.records : []))
+      .catch(() => {});
+  }, [user]);
 
   useEffect(() => {
     fetch(`/api/admin/users/${encodeURIComponent(user)}`)
@@ -178,9 +187,50 @@ export default function AdminUserPage() {
             })}
           </div>
         )}
-        <p className="small" style={{ color: 'var(--mute)', marginTop: 8 }}>
-          Note: per-prompt responses within lessons are not yet persisted to disk.
-        </p>
+      </section>
+
+      {/* In-lesson activity (responses + questions) */}
+      <section style={{ marginBottom: 36 }}>
+        <span className="eyebrow" style={{ display: 'block', marginBottom: 12 }}>
+          Lesson Activity{activity.length > 0 ? ` · ${activity.filter(a => a.type === 'response').length} responses · ${activity.filter(a => a.type === 'question').length} questions` : ''}
+        </span>
+        {activity.length === 0 ? (
+          <p className="small" style={{ color: 'var(--mute)' }}>No in-lesson responses or questions recorded yet.</p>
+        ) : (
+          <div style={{ border: '1px solid var(--line)', borderRadius: 4, overflow: 'hidden' }}>
+            {activity.slice(-40).reverse().map((a, i) => (
+              <div key={i} style={{ padding: '12px 18px', background: 'var(--bg-2)', borderBottom: '1px solid var(--line)' }}>
+                <div className="row gap-3" style={{ alignItems: 'baseline', marginBottom: 4 }}>
+                  <span className="mono" style={{ fontSize: 10, color: a.type === 'question' ? 'var(--warm)' : 'var(--mute)', textTransform: 'uppercase' }}>
+                    {a.type}
+                  </span>
+                  {a.type === 'response' && (
+                    <span className="mono" style={{ fontSize: 10, color: 'var(--mute)' }}>{a.grade?.label}</span>
+                  )}
+                  <span className="mono" style={{ fontSize: 10, color: 'var(--mute-2)', marginLeft: 'auto' }}>
+                    {new Date(a.at).toLocaleString()}
+                  </span>
+                </div>
+                {a.type === 'response' ? (
+                  <>
+                    <p className="small" style={{ color: 'var(--mute)', margin: '0 0 2px' }}>Asked: {a.promptText.slice(0, 100)}{a.promptText.length > 100 ? '…' : ''}</p>
+                    <p className="small" style={{ color: 'var(--ink-2)', margin: 0 }}>Said: &ldquo;{a.transcript}&rdquo;</p>
+                    {a.grade?.observed_errors?.length > 0 && (
+                      <p className="small" style={{ color: 'var(--crit)', margin: '2px 0 0' }}>
+                        {a.grade.observed_errors.map(e => e.category).join(', ')}
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="small" style={{ color: 'var(--ink-2)', margin: '0 0 2px' }}>Q: &ldquo;{a.question}&rdquo;</p>
+                    {a.answer && <p className="small" style={{ color: 'var(--mute)', margin: 0 }}>A: {a.answer.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 140)}…</p>}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Mistake Analysis */}

@@ -378,6 +378,31 @@ export interface LessonHistoryEntry {
   topics: string[];
 }
 
+// Durable, append-only record of what a learner did inside a lesson — used for
+// progress tracking over time and to tailor future lessons. One record per graded
+// response or asked question, stored in data/activity/[user].jsonl.
+export type LessonActivityRecord =
+  | {
+      type: 'response';
+      at: string;            // ISO timestamp
+      lessonId?: string;     // generatedLesson.generatedAt
+      lessonTitle?: string;
+      sectionName?: string;
+      promptText: string;    // what the lesson asked
+      expected?: string;     // the modeled Spanish answer, if known
+      transcript: string;    // what the learner said
+      grade: LessonGrade;    // label + feedback + observed_errors + correct_answer
+    }
+  | {
+      type: 'question';
+      at: string;
+      lessonId?: string;
+      lessonTitle?: string;
+      sectionName?: string;
+      question: string;      // the learner's question
+      answer?: string;       // the answer text we generated
+    };
+
 export interface GeneratedLesson {
   transcript: string;
   plays: LessonPlay[];

@@ -1,9 +1,20 @@
 'use client';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import type { GeneratedLesson, LessonGrade } from '@/lib/types';
+import type { GeneratedLesson, LessonGrade, LessonActivityRecord } from '@/lib/types';
 import type { FakePlayer } from './use-fake-player';
 import type { PlayerState } from '@/lib/types';
 import { useRecording } from '@/hooks/use-recording';
+import { useAppStore } from '@/lib/store';
+
+// Fire-and-forget durable log of an in-lesson response or question (for progress
+// tracking + tailoring future lessons). Failures must never disrupt the lesson.
+function postActivity(userName: string, record: LessonActivityRecord) {
+  fetch('/api/lesson/activity', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userName, record }),
+  }).catch(() => {});
+}
 
 // Natural narration pace (English narrator + Spanish voices blended) for estimating
 // the duration of plays whose audio hasn't been generated/measured yet.
@@ -43,6 +54,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     reset: resetRecording,
     transcript: recordTranscript,
   } = useRecording();
+  const userName = useAppStore((s) => s.profile.name);
 
   const clearSub = () => { if (subRef.current) { clearInterval(subRef.current); subRef.current = null; } };
 
@@ -100,6 +112,15 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       })
         .then((r) => r.json())
         .then((data) => {
+          postActivity(userName, {
+            type: 'question',
+            at: new Date().toISOString(),
+            lessonId: lesson.generatedAt,
+            lessonTitle: lesson.title,
+            sectionName: plays[playIdx]?.sectionName,
+            question: recordTranscript,
+            answer: data.answerText,
+          });
           if (!data.audioUrl) { resumeAfterAsk(); return; }
           const audio = new Audio(data.audioUrl);
           answerAudioRef.current = audio;
@@ -123,7 +144,21 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
         body: JSON.stringify({ transcript: recordTranscript, playText: currentPlay.text, spanishText: currentPlay.spanishText }),
       })
         .then((r) => r.json())
-        .then((data) => setGrade(data && data.label ? data : GRADE_FALLBACK))
+        .then((data) => {
+          const grade = data && data.label ? data : GRADE_FALLBACK;
+          setGrade(grade);
+          postActivity(userName, {
+            type: 'response',
+            at: new Date().toISOString(),
+            lessonId: lesson.generatedAt,
+            lessonTitle: lesson.title,
+            sectionName: currentPlay.sectionName,
+            promptText: currentPlay.text,
+            expected: currentPlay.spanishText,
+            transcript: recordTranscript,
+            grade,
+          });
+        })
         .catch(() => setGrade(GRADE_FALLBACK));
     }
   }, [recordTranscript]);
