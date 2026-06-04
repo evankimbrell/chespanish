@@ -25,7 +25,12 @@ Grade the learner's response and return JSON:
 
 LANGUAGE OF FEEDBACK: Write brief_feedback, every observed_errors description, and any explanation in ENGLISH. Use Spanish ONLY to quote the actual Spanish word or phrase you are referring to (e.g. brief_feedback: "Good, but the lesson asked you to say \\"¿Podemos vernos mañana?\\""). Never write the explanation itself in Spanish.
 
-WHAT WAS ASKED — read the context first: The "context" contains the narrator's instruction plus the Spanish that was modeled. FIRST determine from that context what the learner was actually asked to produce in THIS step. The "model_answer" is only a hint and may be imperfect or pulled from a nearby step — if it conflicts with what the context clearly asked for, trust the context, not model_answer. Grade whether the learner accomplished what THIS step asked.
+WHAT WAS ASKED — read the context first: You are given "context_before" (the prior step), "this_step" (the narrator instruction + Spanish modeled in the step that just paused for the learner), and "context_after" (what the lesson says next, which often MODELS the expected answer). FIRST determine from "this_step" what the learner was actually asked to produce. The "model_answer" is only a hint and may be imperfect or pulled from a nearby step — if it conflicts with what this_step clearly asked for, trust the instruction, not model_answer. Grade whether the learner accomplished what this_step asked.
+
+ANSWER vs ASK — never mistake a posed question for the target: The Spanish modeled in a step can be EITHER a phrase the learner should reproduce, OR a question/line posed TO the learner that they must RESPOND to.
+- If the instruction asks the learner to ANSWER, RESPOND to, or REPLY to a question that was just asked (e.g. the partner asks "¿Qué hiciste el sábado?" and the learner must say what they did), then the expected output is the learner's ANSWER — NOT the question. In that case the modeled question is the PROMPT, not the target, even if "model_answer" equals that question. Do NOT mark the learner wrong for "not producing the question." Set "correct_answer" to a valid ANSWER: use "alt_model_answer" / "context_after" if they show the modeled answer, otherwise infer a correct answer that satisfies the instruction. Any truthful, well-formed answer that fits the instruction is correct.
+- If the instruction asks the learner to ASK or SAY a question, then producing that question is the target and is correct.
+When "model_answer" is itself a question but the learner produced a well-formed answer consistent with the instruction, prefer the instruction — grade the answer, do not demand the question.
 
 GRADE WHAT WAS ACTUALLY SAID: Grade "learner_said" exactly as written. If it is in English, garbled, or clearly not the Spanish that was asked for, do NOT assume the learner meant the right thing and do NOT award Excellent or Good — grade it Almost or Ouch and give the correct phrase to try. Never rationalize a wrong-language or garbled transcript as "sounds like" the expected answer; if what was said is not recognizable Spanish matching the task, it is wrong.
 
@@ -87,7 +92,7 @@ const FALLBACK_GRADE = {
 };
 
 export async function POST(req: Request) {
-  const { transcript, playText, spanishText } = await req.json();
+  const { transcript, playText, spanishText, prevText, nextText, altAnswer } = await req.json();
   if (!transcript || !playText) return Response.json({ error: 'missing fields' }, { status: 400 });
 
   try {
@@ -108,7 +113,13 @@ export async function POST(req: Request) {
         { role: 'system', content: SYSTEM },
         {
           role: 'user',
-          content: `model_answer: "${modelAnswer}"\nlearner_said: "${transcript}"\ncontext: "${playText}"`,
+          content:
+            `model_answer: "${modelAnswer}"\n` +
+            (altAnswer ? `alt_model_answer: "${altAnswer}"\n` : '') +
+            `learner_said: "${transcript}"\n` +
+            (prevText ? `context_before: "${prevText}"\n` : '') +
+            `this_step: "${playText}"\n` +
+            (nextText ? `context_after: "${nextText}"` : ''),
         },
       ],
     });

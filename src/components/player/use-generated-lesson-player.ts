@@ -139,10 +139,23 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     setGrade(null);
     const currentPlay = plays[playIdx];
     if (currentPlay) {
+      // Pass neighbouring context so the grader can tell an "answer the posed question"
+      // step from a "repeat this" step. The baked spanishText is a look-ahead heuristic
+      // that can grab a posed question as the "answer"; the modeled answer for a posed
+      // question is usually in the NEXT play, so send that as an alternate candidate.
+      const prevPlay = plays[playIdx - 1];
+      const nextPlay = plays[playIdx + 1];
       fetch('/api/lesson/grade', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: recordTranscript, playText: currentPlay.text, spanishText: currentPlay.spanishText }),
+        body: JSON.stringify({
+          transcript: recordTranscript,
+          playText: currentPlay.text,
+          spanishText: currentPlay.spanishText,
+          prevText: prevPlay?.text,
+          nextText: nextPlay?.text,
+          altAnswer: nextPlay?.spanishText,
+        }),
       })
         .then((r) => r.json())
         .then((data) => {
