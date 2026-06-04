@@ -175,6 +175,8 @@ const EDUCATOR_PROMPT = `You're an expert Argentine Spanish tutor reviewing a si
 - Priority weaknesses and error patterns to address
 - Specific recommendations for the first lessons
 
+Base your analysis on the student's language ability, level, and skill gaps. Do NOT build conclusions around the student's personal biography (where they live, their job, why they're learning) — even if it surfaces in their answers, we don't actually know it for a real learner.
+
 Be specific and reference actual responses where possible. Be direct and actionable.`;
 
 async function generateEducatorReport(run: SimulationRun): Promise<string> {
@@ -230,6 +232,9 @@ export async function POST(req: Request) {
     studentName: studentName.trim(),
     designatedLevel,
     comfortLevel,
+    // persona drives the simulated test ANSWERS only. It must never be fed into the
+    // educator report / design brief / diagnostic / lesson generation — those get test
+    // performance only, exactly like a real user (who has no persona).
     persona: null,
     prompts: [],
     testReport: null,

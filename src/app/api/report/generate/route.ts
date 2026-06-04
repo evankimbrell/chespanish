@@ -15,6 +15,8 @@ const EDUCATOR_PROMPT = `You're an expert language tutor for Spanish, and your s
 
 Imagine you're going to write a report and hand that to another educator who's going to build the first set of lessons and plan the students' trajectory so that they can learn Spanish as quickly and effectively as possible. What would you pull from this report or similar reports that might be useful for the person designing the lessons? What areas do they appear to be weak in? What areas could you immediately address, and what are the knowledge gaps that you might have to fill in before going forward?
 
+Base your analysis on the student's language ability, level, and skill gaps only. Do NOT build conclusions around the student's personal biography (where they live, their job, why they're learning) — even if it surfaces in their answers, we don't actually know it for a real learner.
+
 Make the report less than 500 words and use bullet points to clearly map their strengths, weaknesses, gaps, and logical things to incorporate next. Make the report specific and to the point.`;
 
 

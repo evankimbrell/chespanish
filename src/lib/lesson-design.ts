@@ -94,6 +94,8 @@ For open prompts, explain what is acceptable, then give model examples.
 
 DIALECT: Argentine/Rioplatense Spanish by default. Use vos, querés, tenés, podés, sos, dale, che, viste naturally.
 
+DO NOT TREAT THE LEARNER'S PERSONAL IDENTITY AS FACT: The test data may show the learner mentioning personal details (hometown, name, nationality, age, job). These are NOT facts to build the lesson around or to hardcode as the correct answer. Design the lesson from the learner's demonstrated LEVEL and SKILL GAPS, not their biography. For any prompt that asks for personal information (where you're from, your name, your age, your job, etc.), make it an OPEN question: the narrator invites the learner to give their OWN answer, and any modeled Spanish is framed clearly as a generic EXAMPLE ("for example, you could say…") using a neutral placeholder, NEVER the learner's actual hometown/name pulled from the test. Any truthful answer must count as correct.
+
 LESSON STRUCTURE:
 1. Brief English introduction
 2. Warm-up (material the student can handle)
@@ -209,6 +211,7 @@ Important constraints:
 * Keep the lesson focused enough to complete in roughly 15–25 minutes of audio.
 * Use practical Spanish the student could actually use in conversation.
 * Make the design brief detailed enough that a separate lesson-generation prompt can create the full audio lesson from it.
+* Base the lesson on the student's demonstrated LEVEL and SKILL GAPS, not on personal details (hometown, name, nationality, job, motivation) that happen to appear in their answers. Do NOT hardcode such personal details as expected answers. Any prompt asking for personal information should be an OPEN question that accepts any truthful answer with a generic example — never the student's actual hometown/name from the test.
 
 After all 12 sections, output a JSON block at the very end in this exact format (no other text after it):
 
