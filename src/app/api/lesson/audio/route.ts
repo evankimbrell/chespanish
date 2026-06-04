@@ -166,7 +166,9 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function textToBufferWithTimings(
   text: string,
   voiceId: string,
-  offsetSec: number
+  offsetSec: number,
+  modelId: string = 'eleven_multilingual_v2',
+  languageCode?: string,
 ): Promise<{ buffer: Buffer; wordTimings: WordTiming[]; durationSec: number }> {
   // Retry transient failures (429 rate limits, 5xx) with exponential backoff.
   // With 100+ plays at concurrency 4, occasional rate-limit blips are expected —
@@ -186,8 +188,10 @@ async function textToBufferWithTimings(
           },
           body: JSON.stringify({
             text,
-            model_id: 'eleven_multilingual_v2',
+            model_id: modelId,
             output_format: 'mp3_44100_128',
+            // language_code is honored by eleven_turbo_v2_5 / flash; ignored by older models.
+            ...(languageCode ? { language_code: languageCode } : {}),
           }),
         }
       );
@@ -230,12 +234,29 @@ async function generatePlayAudio(
 
   for (const seg of play.segments) {
     const voiceId = seg.type === 'english' ? ENGLISH_VOICE : (SPANISH_VOICES[(seg.voiceIndex ?? 1) - 1] ?? SPANISH_VOICE);
+    // Short, context-free Spanish words (e.g. a lone "dale") are ambiguous to the
+    // auto-detecting multilingual model and can render with English phonetics ("day-lay").
+    // For these, force Spanish with a language-lockable model (turbo + language_code:'es').
+    // Longer Spanish has enough context to pronounce correctly, so it stays on the
+    // higher-fidelity multilingual model. Falls back to multilingual on any error.
+    const wordCount = seg.text.trim().split(/\s+/).filter(Boolean).length;
+    const lockSpanish = seg.type === 'spanish' && wordCount <= 3;
     const chunks = splitAtSentences(seg.text);
     for (const chunk of chunks) {
-      const { buffer, wordTimings, durationSec } = await textToBufferWithTimings(chunk, voiceId, offsetSec);
-      buffers.push(buffer);
-      allTimings.push(...wordTimings);
-      offsetSec += durationSec;
+      let result;
+      if (lockSpanish) {
+        try {
+          result = await textToBufferWithTimings(chunk, voiceId, offsetSec, 'eleven_turbo_v2_5', 'es');
+        } catch (e) {
+          console.warn('[lesson/audio] language-locked TTS failed, using multilingual:', e instanceof Error ? e.message : e);
+          result = await textToBufferWithTimings(chunk, voiceId, offsetSec);
+        }
+      } else {
+        result = await textToBufferWithTimings(chunk, voiceId, offsetSec);
+      }
+      buffers.push(result.buffer);
+      allTimings.push(...result.wordTimings);
+      offsetSec += result.durationSec;
     }
   }
 
