@@ -243,16 +243,22 @@ async function generatePlayAudio(
     const lockSpanish = seg.type === 'spanish' && wordCount <= 3;
     const chunks = splitAtSentences(seg.text);
     for (const chunk of chunks) {
+      // A bare, context-free short word makes ElevenLabs run past the word and append
+      // a trailing filler/onset ("después" → "despues eeeh") because it has no sentence
+      // boundary to land on. Adding a period gives it a clean falling close so it stops
+      // at the word. Only for the short Spanish case, and only when the text doesn't
+      // already end in terminal punctuation.
+      const ttsText = lockSpanish && !/[.!?…]$/.test(chunk.trim()) ? `${chunk.trim()}.` : chunk;
       let result;
       if (lockSpanish) {
         try {
-          result = await textToBufferWithTimings(chunk, voiceId, offsetSec, 'eleven_turbo_v2_5', 'es');
+          result = await textToBufferWithTimings(ttsText, voiceId, offsetSec, 'eleven_turbo_v2_5', 'es');
         } catch (e) {
           console.warn('[lesson/audio] language-locked TTS failed, using multilingual:', e instanceof Error ? e.message : e);
-          result = await textToBufferWithTimings(chunk, voiceId, offsetSec);
+          result = await textToBufferWithTimings(ttsText, voiceId, offsetSec);
         }
       } else {
-        result = await textToBufferWithTimings(chunk, voiceId, offsetSec);
+        result = await textToBufferWithTimings(ttsText, voiceId, offsetSec);
       }
       buffers.push(result.buffer);
       allTimings.push(...result.wordTimings);
