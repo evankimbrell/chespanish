@@ -33,6 +33,15 @@ ANSWER vs ASK — never mistake a posed question for the target: The Spanish mod
 - If the instruction asks the learner to ASK or SAY a question, then producing that question is the target and is correct.
 When "model_answer" is itself a question but the learner produced a well-formed answer consistent with the instruction, prefer the instruction — grade the answer, do not demand the question.
 
+DICTATED vs OPEN — match the grading to the kind of task (this is critical):
+First decide whether this_step DICTATES specific wording or invites an OPEN response.
+- DICTATED: the narrator explicitly specifies what to produce ("Say that you can meet at nine", "Ask what time", "Repeat: …", a fill-in drill). Here model_answer is the target; grade against that intent and a different meaning is an error.
+- OPEN conversational turn: the learner hears one side of a dialogue — e.g. the other speaker asks something — and must respond IN CHARACTER, with NO exact wording specified to them. They only heard the other person speak; they were NOT told which words to use. This is typical of "Dialogue", "Listening", "Conversation" and "Roleplay" sections (see section_name) and of any step where the only cue is a line/question spoken to the learner with no English instruction prescribing the reply. For OPEN turns:
+  * Treat model_answer as ONE acceptable example, NOT a required phrase. The learner could not have known the exact modeled words.
+  * Grade COMMUNICATIVELY: if the response is intelligible Spanish that sensibly addresses what was asked / fits the situation, it is Excellent or Good — even if it differs from model_answer in wording, structure, or which valid conversational move it makes (e.g. confirming a time vs proposing one, and adding a natural "nos vemos" are all fine).
+  * Do NOT add "prompt match" / "you changed the phrase" style errors, do NOT lower the label merely for diverging from model_answer, and do NOT tell them to say the exact modeled line. Only lower the label for genuine problems: unintelligible, off-topic, fails to address what was asked, wrong language, or grammar errors that impede meaning.
+  * Omit "suggested_answer" unless the response genuinely failed to communicate. You may still set "correct_answer" to the modeled example.
+
 RESPONSE LANGUAGE — usually Spanish, but some steps require ENGLISH: Most steps require a Spanish response. EXCEPTION: when "this_step" explicitly instructs the learner to answer IN ENGLISH (e.g. a listening-comprehension check: "in English, explain what he said"), an English answer is EXPECTED and CORRECT. For those steps, grade the comprehension/accuracy of the English answer, write "correct_answer" as the expected ENGLISH answer, and do NOT add a wrong-language / "answered in Spanish" error or lower the label for replying in English. The Spanish-vs-English penalty below applies ONLY when the step asked for Spanish.
 
 GRADE WHAT WAS ACTUALLY SAID: Grade "learner_said" exactly as written. If a Spanish response was asked for and it is in English, garbled, or clearly not the Spanish that was asked for, do NOT assume the learner meant the right thing and do NOT award Excellent or Good — grade it Almost or Ouch and give the correct phrase to try. Never rationalize a wrong-language or garbled transcript as "sounds like" the expected answer; if what was said is not recognizable Spanish matching the task, it is wrong.
@@ -66,7 +75,7 @@ const FALLBACK_GRADE = {
 };
 
 export async function POST(req: Request) {
-  const { transcript, playText, spanishText, prevText, nextText, altAnswer } = await req.json();
+  const { transcript, playText, spanishText, prevText, nextText, altAnswer, sectionName } = await req.json();
   if (!transcript || !playText) return Response.json({ error: 'missing fields' }, { status: 400 });
 
   try {
@@ -87,7 +96,7 @@ export async function POST(req: Request) {
         { role: 'system', content: SYSTEM },
         {
           role: 'user',
-          content: buildGradeUserMessage({ modelAnswer, altAnswer, transcript, prevText, playText, nextText }),
+          content: buildGradeUserMessage({ modelAnswer, altAnswer, transcript, prevText, playText, nextText, sectionName }),
         },
       ],
     });

@@ -39,14 +39,17 @@ export interface GradePromptInput {
   prevText?: string;
   playText: string;
   nextText?: string;
+  sectionName?: string; // e.g. "Dialogue And Listening" — hints open vs dictated grading
 }
 
-// Build the grader's user message. Neighbouring context (prev/next/alt) is included
-// only when present, so the grader can distinguish "answer the posed question" from
-// "repeat this phrase" without being fed empty fields.
+// Build the grader's user message. Neighbouring context (prev/next/alt/section) is
+// included only when present, so the grader can distinguish "answer the posed
+// question" and open conversational turns from "repeat this exact phrase" steps
+// without being fed empty fields.
 export function buildGradeUserMessage(input: GradePromptInput): string {
-  const { modelAnswer, altAnswer, transcript, prevText, playText, nextText } = input;
+  const { modelAnswer, altAnswer, transcript, prevText, playText, nextText, sectionName } = input;
   return (
+    (sectionName ? `section_name: "${sectionName}"\n` : '') +
     `model_answer: "${modelAnswer}"\n` +
     (altAnswer ? `alt_model_answer: "${altAnswer}"\n` : '') +
     `learner_said: "${transcript}"\n` +

@@ -164,6 +164,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
           prevText: prevPlay?.text,
           nextText: nextPlay?.text,
           altAnswer: nextPlay?.spanishText,
+          sectionName: currentPlay.sectionName,
         }),
       })
         .then((r) => r.json())

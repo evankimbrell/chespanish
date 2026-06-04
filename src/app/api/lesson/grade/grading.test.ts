@@ -32,10 +32,17 @@ describe('buildGradeUserMessage', () => {
       prevText: 'p',
       playText: 's',
       nextText: 'n',
+      sectionName: 'Dialogue And Listening',
     });
     expect(msg).toContain('alt_model_answer: "a"');
     expect(msg).toContain('context_before: "p"');
     expect(msg).toContain('context_after: "n"');
+    expect(msg).toContain('section_name: "Dialogue And Listening"');
+  });
+
+  it('omits section_name when absent', () => {
+    const msg = buildGradeUserMessage({ modelAnswer: 'm', transcript: 't', playText: 's' });
+    expect(msg).not.toContain('section_name');
   });
 
   // The regression this fix targets: an "answer the posed question" step. The baked
