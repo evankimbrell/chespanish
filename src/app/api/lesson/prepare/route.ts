@@ -20,7 +20,7 @@ Each portion of the lesson needs to be labeled as <English voice> and <Spanish v
 
 Wrap related groups of content in <section name="3-5 word label"> and </section> tags. Each lesson must have 5–7 sections total. All <English voice>, <Spanish voice>, and <prompt> tags must appear inside a section block.
 
-Generate the lesson. Do not include any other text other than the lesson transcript. The English voice should never read Spanish.`;
+Generate the lesson. Do not include any other text other than the lesson transcript. The English voice should never read Spanish. In the closing, do NOT preview or promise what the next lesson/session will cover (lessons are generated fresh each time, so the next topic is unknown) — never say things like "next time you will…".`;
 
 const REPORTS_DIR = path.join(process.cwd(), 'data', 'reports');
 

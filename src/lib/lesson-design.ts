@@ -108,7 +108,7 @@ LESSON STRUCTURE:
 9. Guided conversation practice
 10. Open-ended response
 11. Final performance task
-12. Closing with preview of next lesson
+12. Brief closing: recap what was practiced this lesson and encourage continued practice. Do NOT preview, promise, or describe what the NEXT lesson/session will cover — lessons are generated fresh each time, so the next topic is unknown. Never say things like "next time you will…".
 
 PROMPT DENSITY: Use <prompt> frequently — roughly every 20–60 spoken words during active practice. Less frequent during explanations.
 
