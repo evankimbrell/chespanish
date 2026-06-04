@@ -42,31 +42,41 @@ const round2 = (n: number) => Math.round(n * 100) / 100;
 
 // Derive speaking-duration / pause / silence metrics from Whisper word timestamps.
 // Returns null when there's no usable speech (no words).
+// A gap must exceed this to count as a real pause/silence. Sub-300ms gaps are just
+// normal word spacing, not hesitation — counting them would inflate the silence %.
+const PAUSE_THRESHOLD = 0.3;
+
 function computeTiming(words: WordTiming[], durationSec: number): ResponseTiming | null {
   if (words.length < 1 || durationSec <= 0) return null;
   const first = words[0].start;
   const last = words[words.length - 1].end;
+  const trailing = Math.max(0, durationSec - last);
   let voiced = 0;
   let longestPause = 0;
   const pauses: number[] = [];
+  // Silence = only the gaps longer than PAUSE_THRESHOLD: the lead-in (recall
+  // latency), each notable inter-word pause, and trailing dead air. Micro-gaps
+  // between words are excluded.
+  let pauseSilence = 0;
+  if (first > PAUSE_THRESHOLD) pauseSilence += first;
+  if (trailing > PAUSE_THRESHOLD) pauseSilence += trailing;
   for (let i = 0; i < words.length; i++) {
     voiced += Math.max(0, words[i].end - words[i].start);
     if (i > 0) {
       const gap = words[i].start - words[i - 1].end;
       if (gap > longestPause) longestPause = gap;
-      if (gap > 0.25) pauses.push(round2(gap)); // ignore sub-250ms gaps (normal word spacing)
+      if (gap > PAUSE_THRESHOLD) { pauses.push(round2(gap)); pauseSilence += gap; }
     }
   }
   const speakingSpan = Math.max(0, last - first);
-  const silence = Math.max(0, durationSec - voiced);
   return {
     recordingSec: round2(durationSec),
     speakingSpanSec: round2(speakingSpan),
     voicedSec: round2(voiced),
-    silenceSec: round2(silence),
-    silencePct: Math.round((silence / durationSec) * 100),
+    silenceSec: round2(pauseSilence),
+    silencePct: Math.round((pauseSilence / durationSec) * 100),
     initialSilenceSec: round2(first),
-    trailingSilenceSec: round2(Math.max(0, durationSec - last)),
+    trailingSilenceSec: round2(trailing),
     longestPauseSec: round2(longestPause),
     pauses,
     wordCount: words.length,

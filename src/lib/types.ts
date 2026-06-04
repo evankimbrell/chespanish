@@ -385,12 +385,12 @@ export interface ResponseTiming {
   recordingSec: number;        // total length of the recording
   speakingSpanSec: number;     // first word's start → last word's end
   voicedSec: number;           // estimated time actually voicing words
-  silenceSec: number;          // recordingSec − voicedSec (lead-in + pauses + trailing)
-  silencePct: number;          // 0–100: share of the recording that is silence/pause
+  silenceSec: number;          // total time in pauses > 0.3s (lead-in + inter-word + trailing)
+  silencePct: number;          // 0–100: share of the recording spent in pauses > 0.3s
   initialSilenceSec: number;   // lead-in before the first word (recall latency)
   trailingSilenceSec: number;  // dead air after the last word
   longestPauseSec: number;     // longest gap between two consecutive words
-  pauses: number[];            // notable inter-word gaps in seconds (> 0.25s), in order
+  pauses: number[];            // inter-word gaps > 0.3s in seconds, in order
   wordCount: number;
   wpm: number;                 // words per minute over the speaking span
 }
