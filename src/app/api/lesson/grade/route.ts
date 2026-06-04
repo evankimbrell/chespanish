@@ -92,15 +92,17 @@ export async function POST(req: Request) {
 
   try {
     const modelAnswer = spanishText || '(not available — infer from context)';
+    const t0 = Date.now();
     const completion = await getOpenAI().chat.completions.create({
       model: 'gpt-5.5',
       // gpt-5.5 is a reasoning model — reasoning tokens are drawn from this budget
       // before any JSON is emitted, so keep ample headroom or the output truncates
       // to empty and grading silently fails.
       max_completion_tokens: 2000,
-      // Grading a short phrase against a known answer needs little reasoning. Low effort
-      // keeps the model fast (~5-6s → ~1s) without hurting judgment on this simple task.
-      reasoning_effort: 'low',
+      // Matching a short phrase to a known answer with a few explicit rules needs almost
+      // no chain-of-thought. 'low' still let the model spend VARIABLE reasoning (fast on a
+      // clean match, slow on an ambiguous one) — 'minimal' makes latency consistently low.
+      reasoning_effort: 'minimal',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM },
@@ -110,6 +112,10 @@ export async function POST(req: Request) {
         },
       ],
     });
+    // Visibility into "recall times": total latency + how many tokens were spent reasoning
+    // vs emitting. Reasoning tokens are the main driver of the variance.
+    const reasoningTokens = completion.usage?.completion_tokens_details?.reasoning_tokens ?? 0;
+    console.log(`[lesson/grade] ${Date.now() - t0}ms | reasoning ${reasoningTokens} tok | output ${completion.usage?.completion_tokens ?? 0} tok`);
     const content = completion.choices[0]?.message?.content;
     if (!content) return Response.json(FALLBACK_GRADE);
     let parsed: unknown;

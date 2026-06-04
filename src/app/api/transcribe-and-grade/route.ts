@@ -303,6 +303,7 @@ Skipped: false
 
 Prompt ID to echo back: ${q.prompt_id}`;
 
+        const tGrade = Date.now();
         const completion = await getOpenAI().chat.completions.create({
           model: 'gpt-5.5',
           response_format: { type: 'json_object' },
@@ -315,6 +316,7 @@ Prompt ID to echo back: ${q.prompt_id}`;
             { role: 'user', content: userMessage },
           ],
         });
+        console.log(`[transcribe-and-grade] grade ${Date.now() - tGrade}ms | reasoning ${completion.usage?.completion_tokens_details?.reasoning_tokens ?? 0} tok`);
 
         const raw = completion.choices[0]?.message?.content ?? '{}';
         // eslint-disable-next-line prefer-const
