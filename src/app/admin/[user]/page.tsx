@@ -215,6 +215,11 @@ export default function AdminUserPage() {
                   <>
                     <p className="small" style={{ color: 'var(--mute)', margin: '0 0 2px' }}>Asked: {a.promptText.slice(0, 100)}{a.promptText.length > 100 ? '…' : ''}</p>
                     <p className="small" style={{ color: 'var(--ink-2)', margin: 0 }}>Said: &ldquo;{a.transcript}&rdquo;</p>
+                    {a.timing && (
+                      <p className="mono" style={{ fontSize: 11, color: 'var(--mute)', margin: '2px 0 0' }}>
+                        {a.timing.recordingSec}s spoken · {a.timing.silencePct}% silence · {a.timing.initialSilenceSec}s to start · longest pause {a.timing.longestPauseSec}s · {a.timing.wpm} wpm
+                      </p>
+                    )}
                     {a.grade?.observed_errors?.length > 0 && (
                       <p className="small" style={{ color: 'var(--crit)', margin: '2px 0 0' }}>
                         {a.grade.observed_errors.map(e => e.category).join(', ')}

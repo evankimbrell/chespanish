@@ -53,6 +53,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     startRecording, stopRecording, primeMic,
     reset: resetRecording,
     transcript: recordTranscript,
+    responseTiming,
   } = useRecording();
   const userName = useAppStore((s) => s.profile.name);
 
@@ -157,6 +158,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
             expected: currentPlay.spanishText,
             transcript: recordTranscript,
             grade,
+            timing: responseTiming ?? undefined,
           });
         })
         .catch(() => setGrade(GRADE_FALLBACK));

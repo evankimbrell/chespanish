@@ -378,6 +378,23 @@ export interface LessonHistoryEntry {
   topics: string[];
 }
 
+// Timing/pause analysis of a spoken response, derived from Whisper word-level
+// timestamps + the audio duration. Useful for recall fluency: how long they took,
+// how much of the recording was silence, and where/how long the pauses were.
+export interface ResponseTiming {
+  recordingSec: number;        // total length of the recording
+  speakingSpanSec: number;     // first word's start → last word's end
+  voicedSec: number;           // estimated time actually voicing words
+  silenceSec: number;          // recordingSec − voicedSec (lead-in + pauses + trailing)
+  silencePct: number;          // 0–100: share of the recording that is silence/pause
+  initialSilenceSec: number;   // lead-in before the first word (recall latency)
+  trailingSilenceSec: number;  // dead air after the last word
+  longestPauseSec: number;     // longest gap between two consecutive words
+  pauses: number[];            // notable inter-word gaps in seconds (> 0.25s), in order
+  wordCount: number;
+  wpm: number;                 // words per minute over the speaking span
+}
+
 // Durable, append-only record of what a learner did inside a lesson — used for
 // progress tracking over time and to tailor future lessons. One record per graded
 // response or asked question, stored in data/activity/[user].jsonl.
@@ -392,6 +409,7 @@ export type LessonActivityRecord =
       expected?: string;     // the modeled Spanish answer, if known
       transcript: string;    // what the learner said
       grade: LessonGrade;    // label + feedback + observed_errors + correct_answer
+      timing?: ResponseTiming; // speaking duration + pauses + silence %, when available
     }
   | {
       type: 'question';

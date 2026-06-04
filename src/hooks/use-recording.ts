@@ -1,5 +1,6 @@
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
+import type { ResponseTiming } from '@/lib/types';
 
 export function useRecording() {
   const [isRecording, setIsRecording]       = useState(false);
@@ -8,6 +9,7 @@ export function useRecording() {
   const [volume, setVolume]                 = useState(0);
   const [speechOnsetMs, setSpeechOnsetMs]   = useState<number | null>(null);
   const [recordingDurationMs, setRecordingDurationMs] = useState<number | null>(null);
+  const [responseTiming, setResponseTiming] = useState<ResponseTiming | null>(null);
 
   const mrRef          = useRef<MediaRecorder | null>(null);
   const chunks         = useRef<Blob[]>([]);
@@ -110,6 +112,7 @@ export function useRecording() {
         if (!res.ok) throw new Error(`Transcribe failed: ${res.status}`);
         const data = await res.json();
         setTranscript(data.transcript ?? null);
+        setResponseTiming(data.timing ?? null);
       } catch (e) {
         console.error('[recording] transcription error:', e);
         setTranscript(null);
@@ -128,6 +131,7 @@ export function useRecording() {
     setTranscript(null);
     setSpeechOnsetMs(null);
     setRecordingDurationMs(null);
+    setResponseTiming(null);
     onsetDetected.current = false;
     startedAtRef.current = Date.now();
     chunks.current = [];
@@ -153,6 +157,7 @@ export function useRecording() {
     setVolume(0);
     setSpeechOnsetMs(null);
     setRecordingDurationMs(null);
+    setResponseTiming(null);
     onsetDetected.current = false;
   }, []);
 
@@ -171,7 +176,7 @@ export function useRecording() {
   return {
     startRecording, stopRecording, primeMic,
     isRecording, isTranscribing, transcript, volume,
-    speechOnsetMs, recordingDurationMs,
+    speechOnsetMs, recordingDurationMs, responseTiming,
     reset,
   };
 }
