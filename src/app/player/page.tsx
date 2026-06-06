@@ -26,6 +26,9 @@ function GeneratedLessonPlayerPage() {
 
   // Always-current ref to avoid stale closures in save/cleanup
   const saveHistoryRef = useRef<(playIdx: number, completed: boolean) => void>(() => {});
+  // Real wall-clock start of this play session — used for "time to finish". (Must NOT be
+  // the lesson's generatedAt, which is when the lesson was created, often long before.)
+  const startedAtRef = useRef<string>(new Date().toISOString());
   saveHistoryRef.current = (playIdx: number, completed: boolean) => {
     const topics = [...new Set(
       allMeta.map((m) => m.sectionName).filter((s): s is string => Boolean(s))
@@ -39,7 +42,7 @@ function GeneratedLessonPlayerPage() {
           id: generatedLesson.generatedAt,
           title: generatedLesson.title,
           transcript: generatedLesson.transcript,
-          startedAt: generatedLesson.generatedAt,
+          startedAt: startedAtRef.current,
           lastAccessedAt: new Date().toISOString(),
           playIdx,
           totalCount: total,
