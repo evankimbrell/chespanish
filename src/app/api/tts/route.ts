@@ -1,13 +1,14 @@
 import { ElevenLabsClient } from 'elevenlabs';
 import { NextRequest } from 'next/server';
+import { SPANISH_MALE_VOICE_ID, SPANISH_FEMALE_VOICE_ID } from '@/lib/voices';
 
 const client = new ElevenLabsClient({
   apiKey: process.env.ELEVENLABS_API_KEY!,
 });
 
-// Facundo — Argentine Spanish male voice
-export const DEFAULT_VOICE_ID = 'qnvusyIjzlSoWYJ0C2Nm';
-const VOICE_B = '1WXz8v08ntDcSTeVXMN2';
+// Active Argentine Spanish voices (see src/lib/voices.ts)
+export const DEFAULT_VOICE_ID = SPANISH_MALE_VOICE_ID;
+const VOICE_B = SPANISH_FEMALE_VOICE_ID;
 
 // Split "Persona A: foo Persona B: bar" into ordered speaker segments
 function parseDialogue(text: string): { speaker: 'A' | 'B'; text: string }[] | null {

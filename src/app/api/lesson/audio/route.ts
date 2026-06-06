@@ -1,12 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import type { WordTiming, PlayMeta } from '@/lib/types';
+import { NARRATOR_VOICE_ID, SPANISH_MALE_VOICE_ID, SPANISH_FEMALE_VOICE_ID } from '@/lib/voices';
 
 export const maxDuration = 300; // 5-minute timeout for long lessons
 
-const ENGLISH_VOICE = 'nzFihrBIvB34imQBuxub';
-const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm';  // Facundo (MALE) — spanish 1 / 3
-const SPANISH_VOICE_2 = '1WXz8v08ntDcSTeVXMN2'; // FEMALE — spanish 2 / 4
+const ENGLISH_VOICE = NARRATOR_VOICE_ID;
+const SPANISH_VOICE = SPANISH_MALE_VOICE_ID;    // active male — spanish 1 / 3
+const SPANISH_VOICE_2 = SPANISH_FEMALE_VOICE_ID; // active female — spanish 2 / 4
 const CONCURRENCY = 4;
 
 // voiceIndex 1–4 maps to: male, female, male, female.

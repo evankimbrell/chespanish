@@ -1,9 +1,10 @@
 import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
+import { NARRATOR_VOICE_ID, SPANISH_MALE_VOICE_ID } from '@/lib/voices';
 
-const ENGLISH_VOICE = 'nzFihrBIvB34imQBuxub';
-const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm';
+const ENGLISH_VOICE = NARRATOR_VOICE_ID;
+const SPANISH_VOICE = SPANISH_MALE_VOICE_ID;
 
 let _openai: OpenAI | null = null;
 function getOpenAI() {

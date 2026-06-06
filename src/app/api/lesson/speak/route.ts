@@ -1,4 +1,6 @@
-const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm';
+import { SPANISH_MALE_VOICE_ID } from '@/lib/voices';
+
+const SPANISH_VOICE = SPANISH_MALE_VOICE_ID;
 
 export async function POST(req: Request) {
   const { text } = await req.json();

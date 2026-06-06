@@ -1,8 +1,9 @@
 import path from 'path';
 import fs from 'fs';
+import { SPANISH_MALE_VOICE_ID, NARRATOR_VOICE_ID } from '@/lib/voices';
 
-const SPANISH_VOICE = 'qnvusyIjzlSoWYJ0C2Nm';
-const ENGLISH_VOICE = 'nzFihrBIvB34imQBuxub';
+const SPANISH_VOICE = SPANISH_MALE_VOICE_ID;
+const ENGLISH_VOICE = NARRATOR_VOICE_ID;
 
 export async function generateTestAudio(
   text: string,
