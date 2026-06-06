@@ -7,6 +7,7 @@ import { useRecording } from '@/hooks/use-recording';
 import { useAppStore } from '@/lib/store';
 import { expectsEnglishResponse } from '@/lib/prompt-language';
 import { playNeedsRegen } from '@/lib/speed';
+import { gradeProvidedAnswer } from '@/lib/correct-answer';
 
 // Choose the transcription language for a prompt. Default is Spanish (forced, so short
 // answers aren't mis-heard as English). When the instruction explicitly asks for an
@@ -382,28 +383,49 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const playCorrect = useCallback(() => {
     const play = plays[playIdx];
     if (!play) return;
-    // Prefer the grader's correct_answer for THIS step (it reads the prompt context and
-    // isn't subject to the spanishText look-ahead heuristic that can pull a phrase from a
-    // different part of the lesson), then suggested_answer, then the lesson's spanishText.
-    const text = (grade?.correct_answer ?? grade?.suggested_answer ?? play.spanishText)?.trim();
-    if (!text) {
-      new Audio(play.audioUrl).play().catch(() => {});
-      return;
-    }
-    fetch('/api/lesson/speak', {
+
+    const speak = (text: string) => {
+      fetch('/api/lesson/speak', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, speed: spanishSpeed }),
+      })
+        .then((r) => r.arrayBuffer())
+        .then((buf) => {
+          const url = URL.createObjectURL(new Blob([buf], { type: 'audio/mpeg' }));
+          const audio = new Audio(url);
+          audio.onended = () => URL.revokeObjectURL(url);
+          audio.play().catch(() => {});
+        })
+        .catch(() => {});
+    };
+
+    // Best source: the grader's correct_answer for THIS step (it read the prompt context).
+    const fromGrade = gradeProvidedAnswer(grade);
+    if (fromGrade) { speak(fromGrade); return; }
+
+    // No grade (e.g. grading failed) — DON'T trust the baked play.spanishText, which the
+    // generation heuristic can resolve to a nearby/previous step. Re-derive the correct
+    // answer for THIS prompt from its own instruction + neighbouring context.
+    fetch('/api/lesson/correct-answer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, speed: spanishSpeed }),
+      body: JSON.stringify({
+        playText: play.text,
+        prevText: plays[playIdx - 1]?.text,
+        nextText: plays[playIdx + 1]?.text,
+        altAnswer: plays[playIdx + 1]?.spanishText,
+        spanishText: play.spanishText,
+        sectionName: play.sectionName,
+      }),
     })
-      .then((r) => r.arrayBuffer())
-      .then((buf) => {
-        const blob = new Blob([buf], { type: 'audio/mpeg' });
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audio.onended = () => URL.revokeObjectURL(url);
-        audio.play().catch(() => {});
+      .then((r) => r.json())
+      .then((data) => {
+        const answer = typeof data.answer === 'string' ? data.answer.trim() : '';
+        if (answer) speak(answer);
+        else new Audio(play.audioUrl).play().catch(() => {}); // last resort: replay the chunk
       })
-      .catch(() => {});
+      .catch(() => { new Audio(play.audioUrl).play().catch(() => {}); });
   }, [plays, playIdx, grade, spanishSpeed]);
 
   const seek = useCallback((t: number) => {
