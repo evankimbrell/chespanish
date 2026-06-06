@@ -65,6 +65,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     responseTiming,
   } = useRecording();
   const userName = useAppStore((s) => s.profile.name);
+  const autoPrompt = useAppStore((s) => s.autoPrompt);
 
   const clearSub = () => { if (subRef.current) { clearInterval(subRef.current); subRef.current = null; } };
 
@@ -268,6 +269,15 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     setState('idle');
   }, []);
 
+  // Start recording the learner's answer to the current lesson prompt.
+  const beginPromptRecording = useCallback(() => {
+    isAskRef.current = false;
+    setTranscript(null);
+    resetRecording();
+    startRecording(recordingOptsForPrompt(plays[playIdx]?.text));
+    setState('recording');
+  }, [startRecording, resetRecording, plays, playIdx]);
+
   // Toggle for lesson prompts. Also handles stopping ask recording.
   const record = useCallback(() => {
     if (state === 'asking') {
@@ -280,13 +290,18 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       stopRecording();
       setState('processing');
     } else {
-      isAskRef.current = false;
-      setTranscript(null);
-      resetRecording();
-      startRecording(recordingOptsForPrompt(plays[playIdx]?.text));
-      setState('recording');
+      beginPromptRecording();
     }
-  }, [state, startRecording, stopRecording, resetRecording, plays, playIdx]);
+  }, [state, stopRecording, beginPromptRecording]);
+
+  // Auto-record: the instant a prompt is reached, start listening (Pimsleur-style time
+  // pressure) so the learner can't pre-plan. They stop with space/mic. The lead-in
+  // silence we already capture then reflects real time-to-respond. Off → manual start.
+  useEffect(() => {
+    if (state !== 'prompting' || !autoPrompt) return;
+    const id = setTimeout(() => beginPromptRecording(), 250);
+    return () => clearTimeout(id);
+  }, [state, autoPrompt, beginPromptRecording]);
 
   const next = useCallback(() => {
     setGrade(null);
@@ -301,12 +316,8 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     // Jump straight back into recording rather than the idle "your turn" prompt,
     // so the learner doesn't have to press the mic again.
     setGrade(null);
-    setTranscript(null);
-    isAskRef.current = false;
-    resetRecording();
-    startRecording(recordingOptsForPrompt(plays[playIdx]?.text));
-    setState('recording');
-  }, [resetRecording, startRecording, plays, playIdx]);
+    beginPromptRecording();
+  }, [beginPromptRecording]);
 
   const playCorrect = useCallback(() => {
     const play = plays[playIdx];

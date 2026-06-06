@@ -15,6 +15,15 @@ function loadLesson(name: string): GeneratedLesson | null {
   } catch { return null; }
 }
 
+// Auto-record (Pimsleur-style time pressure) defaults ON. Persisted across sessions.
+function loadAutoPrompt(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const raw = localStorage.getItem('che_auto_prompt');
+    return raw === null ? true : raw === '1';
+  } catch { return true; }
+}
+
 interface AppStore {
   builder: BuilderState;
   setBuilder: (updates: Partial<BuilderState>) => void;
@@ -34,6 +43,10 @@ interface AppStore {
   generatedLesson: GeneratedLesson | null;
   setGeneratedLesson: (lesson: GeneratedLesson) => void;
   appendPlays: (newPlays: LessonPlay[]) => void;
+
+  // Auto-start recording the instant a prompt is reached (time pressure). Toggleable.
+  autoPrompt: boolean;
+  setAutoPrompt: (v: boolean) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -143,5 +156,12 @@ export const useAppStore = create<AppStore>((set) => ({
       };
       try { localStorage.setItem(lessonKey(s.profile.name), JSON.stringify(updated)); } catch {}
       return { generatedLesson: updated };
+    }),
+
+  autoPrompt: loadAutoPrompt(),
+  setAutoPrompt: (v) =>
+    set(() => {
+      try { localStorage.setItem('che_auto_prompt', v ? '1' : '0'); } catch {}
+      return { autoPrompt: v };
     }),
 }));

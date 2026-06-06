@@ -7,6 +7,7 @@ import { OrbWithSections } from './orb-with-sections';
 import { UserResponseAnalysis } from './user-response-analysis';
 import { KaraokeTranscript } from './karaoke-transcript';
 import { LESSON, SECTIONS, SUBTITLE_LINES } from '@/lib/data';
+import { useAppStore } from '@/lib/store';
 import type { FakePlayer } from './use-fake-player';
 import type { WordTiming } from '@/lib/types';
 
@@ -26,6 +27,8 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
   const [hoverSection, setHoverSection] = useState<number | null>(null);
   const [showText, setShowText] = useState(false);
   const router = useRouter();
+  const autoPrompt = useAppStore((s) => s.autoPrompt);
+  const setAutoPrompt = useAppStore((s) => s.setAutoPrompt);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -68,9 +71,18 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
 
         {/* Top bar */}
         <div className="row between" style={{ marginBottom: 8 }}>
-          <button className="btn btn-text small" style={{ paddingLeft: 0 }} onClick={() => router.push('/dashboard')}>
-            <Icons.arrowLeft /> Exit lesson
-          </button>
+          <div className="row gap-3" style={{ alignItems: 'center' }}>
+            <button className="btn btn-text small" style={{ paddingLeft: 0 }} onClick={() => router.push('/dashboard')}>
+              <Icons.arrowLeft /> Exit lesson
+            </button>
+            <button
+              className="btn btn-text small"
+              onClick={() => setAutoPrompt(!autoPrompt)}
+              title="When on, recording starts automatically at each prompt (time pressure). When off, press space or the mic to start."
+            >
+              Auto-record: {autoPrompt ? 'On' : 'Off'}
+            </button>
+          </div>
           <div className="col gap-1" style={{ textAlign: 'center' }}>
             <span className="kicker">{lessonTitle ?? LESSON.title}</span>
             <span className="mono" style={{ fontSize: 11, color: 'var(--mute-2)' }}>
@@ -146,11 +158,20 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
             )
           )}
 
-          {/* Prompting cue */}
+          {/* Prompting cue (auto-record off → waiting for the learner to start) */}
           {p.state === 'prompting' && (
             <div className="col gap-3 fade-in" style={{ alignItems: 'center', marginTop: 20, maxWidth: 600, textAlign: 'center' }}>
               <span className="eyebrow eyebrow-warm">Your turn · respond now</span>
               {prompt?.cue && <p className="serif" style={{ fontSize: 26, fontStyle: 'italic' }}>&ldquo;{prompt.cue}&rdquo;</p>}
+              <span className="small" style={{ color: 'var(--mute)' }}>Press space or tap the mic to start.</span>
+            </div>
+          )}
+
+          {/* Recording cue (lesson answer in progress — stop with space/mic) */}
+          {p.state === 'recording' && (
+            <div className="col gap-2 fade-in" style={{ alignItems: 'center', marginTop: 20, maxWidth: 600, textAlign: 'center' }}>
+              <span className="eyebrow eyebrow-warm">Recording · speak now</span>
+              <span className="small" style={{ color: 'var(--mute)' }}>Press space or tap the mic when you&rsquo;re done.</span>
             </div>
           )}
 
