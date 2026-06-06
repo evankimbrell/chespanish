@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import type {
   DiagnosticReport,
   CategoryDiagnostic,
@@ -80,6 +81,8 @@ function Badge({ text, color }: { text: string; color: string }) {
 // ── Category card ─────────────────────────────────────────────────────────────
 
 function CategoryCard({ cat, level }: { cat: CategoryDiagnostic; level: string }) {
+  const [open, setOpen] = useState(false);
+  const examples = cat.examples ?? [];
   return (
     <div style={{ padding: '18px 20px', borderTop: '1px solid var(--line)' }}>
       <div className="row between" style={{ alignItems: 'baseline', marginBottom: 10, gap: 12 }}>
@@ -95,14 +98,31 @@ function CategoryCard({ cat, level }: { cat: CategoryDiagnostic; level: string }
       {cat.userFacingSummary && (
         <p className="body" style={{ margin: 0, color: 'var(--ink-2)' }}>{cat.userFacingSummary}</p>
       )}
-      {cat.examples?.map((ex, i) => (
-        <div key={i} style={{ marginTop: 10, paddingLeft: 12, borderLeft: '2px solid var(--line-2)' }}>
-          {ex.learnerAnswer && (
-            <p className="serif-italic" style={{ fontSize: 14, margin: '0 0 2px', color: 'var(--ink)' }}>&ldquo;{ex.learnerAnswer}&rdquo;</p>
+      {/* Examples are collapsed by default — keeps the report scannable instead of a wall of text */}
+      {examples.length > 0 && (
+        <>
+          <button
+            className="btn btn-text small"
+            style={{ paddingLeft: 0, marginTop: 10 }}
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+          >
+            {open ? 'Hide examples' : `Show examples (${examples.length})`}
+          </button>
+          {open && (
+            <div className="fade-in">
+              {examples.map((ex, i) => (
+                <div key={i} style={{ marginTop: 10, paddingLeft: 12, borderLeft: '2px solid var(--line-2)' }}>
+                  {ex.learnerAnswer && (
+                    <p className="serif-italic" style={{ fontSize: 14, margin: '0 0 2px', color: 'var(--ink)' }}>&ldquo;{ex.learnerAnswer}&rdquo;</p>
+                  )}
+                  <p className="small" style={{ margin: 0, color: 'var(--mute)' }}>{ex.observation}</p>
+                </div>
+              ))}
+            </div>
           )}
-          <p className="small" style={{ margin: 0, color: 'var(--mute)' }}>{ex.observation}</p>
-        </div>
-      ))}
+        </>
+      )}
     </div>
   );
 }
@@ -131,7 +151,9 @@ export function DiagnosticReportView({ report, showPlacementHeader = true }: { r
   const targets = shown.filter((c) => c.relativeStatus === 'slightly_below_expectations' || c.relativeStatus === 'below_expectations');
   const measuring = shown.filter((c) => c.relativeStatus === 'not_enough_evidence' || c.relativeStatus === 'not_measured');
 
-  const fl = report.firstLessonRecommendation;
+  // NOTE: report.firstLessonRecommendation is intentionally NOT rendered here — it
+  // duplicates the "Recommended first lesson" card at the bottom of the report page.
+  // The data is still generated and persisted for internal use.
 
   return (
     <div>
@@ -183,22 +205,6 @@ export function DiagnosticReportView({ report, showPlacementHeader = true }: { r
         </div>
       )}
 
-      {/* First lesson */}
-      <div style={{ border: '1px solid var(--warm-deep)', borderRadius: 6, marginTop: 16, padding: '24px 28px', background: 'color-mix(in srgb, var(--warm) 6%, transparent)' }}>
-        <span className="eyebrow eyebrow-warm" style={{ display: 'block', marginBottom: 8 }}>Your first lesson</span>
-        <h3 className="serif" style={{ fontSize: 20, margin: '0 0 8px', color: 'var(--ink)' }}>{fl.title}</h3>
-        {fl.focusSummary && <p className="body" style={{ margin: '0 0 14px', color: 'var(--ink-2)', maxWidth: 640 }}>{fl.focusSummary}</p>}
-        {fl.targetSkills.length > 0 && (
-          <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-            {fl.targetSkills.map((s, i) => (
-              <li key={i} className="row gap-2" style={{ alignItems: 'baseline', padding: '3px 0' }}>
-                <span style={{ color: 'var(--warm)', flexShrink: 0 }}>·</span>
-                <span className="small" style={{ color: 'var(--ink-2)' }}>{s}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </div>
   );
 }
