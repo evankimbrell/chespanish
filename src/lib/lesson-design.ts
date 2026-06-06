@@ -286,3 +286,36 @@ export async function generateNextLessonBrief(combinedReport: string): Promise<L
 
   return { fullBrief, displayLesson };
 }
+
+// Short, single-mistake practice lesson (~10 min). Targets ONE recurring mistake and
+// starts with a narrator explanation, then an example, then focused drills.
+export const PRACTICE_LESSON_PROMPT = `You are a master Argentine Spanish (Rioplatense) tutor creating a SHORT, focused ~10-minute audio MICRO-LESSON that targets ONE specific recurring mistake for this student. Use vos, tenés, querés, podés, dale, che naturally.
+
+[MISTAKE_BLOCK]
+
+Design a micro-lesson that ONLY targets this mistake:
+1. Open with the narrator briefly explaining IN ENGLISH what this mistake is and the correct pattern — short and clear.
+2. Walk through ONE clear example, contrasting the wrong form with the correct form.
+3. Drill it with several active-recall <prompt> exercises at the student's level, recombining across persons, tenses, and contexts (do not repeat the same sentence).
+4. End with a short final spoken check.
+
+Keep it to ABOUT 10 minutes — roughly 1,200–1,700 spoken words total (narrator + Spanish voices), not counting tags. Do NOT teach unrelated material.
+
+FORMAT (required — the app parses these tags):
+<narrator> — the English narrator; gives all instructions/explanations in English. NEVER put a Spanish word inside <narrator>; to reference a Spanish word, switch to <spanish 1> for just that word, then back to <narrator>.
+<spanish 1> — the main MALE Spanish voice; use it for all teaching and model phrases.
+<spanish 2> — a FEMALE Spanish voice; only for a genuine second speaker in a mini-dialogue.
+<prompt> — on its own line, wherever the student should speak.
+Wrap content in <section name="3-5 word label"> … </section> blocks (3–5 sections total). Every tag must sit inside a section. Do not nest sections.
+For each closed <prompt>, give the expected Spanish answer immediately after.
+
+OUTPUT: Return ONLY the lesson transcript, starting with the first <section ...> tag. No commentary before or after.`;
+
+export async function generatePracticeLesson(mistakeBlock: string): Promise<string> {
+  const completion = await getOpenAI().chat.completions.create({
+    model: 'gpt-5.5',
+    max_completion_tokens: 5000,
+    messages: [{ role: 'user', content: PRACTICE_LESSON_PROMPT.replace('[MISTAKE_BLOCK]', mistakeBlock) }],
+  });
+  return completion.choices[0]?.message?.content?.trim() ?? '';
+}
