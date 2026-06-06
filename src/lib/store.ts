@@ -24,6 +24,16 @@ function loadAutoPrompt(): boolean {
   } catch { return true; }
 }
 
+// Spanish-voice playback speed (1.0 default). Persisted across sessions.
+function loadSpanishSpeed(): number {
+  if (typeof window === 'undefined') return 1.0;
+  try {
+    const raw = localStorage.getItem('che_spanish_speed');
+    const n = raw === null ? 1.0 : parseFloat(raw);
+    return Number.isFinite(n) ? n : 1.0;
+  } catch { return 1.0; }
+}
+
 interface AppStore {
   builder: BuilderState;
   setBuilder: (updates: Partial<BuilderState>) => void;
@@ -43,10 +53,15 @@ interface AppStore {
   generatedLesson: GeneratedLesson | null;
   setGeneratedLesson: (lesson: GeneratedLesson) => void;
   appendPlays: (newPlays: LessonPlay[]) => void;
+  updatePlay: (idx: number, partial: Partial<LessonPlay>) => void;
 
   // Auto-start recording the instant a prompt is reached (time pressure). Toggleable.
   autoPrompt: boolean;
   setAutoPrompt: (v: boolean) => void;
+
+  // Spanish-voice playback speed (narrator stays 1×). Changing it regenerates audio.
+  spanishSpeed: number;
+  setSpanishSpeed: (v: number) => void;
 }
 
 export const useAppStore = create<AppStore>((set) => ({
@@ -158,10 +173,27 @@ export const useAppStore = create<AppStore>((set) => ({
       return { generatedLesson: updated };
     }),
 
+  updatePlay: (idx, partial) =>
+    set((s) => {
+      if (!s.generatedLesson?.plays[idx]) return s;
+      const plays = s.generatedLesson.plays.slice();
+      plays[idx] = { ...plays[idx], ...partial };
+      const updated: GeneratedLesson = { ...s.generatedLesson, plays };
+      try { localStorage.setItem(lessonKey(s.profile.name), JSON.stringify(updated)); } catch {}
+      return { generatedLesson: updated };
+    }),
+
   autoPrompt: loadAutoPrompt(),
   setAutoPrompt: (v) =>
     set(() => {
       try { localStorage.setItem('che_auto_prompt', v ? '1' : '0'); } catch {}
       return { autoPrompt: v };
+    }),
+
+  spanishSpeed: loadSpanishSpeed(),
+  setSpanishSpeed: (v) =>
+    set(() => {
+      try { localStorage.setItem('che_spanish_speed', String(v)); } catch {}
+      return { spanishSpeed: v };
     }),
 }));

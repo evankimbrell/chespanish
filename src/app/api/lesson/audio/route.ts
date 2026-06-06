@@ -170,6 +170,7 @@ async function textToBufferWithTimings(
   offsetSec: number,
   modelId: string = 'eleven_multilingual_v2',
   languageCode?: string,
+  speed?: number,
 ): Promise<{ buffer: Buffer; wordTimings: WordTiming[]; durationSec: number }> {
   // Retry transient failures (429 rate limits, 5xx) with exponential backoff.
   // With 100+ plays at concurrency 4, occasional rate-limit blips are expected —
@@ -193,6 +194,8 @@ async function textToBufferWithTimings(
             output_format: 'mp3_44100_128',
             // language_code is honored by eleven_turbo_v2_5 / flash; ignored by older models.
             ...(languageCode ? { language_code: languageCode } : {}),
+            // Only the Spanish voices are sped/slowed; narrator is always rendered at 1×.
+            ...(speed && speed !== 1 ? { voice_settings: { speed } } : {}),
           }),
         }
       );
@@ -227,7 +230,8 @@ async function textToBufferWithTimings(
 }
 
 async function generatePlayAudio(
-  play: Play
+  play: Play,
+  spanishSpeed = 1.0,
 ): Promise<{ buffer: Buffer; wordTimings: WordTiming[] }> {
   const buffers: Buffer[] = [];
   const allTimings: WordTiming[] = [];
@@ -235,6 +239,8 @@ async function generatePlayAudio(
 
   for (const seg of play.segments) {
     const voiceId = seg.type === 'english' ? ENGLISH_VOICE : (SPANISH_VOICES[(seg.voiceIndex ?? 1) - 1] ?? SPANISH_VOICE);
+    // Speed only applies to the Spanish voices; the narrator stays at 1×.
+    const segSpeed = seg.type === 'spanish' ? spanishSpeed : 1.0;
     // Short, context-free Spanish words (e.g. a lone "dale") are ambiguous to the
     // auto-detecting multilingual model and can render with English phonetics ("day-lay").
     // For these, force Spanish with a language-lockable model (turbo + language_code:'es').
@@ -253,13 +259,13 @@ async function generatePlayAudio(
       let result;
       if (lockSpanish) {
         try {
-          result = await textToBufferWithTimings(ttsText, voiceId, offsetSec, 'eleven_turbo_v2_5', 'es');
+          result = await textToBufferWithTimings(ttsText, voiceId, offsetSec, 'eleven_turbo_v2_5', 'es', segSpeed);
         } catch (e) {
           console.warn('[lesson/audio] language-locked TTS failed, using multilingual:', e instanceof Error ? e.message : e);
-          result = await textToBufferWithTimings(ttsText, voiceId, offsetSec);
+          result = await textToBufferWithTimings(ttsText, voiceId, offsetSec, 'eleven_multilingual_v2', undefined, segSpeed);
         }
       } else {
-        result = await textToBufferWithTimings(ttsText, voiceId, offsetSec);
+        result = await textToBufferWithTimings(ttsText, voiceId, offsetSec, 'eleven_multilingual_v2', undefined, segSpeed);
       }
       buffers.push(result.buffer);
       allTimings.push(...result.wordTimings);
@@ -275,8 +281,9 @@ export async function POST(req: Request) {
     return Response.json({ error: 'ELEVENLABS_API_KEY not configured' }, { status: 500 });
   }
 
-  const { transcript, userName, startIdx = 0, count } = await req.json();
+  const { transcript, userName, startIdx = 0, count, speed = 1.0 } = await req.json();
   if (!transcript) return Response.json({ error: 'missing_transcript' }, { status: 400 });
+  const spanishSpeed = typeof speed === 'number' && speed >= 0.7 && speed <= 1.2 ? speed : 1.0;
 
   try {
     const segments = parseLesson(transcript);
@@ -297,7 +304,7 @@ export async function POST(req: Request) {
     // Use a fixed timestamp per lesson session stored by caller — for simplicity, embed startIdx in filename
     const ts = timestamp ?? Date.now();
 
-    const result: { audioUrl: string; promptAfter: boolean; text: string; spanishText?: string; wordTimings: WordTiming[]; sectionName?: string }[] = new Array(batch.length);
+    const result: { audioUrl: string; promptAfter: boolean; text: string; spanishText?: string; wordTimings: WordTiming[]; sectionName?: string; speed: number; hasSpanish: boolean }[] = new Array(batch.length);
 
     // Process plays in parallel batches to stay within ElevenLabs rate limits
     for (let b = 0; b < batch.length; b += CONCURRENCY) {
@@ -307,11 +314,15 @@ export async function POST(req: Request) {
 
       await Promise.all(batchItems.map(async ({ play, i }) => {
         const globalIdx = startIdx + i;
-        const filename = `${safeUser}-${ts}-${globalIdx}.mp3`;
+        // Include the speed in the filename so different-speed renders of the same play
+        // don't collide and a regenerated chunk gets a fresh URL.
+        const speedTag = spanishSpeed === 1 ? '' : `-s${String(spanishSpeed).replace('.', '')}`;
+        const filename = `${safeUser}-${ts}-${globalIdx}${speedTag}.mp3`;
         const filePath = path.join(lessonsDir, filename);
-        const { buffer, wordTimings } = await generatePlayAudio(play);
+        const { buffer, wordTimings } = await generatePlayAudio(play, spanishSpeed);
         fs.writeFileSync(filePath, buffer);
-        result[i] = { audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, spanishText: play.spanishText, wordTimings, sectionName: play.sectionName };
+        const hasSpanish = play.segments.some((s) => s.type === 'spanish');
+        result[i] = { audioUrl: `/lessons/${filename}`, promptAfter: play.promptAfter, text: play.text, spanishText: play.spanishText, wordTimings, sectionName: play.sectionName, speed: spanishSpeed, hasSpanish };
       }));
 
       console.log(`[lesson/audio] sub-batch ${Math.floor(b / CONCURRENCY) + 1}/${Math.ceil(batch.length / CONCURRENCY)} done`);

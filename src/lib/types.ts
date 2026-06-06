@@ -350,6 +350,8 @@ export interface LessonPlay {
   spanishText?: string;        // Spanish voice segments only — the model answer
   wordTimings?: WordTiming[];  // absent for older cached plays
   sectionName?: string;        // absent for older cached plays
+  speed?: number;              // Spanish-voice speed this audio was rendered at (default 1.0)
+  hasSpanish?: boolean;        // whether this play contains Spanish audio (affected by speed)
 }
 
 export interface PlayMeta {

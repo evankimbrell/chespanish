@@ -6,6 +6,7 @@ import type { PlayerState } from '@/lib/types';
 import { useRecording } from '@/hooks/use-recording';
 import { useAppStore } from '@/lib/store';
 import { expectsEnglishResponse } from '@/lib/prompt-language';
+import { playNeedsRegen } from '@/lib/speed';
 
 // Choose the transcription language for a prompt. Default is Spanish (forced, so short
 // answers aren't mis-heard as English). When the instruction explicitly asks for an
@@ -66,12 +67,35 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   } = useRecording();
   const userName = useAppStore((s) => s.profile.name);
   const autoPrompt = useAppStore((s) => s.autoPrompt);
+  const spanishSpeed = useAppStore((s) => s.spanishSpeed);
+  const updatePlay = useAppStore((s) => s.updatePlay);
 
   // Refs so the audio onended handler (whose effect deps are [state, playIdx]) can read
   // the latest values without re-running the audio effect.
   const autoPromptRef = useRef(autoPrompt);
   autoPromptRef.current = autoPrompt;
   const beginPromptRecordingRef = useRef<() => void>(() => {});
+  const loadedUrlRef = useRef<string | null>(null);
+  const regenInFlightRef = useRef(false);
+  const [regenerating, setRegenerating] = useState(false);
+
+  // Re-render the current Spanish chunk at the selected speed and swap it into the store.
+  const regeneratePlay = useCallback(async (idx: number, speed: number) => {
+    try {
+      const res = await fetch('/api/lesson/audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript: lesson.transcript, userName, startIdx: idx, count: 1, speed }),
+      });
+      const data = await res.json();
+      const np = data.plays?.[0];
+      if (np?.audioUrl) {
+        updatePlay(idx, { audioUrl: np.audioUrl, wordTimings: np.wordTimings, speed: np.speed ?? speed, hasSpanish: np.hasSpanish });
+      }
+    } catch (e) {
+      console.error('[player] speed regeneration failed:', e);
+    }
+  }, [lesson.transcript, userName, updatePlay]);
 
   const clearSub = () => { if (subRef.current) { clearInterval(subRef.current); subRef.current = null; } };
 
@@ -199,6 +223,20 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   useEffect(() => {
     if (state !== 'playing' || !plays[playIdx]) return;
 
+    // If this chunk's Spanish audio isn't at the selected speed, regenerate it first and
+    // wait — updatePlay swaps in the new URL, which re-runs this effect and plays it.
+    if (playNeedsRegen(plays[playIdx], spanishSpeed)) {
+      if (!regenInFlightRef.current) {
+        regenInFlightRef.current = true;
+        setRegenerating(true);
+        regeneratePlay(playIdx, spanishSpeed).finally(() => {
+          regenInFlightRef.current = false;
+          setRegenerating(false);
+        });
+      }
+      return;
+    }
+
     // Keep the mic warm during playback so an auto-record start (which no longer primes
     // in onended) captures the first word cleanly. Idempotent — reuses the warm stream.
     primeMic();
@@ -207,9 +245,11 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     const audio = audioRef.current;
     const currentIdx = playIdx;
 
-    // Only reload src when switching to a different segment — not on resume
-    if (loadedIdxRef.current !== currentIdx) {
+    // Reload src when switching segments OR when this segment's audio URL changed (e.g. a
+    // speed regeneration swapped in a new file) — but not on a plain resume.
+    if (loadedIdxRef.current !== currentIdx || loadedUrlRef.current !== plays[currentIdx].audioUrl) {
       loadedIdxRef.current = currentIdx;
+      loadedUrlRef.current = plays[currentIdx].audioUrl;
       audio.src = plays[currentIdx].audioUrl;
       setAudioProgress(0);
       setAudioCurrentTime(0);
@@ -267,7 +307,9 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       audio.pause();
       clearSub();
     };
-  }, [state, playIdx]);
+    // audioUrl + spanishSpeed deps so a speed change (or regenerated chunk URL) re-runs:
+    // changing speed triggers the regen branch; the new URL then triggers playback.
+  }, [state, playIdx, plays[playIdx]?.audioUrl, spanishSpeed]);
 
   useEffect(() => () => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
@@ -351,7 +393,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     fetch('/api/lesson/speak', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text, speed: spanishSpeed }),
     })
       .then((r) => r.arrayBuffer())
       .then((buf) => {
@@ -362,7 +404,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
         audio.play().catch(() => {});
       })
       .catch(() => {});
-  }, [plays, playIdx, grade]);
+  }, [plays, playIdx, grade, spanishSpeed]);
 
   const seek = useCallback((t: number) => {
     pendingPlayIdxRef.current = null; // a manual seek overrides any pending buffer-resume
@@ -430,5 +472,5 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   // play instead of dropping back to the start of it.
   const elapsedSeconds = completedSecs + audioProgress * (playSecs[playIdx] ?? 0);
 
-  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, elapsedSeconds, totalSeconds, play, pause, record, next, retry, seek, ask, submitQuestion, playCorrect, grade };
+  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, elapsedSeconds, totalSeconds, regenerating, play, pause, record, next, retry, seek, ask, submitQuestion, playCorrect, grade };
 }

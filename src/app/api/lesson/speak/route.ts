@@ -3,8 +3,9 @@ import { SPANISH_MALE_VOICE_ID } from '@/lib/voices';
 const SPANISH_VOICE = SPANISH_MALE_VOICE_ID;
 
 export async function POST(req: Request) {
-  const { text } = await req.json();
+  const { text, speed } = await req.json();
   if (!text?.trim()) return Response.json({ error: 'missing text' }, { status: 400 });
+  const spanishSpeed = typeof speed === 'number' && speed >= 0.7 && speed <= 1.2 ? speed : 1.0;
 
   const res = await fetch(
     `https://api.elevenlabs.io/v1/text-to-speech/${SPANISH_VOICE}`,
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
         text,
         model_id: 'eleven_turbo_v2_5',
         output_format: 'mp3_44100_128',
+        ...(spanishSpeed !== 1 ? { voice_settings: { speed: spanishSpeed } } : {}),
       }),
     }
   );

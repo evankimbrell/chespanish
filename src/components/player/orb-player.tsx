@@ -8,6 +8,7 @@ import { UserResponseAnalysis } from './user-response-analysis';
 import { KaraokeTranscript } from './karaoke-transcript';
 import { LESSON, SECTIONS, SUBTITLE_LINES } from '@/lib/data';
 import { useAppStore } from '@/lib/store';
+import { SPANISH_SPEEDS, formatSpeed } from '@/lib/speed';
 import type { FakePlayer } from './use-fake-player';
 import type { WordTiming } from '@/lib/types';
 
@@ -29,6 +30,9 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
   const router = useRouter();
   const autoPrompt = useAppStore((s) => s.autoPrompt);
   const setAutoPrompt = useAppStore((s) => s.setAutoPrompt);
+  const spanishSpeed = useAppStore((s) => s.spanishSpeed);
+  const setSpanishSpeed = useAppStore((s) => s.setSpanishSpeed);
+  const [speedMenuOpen, setSpeedMenuOpen] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -82,11 +86,40 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
             >
               Auto-record: {autoPrompt ? 'On' : 'Off'}
             </button>
+            {/* Spanish-voice speed — changing it regenerates the audio at the new speed */}
+            <div style={{ position: 'relative' }}>
+              <button
+                className="btn btn-text small"
+                onClick={() => setSpeedMenuOpen((o) => !o)}
+                title="Slow down or speed up only the Spanish voice. Changing it regenerates the audio."
+              >
+                Speed {formatSpeed(spanishSpeed)}
+              </button>
+              {speedMenuOpen && (
+                <>
+                  <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => setSpeedMenuOpen(false)} />
+                  <div style={{ position: 'absolute', top: '100%', left: 0, marginTop: 4, zIndex: 41, background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 4, padding: 4, minWidth: 96, boxShadow: '0 8px 24px rgba(0,0,0,.4)' }}>
+                    {SPANISH_SPEEDS.map((s) => (
+                      <button
+                        key={s}
+                        className="btn btn-text small"
+                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 10px', color: s === spanishSpeed ? 'var(--warm)' : 'var(--ink)' }}
+                        onClick={() => { setSpanishSpeed(s); setSpeedMenuOpen(false); }}
+                      >
+                        {formatSpeed(s)}{s === 1 ? ' (normal)' : ''}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <div className="col gap-1" style={{ textAlign: 'center' }}>
             <span className="kicker">{lessonTitle ?? LESSON.title}</span>
             <span className="mono" style={{ fontSize: 11, color: 'var(--mute-2)' }}>
-              {Math.round(p.progress * 100)}% · section {String(activeSection?.id ?? 1).padStart(2, '0')} of {String(sections.length).padStart(2, '0')}
+              {p.regenerating
+                ? <span style={{ color: 'var(--warm)' }}>Adjusting speed…</span>
+                : <>{Math.round(p.progress * 100)}% · section {String(activeSection?.id ?? 1).padStart(2, '0')} of {String(sections.length).padStart(2, '0')}</>}
             </span>
           </div>
           <button

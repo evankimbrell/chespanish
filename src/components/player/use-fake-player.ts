@@ -13,6 +13,7 @@ export interface FakePlayer {
   audioCurrentTime?: number;
   elapsedSeconds?: number;
   totalSeconds?: number;
+  regenerating?: boolean;
   play: () => void;
   pause: () => void;
   record: () => void;

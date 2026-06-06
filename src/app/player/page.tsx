@@ -15,6 +15,7 @@ function GeneratedLessonPlayerPage() {
   const generatedLesson = useAppStore((s) => s.generatedLesson)!;
   const appendPlays = useAppStore((s) => s.appendPlays);
   const userName = useAppStore((s) => s.profile.name);
+  const spanishSpeed = useAppStore((s) => s.spanishSpeed);
   const p = useGeneratedLessonPlayer(generatedLesson);
 
   const plays = generatedLesson.plays;
@@ -99,6 +100,7 @@ function GeneratedLessonPlayerPage() {
         userName: safeUser,
         startIdx: loadedCount,
         count: BATCH_SIZE,
+        speed: spanishSpeed,
       }),
     })
       .then((r) => r.json())
