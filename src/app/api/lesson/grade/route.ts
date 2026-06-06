@@ -78,43 +78,45 @@ export async function POST(req: Request) {
   const { transcript, playText, spanishText, prevText, nextText, altAnswer, sectionName } = await req.json();
   if (!transcript || !playText) return Response.json({ error: 'missing fields' }, { status: 400 });
 
-  try {
-    const modelAnswer = spanishText || '(not available — infer from context)';
+  const modelAnswer = spanishText || '(not available — infer from context)';
+  const userContent = buildGradeUserMessage({ modelAnswer, altAnswer, transcript, prevText, playText, nextText, sectionName });
+
+  // gpt-5.5 at reasoning 'minimal' is fast, but with this longer rubric it sometimes
+  // returns empty/truncated output (no JSON) — which previously fell straight through to
+  // the fallback ("Grading was unavailable"). Try 'minimal' first for speed, then escalate
+  // to 'low' for reliability, before giving up. max_completion_tokens covers reasoning +
+  // JSON, so keep generous headroom (empty output = budget exhausted before any JSON).
+  for (const effort of ['minimal', 'low'] as const) {
     const t0 = Date.now();
-    const completion = await getOpenAI().chat.completions.create({
-      model: 'gpt-5.5',
-      // gpt-5.5 is a reasoning model — reasoning tokens are drawn from this budget
-      // before any JSON is emitted, so keep ample headroom or the output truncates
-      // to empty and grading silently fails.
-      max_completion_tokens: 2000,
-      // Matching a short phrase to a known answer with a few explicit rules needs almost
-      // no chain-of-thought. 'low' still let the model spend VARIABLE reasoning (fast on a
-      // clean match, slow on an ambiguous one) — 'minimal' makes latency consistently low.
-      reasoning_effort: 'minimal',
-      response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: SYSTEM },
-        {
-          role: 'user',
-          content: buildGradeUserMessage({ modelAnswer, altAnswer, transcript, prevText, playText, nextText, sectionName }),
-        },
-      ],
-    });
-    // Visibility into "recall times": total latency + how many tokens were spent reasoning
-    // vs emitting. Reasoning tokens are the main driver of the variance.
-    const reasoningTokens = completion.usage?.completion_tokens_details?.reasoning_tokens ?? 0;
-    console.log(`[lesson/grade] ${Date.now() - t0}ms | reasoning ${reasoningTokens} tok | output ${completion.usage?.completion_tokens ?? 0} tok`);
-    const content = completion.choices[0]?.message?.content;
-    if (!content) return Response.json(FALLBACK_GRADE);
-    let parsed: unknown;
     try {
-      parsed = JSON.parse(content);
-    } catch {
-      return Response.json(FALLBACK_GRADE);
+      const completion = await getOpenAI().chat.completions.create({
+        model: 'gpt-5.5',
+        max_completion_tokens: 3000,
+        reasoning_effort: effort,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: SYSTEM },
+          { role: 'user', content: userContent },
+        ],
+      });
+      const choice = completion.choices[0];
+      const finish = choice?.finish_reason;
+      const reasoningTokens = completion.usage?.completion_tokens_details?.reasoning_tokens ?? 0;
+      const content = choice?.message?.content;
+      console.log(`[lesson/grade] ${Date.now() - t0}ms | effort ${effort} | finish ${finish} | reasoning ${reasoningTokens} tok | output ${completion.usage?.completion_tokens ?? 0} tok`);
+      if (!content) {
+        console.warn(`[lesson/grade] empty content (effort=${effort}, finish=${finish}) — ${effort === 'minimal' ? 'escalating to low' : 'giving up'}`);
+        continue;
+      }
+      try {
+        return Response.json(normalizeGrade(JSON.parse(content)));
+      } catch {
+        console.warn(`[lesson/grade] JSON parse failed (effort=${effort}, finish=${finish}), raw: ${content.slice(0, 160)}`);
+        continue;
+      }
+    } catch (e) {
+      console.error(`[lesson/grade] error (effort=${effort}):`, e);
     }
-    return Response.json(normalizeGrade(parsed));
-  } catch (e) {
-    console.error('[lesson/grade] error:', e);
-    return Response.json(FALLBACK_GRADE);
   }
+  return Response.json(FALLBACK_GRADE);
 }
