@@ -67,6 +67,12 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const userName = useAppStore((s) => s.profile.name);
   const autoPrompt = useAppStore((s) => s.autoPrompt);
 
+  // Refs so the audio onended handler (whose effect deps are [state, playIdx]) can read
+  // the latest values without re-running the audio effect.
+  const autoPromptRef = useRef(autoPrompt);
+  autoPromptRef.current = autoPrompt;
+  const beginPromptRecordingRef = useRef<() => void>(() => {});
+
   const clearSub = () => { if (subRef.current) { clearInterval(subRef.current); subRef.current = null; } };
 
   const advanceOrComplete = useCallback((idx: number) => {
@@ -193,6 +199,10 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   useEffect(() => {
     if (state !== 'playing' || !plays[playIdx]) return;
 
+    // Keep the mic warm during playback so an auto-record start (which no longer primes
+    // in onended) captures the first word cleanly. Idempotent — reuses the warm stream.
+    primeMic();
+
     if (!audioRef.current) audioRef.current = new Audio();
     const audio = audioRef.current;
     const currentIdx = playIdx;
@@ -222,8 +232,14 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       setAudioProgress(1); // hold at end-of-play until next play starts
       setAudioCurrentTime(0);
       if (plays[currentIdx]?.promptAfter) {
-        setState('prompting');
-        primeMic(); // warm the mic now so the spacebar press records the first word
+        if (autoPromptRef.current) {
+          // Auto-record: jump straight from playing to the red recording state — no
+          // intermediate "prompting" frame with an inactive mic button (avoids the stutter).
+          beginPromptRecordingRef.current();
+        } else {
+          setState('prompting');
+          primeMic(); // warm the mic so the spacebar press records the first word
+        }
       } else {
         advanceOrComplete(currentIdx);
       }
@@ -277,6 +293,7 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     startRecording(recordingOptsForPrompt(plays[playIdx]?.text));
     setState('recording');
   }, [startRecording, resetRecording, plays, playIdx]);
+  beginPromptRecordingRef.current = beginPromptRecording;
 
   // Toggle for lesson prompts. Also handles stopping ask recording.
   const record = useCallback(() => {
@@ -294,12 +311,13 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     }
   }, [state, stopRecording, beginPromptRecording]);
 
-  // Auto-record: the instant a prompt is reached, start listening (Pimsleur-style time
-  // pressure) so the learner can't pre-plan. They stop with space/mic. The lead-in
-  // silence we already capture then reflects real time-to-respond. Off → manual start.
+  // Auto-record (Pimsleur-style time pressure) is triggered directly from the audio's
+  // onended handler so the UI goes playing → recording with no intermediate frame. This
+  // effect only covers the edge case of toggling auto-record ON while already waiting at
+  // a manual prompt.
   useEffect(() => {
     if (state !== 'prompting' || !autoPrompt) return;
-    const id = setTimeout(() => beginPromptRecording(), 250);
+    const id = setTimeout(() => beginPromptRecording(), 150);
     return () => clearTimeout(id);
   }, [state, autoPrompt, beginPromptRecording]);
 
