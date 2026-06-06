@@ -3,11 +3,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { TopNav } from '@/components/ui/top-nav';
 import { SectionHead } from '@/components/ui/section-head';
-import { TutorStrip } from '@/components/ui/tutor-strip';
 import { Tag } from '@/components/ui/tag';
 import { Icons } from '@/components/ui/icons';
 import { useAppStore } from '@/lib/store';
 import type { LessonResults } from '@/lib/lesson-results';
+import type { DisplayLesson } from '@/lib/lesson-design';
 
 function fmtDuration(sec: number | null): string {
   if (sec == null) return '—';
@@ -29,6 +29,8 @@ export default function ReportPage() {
   const lesson = useAppStore((s) => s.generatedLesson);
   const [results, setResults] = useState<LessonResults | null>(null);
   const [loading, setLoading] = useState(true);
+  const [nextBrief, setNextBrief] = useState<DisplayLesson | null>(null);
+  const [nextLoading, setNextLoading] = useState(true);
 
   const lessonId = lesson?.generatedAt;
 
@@ -41,6 +43,18 @@ export default function ReportPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, [userName, lessonId, lesson?.title]);
+
+  // The next-lesson brief is a model call (slower) — fetch it separately so stats
+  // render immediately and the recommendation fills in when ready.
+  useEffect(() => {
+    if (!userName || !lessonId) { setNextLoading(false); return; }
+    const params = new URLSearchParams({ user: userName, lessonId });
+    fetch(`/api/lesson/next-brief?${params}`)
+      .then((r) => r.json())
+      .then((d) => setNextBrief(d.brief ?? null))
+      .catch(() => {})
+      .finally(() => setNextLoading(false));
+  }, [userName, lessonId]);
 
   if (loading) {
     return (
@@ -79,11 +93,6 @@ export default function ReportPage() {
     ['Avg recall', avgRecallSec != null ? `${avgRecallSec}s` : '—', 'time to start speaking'],
     ['Mistakes', String(mistakeCounts.total), `${mistakeCounts.new} new · ${mistakeCounts.recurring} recurring`],
   ];
-
-  // Basic "recommended next" — the most frequent mistake category this lesson.
-  const catCounts = new Map<string, number>();
-  for (const m of mistakes) catCounts.set(m.category, (catCounts.get(m.category) ?? 0) + 1);
-  const topCategory = [...catCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
 
   return (
     <>
@@ -169,12 +178,27 @@ export default function ReportPage() {
           </div>
         </div>
 
-        {topCategory && (
-          <TutorStrip>
-            <span className="kicker" style={{ fontStyle: 'normal', marginRight: 8 }}>RECOMMENDED NEXT ·</span>
-            More practice on <span style={{ fontFamily: 'var(--font-jetbrains-mono), monospace', fontSize: 13 }}>{topCategory}</span>.
-          </TutorStrip>
-        )}
+        {/* Recommended next lesson — generated from the placement diagnosis + this lesson */}
+        <div style={{ border: '1px solid var(--line)', borderRadius: 4, padding: '24px 28px', marginBottom: 8 }}>
+          <span className="eyebrow eyebrow-warm" style={{ display: 'block', marginBottom: 10 }}>Recommended next lesson</span>
+          {nextLoading ? (
+            <p className="small" style={{ color: 'var(--mute)', margin: 0 }}>Preparing your next lesson…</p>
+          ) : nextBrief ? (
+            <>
+              <h2 className="serif" style={{ fontSize: 28, margin: '0 0 8px', letterSpacing: '-.01em' }}>{nextBrief.title}</h2>
+              {nextBrief.why && <p className="body" style={{ maxWidth: 620, margin: '0 0 14px', color: 'var(--ink-2)' }}>{nextBrief.why}</p>}
+              {nextBrief.focus_points?.length > 0 && (
+                <div className="row gap-2" style={{ flexWrap: 'wrap' }}>
+                  {nextBrief.focus_points.map((f, i) => (
+                    <span key={i} className="chip" style={{ fontSize: 12, padding: '2px 9px', cursor: 'default' }}>{f}</span>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="small" style={{ color: 'var(--mute)', margin: 0 }}>We couldn&rsquo;t generate a recommendation right now — try again from the dashboard.</p>
+          )}
+        </div>
 
         <div className="row gap-3" style={{ marginTop: 32, flexWrap: 'wrap' }}>
           <button className="btn btn-primary" onClick={() => router.push('/builder')}><Icons.spark /> Generate next lesson</button>

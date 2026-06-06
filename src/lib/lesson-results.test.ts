@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { summarizeLessonResults } from './lesson-results';
+import { summarizeLessonResults, formatFirstLessonReport } from './lesson-results';
 import type { LessonActivityRecord, LessonHistoryEntry, LessonGrade } from './types';
 
 function resp(over: Partial<Extract<LessonActivityRecord, { type: 'response' }>> = {}): LessonActivityRecord {
@@ -119,5 +119,22 @@ describe('summarizeLessonResults', () => {
     const r = summarizeLessonResults({ lessonId: 'L1', records, fallbackTitle: 'Untitled' });
     expect(r.lessonTitle).toBe('Changing Plans Naturally'); // from record's lessonTitle
     expect(r.durationSec).toBe(180);
+  });
+});
+
+describe('formatFirstLessonReport', () => {
+  it('renders title, score, concepts and itemized mistakes', () => {
+    const records = [
+      resp({
+        transcript: '¿Tienes tiempo?',
+        grade: { label: 'Almost', brief_feedback: 'Use vos.', observed_errors: [{ category: 'Conjugation', description: 'tienes → tenés' }], correct_answer: '¿Tenés tiempo?' },
+      }),
+    ];
+    const r = summarizeLessonResults({ lessonId: 'L1', records, history });
+    const text = formatFirstLessonReport(r);
+    expect(text).toContain('Lesson completed: "Changing Plans Naturally"');
+    expect(text).toContain('Mistakes (1 total: 1 new, 0 recurring)');
+    expect(text).toContain('[Conjugation] tienes → tenés');
+    expect(text).toContain('target: "¿Tenés tiempo?"');
   });
 });

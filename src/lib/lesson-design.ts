@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { buildNextLessonBriefPrompt } from './next-lesson-brief';
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -140,7 +141,7 @@ export interface LessonDesignResult {
   displayLesson: DisplayLesson;
 }
 
-const DESIGN_BRIEF_PROMPT = `You are a master Spanish tutor and curriculum designer creating the first personalized audio lesson for a student after a Spanish level test.
+export const DESIGN_BRIEF_PROMPT = `You are a master Spanish tutor and curriculum designer creating the first personalized audio lesson for a student after a Spanish level test.
 
 The student has completed an adaptive Spanish placement test covering the A1–C2 CEFR range. I will provide the student's test results, including their estimated level, prompt-by-prompt answers, grading notes, strengths, weaknesses, response speed, pauses, completeness, pronunciation issues, recurring grammar mistakes, and any evaluator recommendations.
 
@@ -257,6 +258,30 @@ export async function generateLessonDesignBrief(formattedTestData: string): Prom
     scenario: 'conversation',
     focus_points: ['Speaking practice', 'Core vocabulary', 'Argentine Spanish'],
     why: 'Based on your test results, this lesson will address your most important speaking needs.',
+  };
+
+  return { fullBrief, displayLesson };
+}
+
+// Generate the NEXT lesson's design brief once the student has completed a lesson.
+// combinedReport = condensed placement diagnosis + first-lesson report (see
+// next-lesson-brief.ts). Reuses the first-lesson brief prompt with next-lesson framing.
+export async function generateNextLessonBrief(combinedReport: string): Promise<LessonDesignResult> {
+  const prompt = buildNextLessonBriefPrompt(DESIGN_BRIEF_PROMPT, combinedReport);
+
+  const completion = await getOpenAI().chat.completions.create({
+    model: 'gpt-5.5',
+    max_completion_tokens: 8000,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  const fullBrief = completion.choices[0]?.message?.content?.trim() ?? '';
+
+  const displayLesson = extractDisplayLesson(fullBrief) ?? {
+    title: 'Your Next Lesson',
+    scenario: 'conversation',
+    focus_points: ['Speaking practice', 'Core vocabulary', 'Argentine Spanish'],
+    why: 'Based on your placement test and first lesson, this lesson targets your most important next step.',
   };
 
   return { fullBrief, displayLesson };

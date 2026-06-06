@@ -158,3 +158,28 @@ export function summarizeLessonResults(args: {
     wentWell,
   };
 }
+
+// Compact, prompt-friendly text version of a completed lesson — fed to the next-lesson
+// brief generator so it knows what the first lesson addressed and how the learner did.
+export function formatFirstLessonReport(results: LessonResults): string {
+  const lines: string[] = [];
+  lines.push(`Lesson completed: "${results.lessonTitle}"`);
+  if (results.score != null) lines.push(`Overall score: ${results.score}/100 across ${results.responseCount} graded responses.`);
+  if (results.durationSec != null) lines.push(`Time to finish: ${Math.round(results.durationSec / 60)} min.`);
+  if (results.avgRecallSec != null) {
+    lines.push(`Average time to start speaking: ${results.avgRecallSec}s${results.avgWpm != null ? `; average pace ${results.avgWpm} wpm` : ''}.`);
+  }
+  if (results.conceptsCovered.length) lines.push(`Concepts practiced: ${results.conceptsCovered.join('; ')}.`);
+  if (results.wentWell.length) lines.push(`Went well: ${results.wentWell.join('; ')}.`);
+  lines.push(`Mistakes (${results.mistakeCounts.total} total: ${results.mistakeCounts.new} new, ${results.mistakeCounts.recurring} recurring):`);
+  if (results.mistakes.length === 0) {
+    lines.push('  - None notable.');
+  } else {
+    for (const m of results.mistakes.slice(0, 12)) {
+      const said = m.youSaid ? ` | said: "${m.youSaid}"` : '';
+      const tgt = m.target ? ` → target: "${m.target}"` : '';
+      lines.push(`  - [${m.category}] ${m.description}${said}${tgt}`);
+    }
+  }
+  return lines.join('\n');
+}
