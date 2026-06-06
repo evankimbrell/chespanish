@@ -386,6 +386,9 @@ export async function generateDiagnosticReport(input: DiagnosticInput): Promise<
       // gpt-5.5 is a reasoning model and this is a large JSON payload (8 categories +
       // examples + common errors). Keep generous headroom so it doesn't truncate.
       max_completion_tokens: 9000,
+      // Low reasoning keeps this large report fast — it's a summarization task over data
+      // we already graded, so it doesn't need heavy chain-of-thought.
+      reasoning_effort: 'low',
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },

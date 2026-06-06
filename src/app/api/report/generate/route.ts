@@ -5,6 +5,8 @@ import type { LevelTestSession } from '@/lib/types';
 import { generateLessonDesignBrief, generateLessonTranscript } from '@/lib/lesson-design';
 import { buildDiagnosticInput, generateDiagnosticReport, diagnosticFallback } from '@/lib/diagnostic-report';
 
+export const maxDuration = 300; // 4 sequential gpt-5.5 calls — must not hit the default timeout
+
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
   if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
@@ -141,57 +143,69 @@ export async function POST(req: Request) {
   }
 
   const formattedReport = formatSessionForOpenAI(session, userName ?? 'student');
+  const testReport = session.report ?? null;
 
-  // Step 1: Educator summary report
-  const educatorCompletion = await getOpenAI().chat.completions.create({
-    model: 'gpt-5.5',
-    max_completion_tokens: 8000,
-    messages: [{ role: 'user', content: EDUCATOR_PROMPT + '\n\n' + formattedReport }],
+  // Stream results as each piece is ready (NDJSON). The diagnostic report is what the
+  // learner sees first, so it's generated and sent BEFORE the slow lesson transcript —
+  // the page no longer waits ~a minute (and previously, with no maxDuration, the whole
+  // request could time out and hang the spinner forever).
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (o: Record<string, unknown>) => controller.enqueue(encoder.encode(JSON.stringify(o) + '\n'));
+      try {
+        // Immediately available — no model call.
+        send({ type: 'test', testReport });
+
+        // Kick off the three independent generations concurrently.
+        const educatorP = getOpenAI().chat.completions
+          .create({ model: 'gpt-5.5', max_completion_tokens: 8000, messages: [{ role: 'user', content: EDUCATOR_PROMPT + '\n\n' + formattedReport }] })
+          .then((c) => c.choices[0]?.message?.content ?? '')
+          .catch((e) => { console.error('[report/generate] educator failed:', e); return ''; });
+
+        const designP = generateLessonDesignBrief(formattedReport)
+          .catch((e) => { console.error('[report/generate] design brief failed:', e); return null; });
+
+        const diagnosticP = (testReport
+          ? generateDiagnosticReport(buildDiagnosticInput(session.prompts, testReport.display_level, testReport.confidence)).catch(() => null)
+          : Promise.resolve(null));
+
+        // Diagnostic first — stream it the moment it resolves.
+        const diagnosticReport = (await diagnosticP) ?? diagnosticFallback(testReport);
+        send({ type: 'diagnostic', diagnosticReport });
+
+        // Then the rest (educator + design brief in flight already; lesson needs the brief).
+        const educatorReport = await educatorP;
+        const design = await designP;
+        const lessonDesignBrief = design?.fullBrief ?? '';
+        const displayLesson = design?.displayLesson ?? null;
+        const lessonTranscript = lessonDesignBrief
+          ? await generateLessonTranscript(lessonDesignBrief).catch((e) => { console.error('[report/generate] transcript failed:', e); return ''; })
+          : '';
+
+        const safeUserName = (userName ?? 'student').toLowerCase().replace(/[^a-z0-9]/g, '-');
+        const timestamp = (session.completedAt ?? new Date().toISOString()).replace(/[:.]/g, '-');
+        const filename = `${safeUserName}-${timestamp}.json`;
+        const reportsDir = path.join(process.cwd(), 'data', 'reports');
+        fs.mkdirSync(reportsDir, { recursive: true });
+        fs.writeFileSync(
+          path.join(reportsDir, filename),
+          JSON.stringify({
+            userName, generatedAt: new Date().toISOString(),
+            educatorReport, lessonDesignBrief, recommendedLesson: displayLesson,
+            testReport, diagnosticReport, lessonTranscript, session,
+          }, null, 2),
+        );
+
+        send({ type: 'done', educatorReport, lessonDesignBrief, recommendedLesson: displayLesson, lessonTranscript, savedTo: `data/reports/${filename}` });
+        controller.close();
+      } catch (e) {
+        console.error('[report/generate] error:', e);
+        send({ type: 'error', message: e instanceof Error ? e.message : String(e) });
+        controller.close();
+      }
+    },
   });
-  const educatorReport = educatorCompletion.choices[0]?.message?.content ?? '';
 
-  // Step 1b: Learner-facing verbal diagnostic report (numeric scores stay internal)
-  const diagnosticReport =
-    (session.report
-      ? await generateDiagnosticReport(
-          buildDiagnosticInput(session.prompts, session.report.display_level, session.report.confidence),
-        )
-      : null) ?? diagnosticFallback(session.report ?? null);
-
-  // Step 2: Lesson design brief — full curriculum design + display data
-  const { fullBrief: lessonDesignBrief, displayLesson } = await generateLessonDesignBrief(formattedReport);
-
-  // Step 3: Full lesson transcript — uses design brief as the primary context
-  const lessonTranscript = await generateLessonTranscript(lessonDesignBrief);
-
-  const safeUserName = (userName ?? 'student').toLowerCase().replace(/[^a-z0-9]/g, '-');
-  const timestamp = (session.completedAt ?? new Date().toISOString()).replace(/[:.]/g, '-');
-  const filename = `${safeUserName}-${timestamp}.json`;
-  const reportsDir = path.join(process.cwd(), 'data', 'reports');
-
-  fs.mkdirSync(reportsDir, { recursive: true });
-  fs.writeFileSync(
-    path.join(reportsDir, filename),
-    JSON.stringify({
-      userName,
-      generatedAt: new Date().toISOString(),
-      educatorReport,
-      lessonDesignBrief,
-      recommendedLesson: displayLesson,
-      testReport: session.report ?? null,
-      diagnosticReport,
-      lessonTranscript,
-      session,
-    }, null, 2),
-  );
-
-  return Response.json({
-    educatorReport,
-    lessonDesignBrief,
-    recommendedLesson: displayLesson,
-    testReport: session.report ?? null,
-    diagnosticReport,
-    lessonTranscript,
-    savedTo: `data/reports/${filename}`,
-  });
+  return new Response(stream, { headers: { 'Content-Type': 'application/x-ndjson' } });
 }

@@ -130,38 +130,58 @@ export default function LevelResultPage() {
   useEffect(() => {
     if (!session?.completedAt || reportSaved) return;
     setReportSaved(true);
-    fetch('/api/report/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session, userName: profile.name }),
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        // Update profile level from the test result
-        const newLevel = data.testReport?.display_level ?? data.testReport?.cefr_band;
-        if (newLevel) setProfile({ level: newLevel });
 
-        if (data.diagnosticReport) {
-          setFetchedDiag(data.diagnosticReport);
-          setDiagnosticReport(data.diagnosticReport);
+    // The report is streamed (NDJSON): the diagnostic arrives well before the slow
+    // lesson transcript, so we show it the moment it lands instead of waiting for the
+    // whole chain.
+    (async () => {
+      try {
+        const res = await fetch('/api/report/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session, userName: profile.name }),
+        });
+        if (!res.body) return;
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop()!;
+          for (const line of lines) {
+            if (!line.trim()) continue;
+            let msg: Record<string, unknown>;
+            try { msg = JSON.parse(line); } catch { continue; }
+            if (msg.type === 'test') {
+              const tr = msg.testReport as { display_level?: string; cefr_band?: string } | null;
+              const newLevel = tr?.display_level ?? tr?.cefr_band;
+              if (newLevel) setProfile({ level: newLevel });
+            } else if (msg.type === 'diagnostic') {
+              if (msg.diagnosticReport) {
+                setFetchedDiag(msg.diagnosticReport as DiagnosticReport);
+                setDiagnosticReport(msg.diagnosticReport as DiagnosticReport);
+              }
+            } else if (msg.type === 'done') {
+              if (msg.lessonTranscript) {
+                setGeneratedLesson({
+                  transcript: msg.lessonTranscript as string,
+                  plays: [],
+                  generatedAt: new Date().toISOString(),
+                  title: (msg.recommendedLesson as { title?: string } | null)?.title
+                    ?? session?.report?.recommended_first_lesson?.title ?? 'Your first lesson',
+                });
+              }
+              if (msg.recommendedLesson && session?.report) {
+                completeLevelTestSession({ ...session.report, recommended_first_lesson: msg.recommendedLesson as TestReport['recommended_first_lesson'] });
+              }
+            }
+          }
         }
-
-        if (data.lessonTranscript) {
-          setGeneratedLesson({
-            transcript: data.lessonTranscript,
-            plays: [],
-            generatedAt: new Date().toISOString(),
-            title: data.recommendedLesson?.title ?? data.testReport?.recommended_first_lesson?.title ?? 'Your first lesson',
-          });
-        }
-
-        // Persist GPT-generated lesson recommendation into the session report
-        if (data.recommendedLesson && session?.report) {
-          const updatedReport = { ...session.report, recommended_first_lesson: data.recommendedLesson };
-          completeLevelTestSession(updatedReport);
-        }
-      })
-      .catch(() => {});
+      } catch { /* leave the fallback path */ }
+    })();
   }, [session, reportSaved, profile.name]);
 
   // Spinner shows once generation has been kicked off until the report arrives.
