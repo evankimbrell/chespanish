@@ -1,51 +1,13 @@
-import OpenAI from 'openai';
-import type { ResponseTiming } from '@/lib/types';
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+import type { ResponseTiming, WordTiming } from '@/lib/types';
+import { transcribeAudio, resolveProvider } from '@/lib/transcription';
 
 // Diacritics that appear in Czech/Slovak/Slovenian but never in Spanish.
-// If Whisper returns these, it misidentified the language.
+// If the STT returns these, it misidentified the language.
 const SLAVIC_RE = /[ČčŠšŽžĚěŘřŮů]/;
-
-// Answer-AGNOSTIC Rioplatense anchor. Passed only when we already know the audio is
-// Spanish (forceLang='es'). It sets the language/accent context (steering away from
-// non-Argentine outputs like the Mexican "quiúbole") WITHOUT seeding any specific
-// phrase, so it can't bias the transcript toward a particular expected answer.
-const ES_PRIME = 'Lo siguiente es una frase corta en español rioplatense de Argentina.';
-
-interface WordTiming { word: string; start: number; end: number; }
-interface TranscriptionResult { text: string; words: WordTiming[]; durationSec: number; }
-
-async function runTranscription(audio: File, forceLang?: string): Promise<TranscriptionResult> {
-  // temperature 0 = greedy decoding, which avoids the temperature-fallback escalation
-  // that makes Whisper hallucinate confident wrong words on short clips. A `prompt`
-  // is only added with a known Spanish language hint (an English prompt would bias
-  // toward English / translation; a Spanish prompt under language='es' is safe).
-  // verbose_json + word granularity also gives us per-word timestamps for pause analysis.
-  // The Spanish accent prime must ONLY accompany a Spanish forced language. Adding it
-  // under language:'en' (a "respond in English" comprehension prompt) would bias Whisper
-  // toward Spanish and mangle the English answer.
-  const isSpanish = !!forceLang && forceLang.toLowerCase().startsWith('es');
-  const params: Record<string, unknown> = {
-    file: audio,
-    model: 'whisper-1',
-    temperature: 0,
-    response_format: 'verbose_json',
-    timestamp_granularities: ['word'],
-    ...(forceLang ? { language: forceLang } : {}),
-    ...(isSpanish ? { prompt: ES_PRIME } : {}),
-  };
-  // SDK return type is narrowed by response_format at runtime; cast needed
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = await (openai.audio.transcriptions.create as any)(params) as {
-    text: string; words?: WordTiming[]; duration?: number;
-  };
-  return { text: result.text, words: result.words ?? [], durationSec: result.duration ?? 0 };
-}
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
-// Derive speaking-duration / pause / silence metrics from Whisper word timestamps.
+// Derive speaking-duration / pause / silence metrics from word timestamps.
 // Returns null when there's no usable speech (no words).
 // A gap must exceed this to count as a real pause/silence. Sub-300ms gaps are just
 // normal word spacing, not hesitation — counting them would inflate the silence %.
@@ -90,34 +52,30 @@ function computeTiming(words: WordTiming[], durationSec: number): ResponseTiming
 }
 
 export async function POST(req: Request) {
-  if (!process.env.OPENAI_API_KEY) {
-    console.error('[transcribe] OPENAI_API_KEY not set');
-    return new Response('OPENAI_API_KEY not configured', { status: 500 });
-  }
-
   const fd = await req.formData();
   const audio = fd.get('audio') as File | null;
   const allowEnglish = fd.get('allowEnglish') === '1';
   // Optional language hint (e.g. 'es' for lesson prompts that ask for a specific Spanish
-  // phrase). Short clips auto-detect unreliably, so the caller can tell Whisper the
+  // phrase). Short clips auto-detect unreliably, so the caller can tell the STT the
   // language. Absent (level test, ask-a-question) → pure auto-detect.
   const language = (fd.get('language') as string | null) || undefined;
 
   if (!audio) return new Response('audio required', { status: 400 });
 
   try {
-    let result = await runTranscription(audio, language);
+    let result = await transcribeAudio(audio, { language });
 
-    // If Slavic characters appear, Whisper mis-detected the language — retry forced to Spanish
+    // If Slavic characters appear, the STT mis-detected the language — retry forced to Spanish
     if (!allowEnglish && SLAVIC_RE.test(result.text)) {
       console.warn('[transcribe] Slavic chars detected, retrying with language:es');
-      result = await runTranscription(audio, 'es');
+      result = await transcribeAudio(audio, { language: 'es' });
     }
 
+    console.log(`[transcribe] ${result.provider} ${result.latencyMs}ms | ${result.words.length} words`);
     const timing = computeTiming(result.words, result.durationSec);
-    return Response.json({ transcript: result.text, timing });
+    return Response.json({ transcript: result.text, timing, provider: result.provider });
   } catch (e) {
-    console.error('[transcribe] Whisper error:', e);
+    console.error(`[transcribe] ${resolveProvider()} error:`, e);
     return new Response(String(e), { status: 500 });
   }
 }

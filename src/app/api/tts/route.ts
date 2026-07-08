@@ -2,9 +2,13 @@ import { ElevenLabsClient } from 'elevenlabs';
 import { NextRequest } from 'next/server';
 import { SPANISH_MALE_VOICE_ID, SPANISH_FEMALE_VOICE_ID } from '@/lib/voices';
 
-const client = new ElevenLabsClient({
-  apiKey: process.env.ELEVENLABS_API_KEY!,
-});
+// Lazy init — a module-scope constructor throws when the key is absent, which crashes
+// `next build` page-data collection in environments without secrets.
+let _client: ElevenLabsClient | null = null;
+function getClient(): ElevenLabsClient {
+  if (!_client) _client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY! });
+  return _client;
+}
 
 // Active Argentine Spanish voices (see src/lib/voices.ts)
 export const DEFAULT_VOICE_ID = SPANISH_MALE_VOICE_ID;
@@ -21,7 +25,7 @@ function parseDialogue(text: string): { speaker: 'A' | 'B'; text: string }[] | n
 }
 
 async function segmentToBuffer(text: string, voiceId: string): Promise<Buffer> {
-  const result = await client.textToSpeech.convertAsStream(voiceId, {
+  const result = await getClient().textToSpeech.convertAsStream(voiceId, {
     text,
     model_id: 'eleven_multilingual_v2',
     output_format: 'mp3_44100_128',
@@ -34,7 +38,7 @@ async function segmentToBuffer(text: string, voiceId: string): Promise<Buffer> {
 }
 
 async function streamTTS(text: string, voiceId: string): Promise<ReadableStream<Uint8Array>> {
-  const result = await client.textToSpeech.convertAsStream(voiceId, {
+  const result = await getClient().textToSpeech.convertAsStream(voiceId, {
     text,
     model_id: 'eleven_multilingual_v2',
     output_format: 'mp3_44100_128',

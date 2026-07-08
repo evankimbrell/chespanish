@@ -1,9 +1,15 @@
 import { ElevenLabsClient } from 'elevenlabs';
 
-const client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY! });
+// Lazy init — a module-scope constructor throws when the key is absent, which crashes
+// `next build` page-data collection in environments without secrets.
+let _client: ElevenLabsClient | null = null;
+function getClient(): ElevenLabsClient {
+  if (!_client) _client = new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY! });
+  return _client;
+}
 
 export async function GET(req: Request) {
-  const { voices } = await client.voices.getAll();
+  const { voices } = await getClient().voices.getAll();
   const { searchParams } = new URL(req.url);
   const search = searchParams.get('name')?.toLowerCase();
 

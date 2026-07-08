@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import type { Question } from '@/lib/types';
+import { transcribeAudio } from '@/lib/transcription';
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -13,30 +14,14 @@ interface WordTiming { word: string; start: number; end: number; }
 interface TranscriptionResult { text: string; words: WordTiming[]; detectedLanguage?: string; }
 
 async function runTranscription(audio: File, forceLang?: string): Promise<TranscriptionResult> {
-  // IMPORTANT: never pass a `prompt`. Whisper's prompt is a context/continuation prime
-  // that it expects to MATCH the audio language — it is NOT an instruction. An English
-  // prompt makes Whisper assume the context is English and continue in English, i.e.
-  // translate Spanish audio into English. We rely on pure auto-detect so the transcript
-  // is always literal (Spanish→Spanish, English→English, mixed→mixed), which also
-  // preserves genuine wrong-language detection. `language` is only forced on the
-  // Slavic-garble retry.
-  const params: Record<string, unknown> = {
-    file: audio,
-    model: 'whisper-1',
-    response_format: 'verbose_json',
-    timestamp_granularities: ['word'],
-  };
-  if (forceLang) {
-    params.language = forceLang;
-  }
-  // SDK return type is narrowed by response_format at runtime; cast needed
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = await (getOpenAI().audio.transcriptions.create as any)(params) as {
-    text: string;
-    words?: WordTiming[];
-    language?: string;
-  };
-  return { text: result.text, words: result.words ?? [], detectedLanguage: result.language };
+  // Provider-agnostic STT (Whisper or ElevenLabs Scribe via TRANSCRIBE_PROVIDER).
+  // Pure auto-detect by default so the transcript is always literal (Spanish→Spanish,
+  // English→English, mixed→mixed), preserving genuine wrong-language detection.
+  // `language` is only forced on the Slavic-garble retry. whisperPrime:false keeps the
+  // level test's historical behavior of never passing a Whisper prompt (a prime could
+  // mask wrong-language errors the test needs to see).
+  const result = await transcribeAudio(audio, { language: forceLang, whisperPrime: false });
+  return { text: result.text, words: result.words, detectedLanguage: result.detectedLanguage };
 }
 
 interface SpeechMetrics {
