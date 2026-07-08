@@ -61,7 +61,14 @@ export function SessionReview({ results, onSeeReport }: {
   const pending = results.length - graded - results.filter((r) => r.gradeFailed).length;
 
   const GradeChip = ({ r }: { r: GradedResponse }) => r.grade
-    ? <Tag kind={LABEL_KIND[r.grade.label]}>{r.grade.label}</Tag>
+    ? (
+      <>
+        <Tag kind={LABEL_KIND[r.grade.label]}>{r.grade.label}</Tag>
+        {/* Neutral dialect note — never an error: Scribe often renders spoken voseo
+            as standard forms, so tú-vs-vos is marked but not graded. */}
+        {r.grade.used_standard_spanish && <Tag kind="mute">standard es</Tag>}
+      </>
+    )
     : r.gradeFailed
       ? <Tag kind="mute">Not graded</Tag>
       : <Tag kind="mute">Grading…</Tag>;

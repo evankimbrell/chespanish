@@ -9,6 +9,7 @@ export interface NormalizedGrade {
   observed_errors: { category: string; description: string }[];
   correct_answer?: string;
   suggested_answer?: string;
+  used_standard_spanish?: boolean; // neutral marker — tú/standard forms where the target uses vos
 }
 
 // Always return a valid LessonGrade shape so the player never shows a blank
@@ -28,6 +29,9 @@ export function normalizeGrade(raw: unknown): NormalizedGrade {
   }
   if (typeof r.suggested_answer === 'string' && r.suggested_answer.trim()) {
     out.suggested_answer = r.suggested_answer;
+  }
+  if (r.used_standard_spanish === true) {
+    out.used_standard_spanish = true;
   }
   return out;
 }

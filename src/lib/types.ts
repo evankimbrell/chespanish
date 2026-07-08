@@ -366,6 +366,10 @@ export interface LessonGrade {
   observed_errors: { category: string; description: string }[];
   correct_answer?: string;     // the Spanish the learner should say for THIS step — used by "Hear correct version"
   suggested_answer?: string;   // shown when label is not Excellent/Good
+  // Neutral observation: the response used standard/tú forms where the Rioplatense
+  // target uses vos. Often an STT artifact (Scribe renders spoken "podés" as
+  // "puedes"), so it NEVER affects the label or counts as an error.
+  used_standard_spanish?: boolean;
 }
 
 export interface LessonHistoryEntry {

@@ -9,7 +9,7 @@ function getOpenAI(): OpenAI {
 
 const SYSTEM_PROMPT = `You are a grading assistant for an Argentine Spanish language level test. Grade each spoken response and return structured JSON.
 
-TARGET DIALECT: Rioplatense / Argentine Spanish. Non-Argentine forms (e.g. "tienes" instead of "tenés") reduce target_style_alignment but not grammar unless meaning is affected.
+TARGET DIALECT: Rioplatense / Argentine Spanish for everything the test MODELS — but the learner may answer in standard/tú forms OR voseo, and both are fully correct. The speech-to-text frequently mis-renders correctly-spoken voseo as standard forms ("podés" transcribed as "puedes"), so the transcript cannot be trusted on this axis: NEVER penalize tú/standard second-person forms in ANY score (not grammar, not target_style_alignment, not anywhere) and NEVER flag them as an observed_error — even when a question's listed common errors mention vos/tú style. Judge target_style_alignment by vocabulary and phrasing choices only (colectivo vs autobús, laburo vs trabajo), never by tú-vs-vos conjugation.
 
 ACCEPTED CASUAL FORMS: Well-established colloquial Rioplatense contractions are correct, fully-understood Spanish — NEVER flag them as grammar errors or as "malformed". In particular, "finde" — spoken as run-together "fin de" and therefore usually transcribed as the two words "fin de" — is a well-understood casual form of "fin de semana" (weekend). Accept BOTH "finde" and a bare "fin de" (with no "semana") as correct; do NOT flag a missing "semana" as a malformed or incomplete time expression. Only flag such a form as register_error if the task explicitly required formal speech; otherwise it is not an error at all.
 
@@ -41,13 +41,13 @@ DIMENSIONS (each 0–5):
 - fluency: How smoothly was the answer produced?
 - pronunciation_intelligibility: Could a listener understand the spoken Spanish?
 - response_speed: Based on responseLatencyMs — 5=<2s, 4=2–4s, 3=4–7s, 2=7–12s, 1=>12s, 0=no response
-- target_style_alignment: How Argentine/Rioplatense is the phrasing?
+- target_style_alignment: How Argentine/Rioplatense is the phrasing? Judge by vocabulary and phrasing choices only — NEVER by tú-vs-vos conjugation (STT-unreliable, see TARGET DIALECT)
 
 ERROR CATEGORIES (use only when applicable):
 no_response, skipped, misunderstood_prompt, incomplete_answer, wrong_meaning, grammar,
 verb_conjugation, tense_error, ser_estar, por_para, gender_agreement, number_agreement,
 word_order, missing_pronoun, object_pronoun, preposition, vocabulary_gap, unnatural_wording,
-pronunciation, response_speed, target_style_vos, target_style_vocabulary,
+pronunciation, response_speed, target_style_vocabulary,
 target_style_pronunciation, too_much_english, hallucinated_or_unrelated_answer
 
 CEFR SIGNAL: Estimate the level this response suggests given prompt difficulty + quality.

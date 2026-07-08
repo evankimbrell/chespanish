@@ -104,3 +104,12 @@ describe('normalizeGrade', () => {
     expect(normalizeGrade({ label: 'Ok', observed_errors: 'oops' }).observed_errors).toEqual([]);
   });
 });
+
+describe('normalizeGrade — used_standard_spanish marker', () => {
+  it('passes the marker through only when strictly true', () => {
+    expect(normalizeGrade({ label: 'Good', used_standard_spanish: true }).used_standard_spanish).toBe(true);
+    expect(normalizeGrade({ label: 'Good', used_standard_spanish: false }).used_standard_spanish).toBeUndefined();
+    expect(normalizeGrade({ label: 'Good', used_standard_spanish: 'yes' }).used_standard_spanish).toBeUndefined();
+    expect(normalizeGrade({ label: 'Good' }).used_standard_spanish).toBeUndefined();
+  });
+});
