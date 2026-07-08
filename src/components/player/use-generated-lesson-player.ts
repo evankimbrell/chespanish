@@ -8,6 +8,7 @@ import { useAppStore } from '@/lib/store';
 import { expectsEnglishResponse } from '@/lib/prompt-language';
 import { playNeedsRegen } from '@/lib/speed';
 import { gradeProvidedAnswer } from '@/lib/correct-answer';
+import type { GradedResponse } from '@/lib/lesson-review';
 
 // Choose the transcription language for a prompt. Default is Spanish (forced, so short
 // answers aren't mis-heard as English). When the instruction explicitly asks for an
@@ -31,7 +32,8 @@ function postActivity(userName: string, record: LessonActivityRecord) {
 // the duration of plays whose audio hasn't been generated/measured yet.
 const SPOKEN_WPM = 150;
 
-// Shown if grading fails or returns nothing — keeps the UI from hanging on "Grading…".
+// Recorded if grading returns a 200 with no usable grade — the review list shows it
+// as an ordinary 'Ok' so one flaky grade never draws attention to itself.
 const GRADE_FALLBACK: LessonGrade = {
   label: 'Ok',
   brief_feedback: 'Grading was unavailable — you can continue.',
@@ -49,6 +51,10 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   const [audioProgress, setAudioProgress] = useState(0);
   const [audioCurrentTime, setAudioCurrentTime] = useState(0);
   const [grade, setGrade] = useState<LessonGrade | null>(null);
+  // Every response this session, graded in the background — feeds the subtle
+  // "N to review" chip mid-lesson and the full review at lesson end.
+  const [results, setResults] = useState<GradedResponse[]>([]);
+  const resultSeqRef = useRef(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const subRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const loadedIdxRef = useRef(-1);
@@ -124,6 +130,17 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     }
   }, [plays.length]);
 
+  // Reset the response UI state and move on. Declared before the transcript effect
+  // below, which calls it to advance the moment a transcript lands (cruise mode).
+  const next = useCallback(() => {
+    setGrade(null);
+    setTranscript(null);
+    resetRecording();
+    setAudioProgress(0);
+    setAudioCurrentTime(0);
+    advanceOrComplete(playIdx);
+  }, [playIdx, advanceOrComplete, resetRecording]);
+
   // Resume lesson at saved position after ask-answer finishes or fails
   const resumeAfterAsk = useCallback(() => {
     answerAudioRef.current = null;
@@ -174,12 +191,24 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
       return;
     }
 
-    // Lesson prompt path
-    setTranscript(recordTranscript);
-    setState('feedback');
-    setGrade(null);
+    // Lesson prompt path — cruise mode: capture the response, grade it in the
+    // background, and keep the lesson moving. The next play often models the correct
+    // answer (Pimsleur anticipation), so advancing IS the immediate feedback; the
+    // detailed grade lands in `results` for the end-of-lesson review.
     const currentPlay = plays[playIdx];
-    if (currentPlay) {
+    if (currentPlay && recordTranscript.trim()) {
+      const id = ++resultSeqRef.current;
+      const entry: GradedResponse = {
+        id,
+        playIdx,
+        at: new Date().toISOString(),
+        promptText: currentPlay.text,
+        expected: currentPlay.spanishText,
+        transcript: recordTranscript,
+        grade: null,
+      };
+      setResults((rs) => [...rs, entry]);
+      const timing = responseTiming ?? undefined;
       // Pass neighbouring context so the grader can tell an "answer the posed question"
       // step from a "repeat this" step. The baked spanishText is a look-ahead heuristic
       // that can grab a posed question as the "answer"; the modeled answer for a posed
@@ -202,10 +231,10 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
         .then((r) => r.json())
         .then((data) => {
           const grade = data && data.label ? data : GRADE_FALLBACK;
-          setGrade(grade);
+          setResults((rs) => rs.map((r) => (r.id === id ? { ...r, grade } : r)));
           postActivity(userName, {
             type: 'response',
-            at: new Date().toISOString(),
+            at: entry.at,
             lessonId: lesson.generatedAt,
             lessonTitle: lesson.title,
             sectionName: currentPlay.sectionName,
@@ -213,11 +242,13 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
             expected: currentPlay.spanishText,
             transcript: recordTranscript,
             grade,
-            timing: responseTiming ?? undefined,
+            timing,
           });
         })
-        .catch(() => setGrade(GRADE_FALLBACK));
+        .catch(() => setResults((rs) => rs.map((r) => (r.id === id ? { ...r, gradeFailed: true } : r))));
     }
+    // Advance without waiting for the grade — grading must never hold up the lesson.
+    next();
   }, [recordTranscript]);
 
   // Start/resume audio whenever state becomes 'playing'
@@ -364,15 +395,6 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
     return () => clearTimeout(id);
   }, [state, autoPrompt, beginPromptRecording]);
 
-  const next = useCallback(() => {
-    setGrade(null);
-    setTranscript(null);
-    resetRecording();
-    setAudioProgress(0);
-    setAudioCurrentTime(0);
-    advanceOrComplete(playIdx);
-  }, [playIdx, advanceOrComplete, resetRecording]);
-
   const retry = useCallback(() => {
     // Jump straight back into recording rather than the idle "your turn" prompt,
     // so the learner doesn't have to press the mic again.
@@ -494,5 +516,5 @@ export function useGeneratedLessonPlayer(lesson: GeneratedLesson): FakePlayer {
   // play instead of dropping back to the start of it.
   const elapsedSeconds = completedSecs + audioProgress * (playSecs[playIdx] ?? 0);
 
-  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, elapsedSeconds, totalSeconds, regenerating, play, pause, record, next, retry, seek, ask, submitQuestion, playCorrect, grade };
+  return { state, progress, promptIdx: playIdx, subtitleIdx, transcript, audioProgress, audioCurrentTime, elapsedSeconds, totalSeconds, regenerating, play, pause, record, next, retry, seek, ask, submitQuestion, playCorrect, grade, results };
 }

@@ -2,6 +2,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { LESSON, SUBTITLE_LINES } from '@/lib/data';
 import type { LessonGrade, PlayerState } from '@/lib/types';
+import type { GradedResponse } from '@/lib/lesson-review';
 
 export interface FakePlayer {
   state: PlayerState;
@@ -24,6 +25,7 @@ export interface FakePlayer {
   submitQuestion: () => void;
   playCorrect?: () => void;
   grade?: LessonGrade | null;
+  results?: GradedResponse[]; // generated-lesson player only: this session's graded responses
 }
 
 export function useFakePlayer(): FakePlayer {

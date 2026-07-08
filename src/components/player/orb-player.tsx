@@ -6,6 +6,8 @@ import { Scrubber } from '@/components/ui/scrubber';
 import { OrbWithSections } from './orb-with-sections';
 import { UserResponseAnalysis } from './user-response-analysis';
 import { KaraokeTranscript } from './karaoke-transcript';
+import { SessionReview } from './session-review';
+import { reviewCount } from '@/lib/lesson-review';
 import { LESSON, SECTIONS, SUBTITLE_LINES } from '@/lib/data';
 import { useAppStore } from '@/lib/store';
 import { SPANISH_SPEEDS, formatSpeed } from '@/lib/speed';
@@ -61,6 +63,7 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
   const prompt = prompts[p.promptIdx];
   const activeSection = sections.find((s) => p.progress >= s.pct && p.progress < s.end) || sections[0];
   const displaySection = hoverSection != null ? sections.find((s) => s.id === hoverSection) : activeSection;
+  const reviewNum = reviewCount(p.results ?? []);
 
   const elapsedSec  = p.elapsedSeconds ?? (p.progress * 25 * 60);
   const totalSec    = p.totalSeconds   ?? (25 * 60);
@@ -119,7 +122,13 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
             <span className="mono" style={{ fontSize: 11, color: 'var(--mute-2)' }}>
               {p.regenerating
                 ? <span style={{ color: 'var(--warm)' }}>Adjusting speed…</span>
-                : <>{Math.round(p.progress * 100)}% · section {String(activeSection?.id ?? 1).padStart(2, '0')} of {String(sections.length).padStart(2, '0')}</>}
+                : (
+                  <>
+                    {Math.round(p.progress * 100)}% · section {String(activeSection?.id ?? 1).padStart(2, '0')} of {String(sections.length).padStart(2, '0')}
+                    {/* Subtle miss counter — the only mid-lesson trace of background grading */}
+                    {reviewNum > 0 && <> · <span style={{ color: 'var(--warm)' }}>{reviewNum} to review</span></>}
+                  </>
+                )}
             </span>
           </div>
           <button
@@ -269,14 +278,18 @@ export function OrbPlayer({ p, customSections, customPrompts, customSubtitles, c
             </p>
           )}
 
-          {/* Complete */}
+          {/* Complete — end-of-lesson review of every response the cruise skipped past */}
           {p.state === 'complete' && (
-            <div className="col gap-4 fade-in" style={{ alignItems: 'center', marginTop: 24 }}>
-              <h2 className="ty-h1">Buen laburo.</h2>
-              <button className="btn btn-primary btn-lg" onClick={() => router.push('/report')}>
-                See your report <Icons.arrow />
-              </button>
-            </div>
+            p.results
+              ? <SessionReview results={p.results} onSeeReport={() => router.push('/report')} />
+              : (
+                <div className="col gap-4 fade-in" style={{ alignItems: 'center', marginTop: 24 }}>
+                  <h2 className="ty-h1">Buen laburo.</h2>
+                  <button className="btn btn-primary btn-lg" onClick={() => router.push('/report')}>
+                    See your report <Icons.arrow />
+                  </button>
+                </div>
+              )
           )}
         </div>
 
