@@ -59,21 +59,21 @@ describe('scribeDurationSec', () => {
 });
 
 describe('resolveProvider', () => {
-  it('defaults to whisper when nothing is set', () => {
+  it('defaults to elevenlabs when nothing is set (benchmark winner, 2026-07)', () => {
     delete process.env.TRANSCRIBE_PROVIDER;
-    expect(resolveProvider()).toBe('whisper');
-  });
-  it('reads TRANSCRIBE_PROVIDER=elevenlabs', () => {
-    process.env.TRANSCRIBE_PROVIDER = 'elevenlabs';
     expect(resolveProvider()).toBe('elevenlabs');
   });
-  it('explicit argument wins over the env', () => {
+  it('reads TRANSCRIBE_PROVIDER=whisper to opt back out', () => {
     process.env.TRANSCRIBE_PROVIDER = 'whisper';
-    expect(resolveProvider('elevenlabs')).toBe('elevenlabs');
-  });
-  it('falls back to whisper on unknown values', () => {
-    process.env.TRANSCRIBE_PROVIDER = 'deepgram';
     expect(resolveProvider()).toBe('whisper');
-    expect(resolveProvider('nonsense')).toBe('whisper');
+  });
+  it('explicit argument wins over the env', () => {
+    process.env.TRANSCRIBE_PROVIDER = 'elevenlabs';
+    expect(resolveProvider('whisper')).toBe('whisper');
+  });
+  it('falls back to the elevenlabs default on unknown values', () => {
+    process.env.TRANSCRIBE_PROVIDER = 'deepgram';
+    expect(resolveProvider()).toBe('elevenlabs');
+    expect(resolveProvider('nonsense')).toBe('elevenlabs');
   });
 });

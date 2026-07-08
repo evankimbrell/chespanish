@@ -2,11 +2,16 @@ import OpenAI from 'openai';
 import type { WordTiming } from './types';
 
 // Provider-agnostic speech-to-text. Two backends:
-//  - 'whisper'    — OpenAI whisper-1 (current default)
-//  - 'elevenlabs' — ElevenLabs Scribe (scribe_v1), reportedly more verbatim
-// Select globally with TRANSCRIBE_PROVIDER=elevenlabs, or per call (the benchmark
-// endpoint runs both). ElevenLabs failures fall back to Whisper so a provider outage
-// can never break lessons.
+//  - 'elevenlabs' — ElevenLabs Scribe (scribe_v1), current default. On a synthetic
+//                   Rioplatense benchmark (2026-07, /api/transcribe-bench over 8 TTS
+//                   clips) it beat Whisper on accuracy (WER 0.03 vs 0.10), latency
+//                   (median 800ms vs 2000ms), and verbatim-ness — it kept fillers and
+//                   false starts ("eh, bueno, yo, yo quería, este") where Whisper
+//                   deleted them, and wrote numbers as words, not digits.
+//  - 'whisper'    — OpenAI whisper-1, the previous default.
+// Select globally with TRANSCRIBE_PROVIDER=whisper|elevenlabs, or per call (the
+// benchmark endpoint runs both). ElevenLabs failures fall back to Whisper so a
+// provider outage can never break lessons.
 
 export type TranscriptionProvider = 'whisper' | 'elevenlabs';
 
@@ -20,8 +25,8 @@ export interface TranscriptionResult {
 }
 
 export function resolveProvider(explicit?: string | null): TranscriptionProvider {
-  const v = (explicit ?? process.env.TRANSCRIBE_PROVIDER ?? 'whisper').toLowerCase().trim();
-  return v === 'elevenlabs' ? 'elevenlabs' : 'whisper';
+  const v = (explicit ?? process.env.TRANSCRIBE_PROVIDER ?? 'elevenlabs').toLowerCase().trim();
+  return v === 'whisper' ? 'whisper' : 'elevenlabs';
 }
 
 // ── ElevenLabs Scribe ────────────────────────────────────────────────────────
