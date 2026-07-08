@@ -6,6 +6,7 @@ import { useAppStore } from '@/lib/store';
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Home',     match: ['/dashboard', '/builder', '/preview', '/player', '/report'] },
   { href: '/lessons',   label: 'Lessons',  match: ['/lessons'] },
+  { href: '/vocab',     label: 'Vocab',    match: ['/vocab'] },
   { href: '/mistakes',  label: 'Mistakes', match: ['/mistakes'] },
   { href: '/settings',  label: 'Settings', match: ['/settings'] },
 ];

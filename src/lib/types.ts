@@ -431,3 +431,71 @@ export interface GeneratedLesson {
   totalCount?: number;      // full parsed play count (may be > plays.length while loading)
   allPlayMeta?: PlayMeta[]; // lightweight metadata for all plays — no audio URLs
 }
+
+// ── Vocab / SRS (Anki-style spaced repetition) ───────────────────────────────
+
+export type VocabGrade = 'again' | 'hard' | 'good' | 'easy';
+export type VocabCardState = 'new' | 'learning' | 'review' | 'relearning';
+// recognize = ES shown, reveal EN; recall = EN shown, learner SPEAKS the Spanish
+export type VocabDirection = 'recognize' | 'recall';
+export type DeckDirectionSetting = 'both' | 'recognize' | 'recall';
+
+export interface VocabNote {
+  id: string;            // stable slug of the Spanish + suffix
+  es: string;
+  en: string;
+  example?: string;      // Spanish example sentence
+  exampleEn?: string;
+  tags: string[];
+  imageUrl?: string;     // '/vocab-images/…' — user-filled; generation leaves empty
+}
+
+export interface VocabCard {
+  id: string;            // `${noteId}:recognize` | `${noteId}:recall`
+  noteId: string;
+  direction: VocabDirection;
+  state: VocabCardState;
+  due: string;           // ISO timestamp; new cards are due immediately
+  intervalDays: number;  // 0 while in (re)learning
+  ease: number;
+  reps: number;
+  lapses: number;
+  stepIndex: number;     // index into learning/relearning steps
+}
+
+export interface VocabDeck {
+  id: string;            // 'core' | 'mistakes' | 'lunfardo' | `user-${ts}`
+  name: string;
+  description: string;
+  source: string;        // display string, e.g. 'Generated from your lessons + level'
+  direction: DeckDirectionSetting;
+  createdAt: string;
+  notes: VocabNote[];
+  cards: VocabCard[];
+}
+
+// data/vocab/[safeName].json
+export interface VocabStore {
+  version: 1;
+  setupCompleted: boolean;
+  setupMethod?: 'auto' | 'upload';
+  decks: VocabDeck[];
+}
+
+// One JSONL line in data/vocab-reviews/[safeName].jsonl — feeds retention/streak/forecast
+export interface VocabReviewRecord {
+  at: string;            // ISO, server time
+  deckId: string;
+  cardId: string;
+  noteId: string;
+  direction: VocabDirection;
+  grade: VocabGrade;
+  prevState: VocabCardState;
+  prevIntervalDays: number;
+  newState: VocabCardState;
+  newIntervalDays: number;
+  newDue: string;
+  heard?: string;        // recall cards: what STT transcribed
+  verdict?: 'match' | 'no_match';
+  tookMs?: number;
+}
