@@ -22,9 +22,12 @@ swap_size_mb = 512
 [http_service]
   internal_port = 3000
   force_https = true
-  auto_stop_machines = "suspend"
+  # Always-on. Idle stop looked thrifty but cost ~9s of cold boot on the first
+  # button press after every listening stretch (with swap enabled Fly can't
+  # suspend, so "suspend" degraded to a full stop). ~$6/mo buys instant taps.
+  auto_stop_machines = "off"
   auto_start_machines = true
-  min_machines_running = 0
+  min_machines_running = 1
 
   # Fly's default 60s idle timeout would kill lesson/audio + vocab/generate, which
   # legitimately send no bytes for 2-4 minutes while batching ElevenLabs/GPT calls.
