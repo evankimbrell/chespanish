@@ -1,0 +1,22 @@
+# Build + deploy to Fly.io on every push to main.
+# Runs in CI because the dev sandbox can't fetch the flyctl binary (GitHub access
+# there is scoped to this repo). App, volume, and secrets are managed directly via
+# Fly's APIs; this workflow only builds the image and releases it.
+name: Fly Deploy
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency: fly-deploy # never two deploys racing for the single machine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      # --ha=false is load-bearing: the default creates a second machine, which
+      # would have no volume and 500 on every write.
+      - run: flyctl deploy --ha=false --build-arg GIT_SHA=${GITHUB_SHA::12}
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
