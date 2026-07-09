@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { scribeWordsToTimings, scribeDurationSec, resolveProvider } from './transcription';
+import { scribeWordsToTimings, scribeDurationSec, resolveProvider, isExpectedEsEn } from './transcription';
 
 const ORIGINAL = process.env.TRANSCRIBE_PROVIDER;
 afterEach(() => {
@@ -75,5 +75,23 @@ describe('resolveProvider', () => {
     process.env.TRANSCRIBE_PROVIDER = 'deepgram';
     expect(resolveProvider()).toBe('elevenlabs');
     expect(resolveProvider('nonsense')).toBe('elevenlabs');
+  });
+});
+
+describe('isExpectedEsEn', () => {
+  it('accepts both providers’ Spanish/English labels', () => {
+    for (const l of ['es', 'en', 'spa', 'eng', 'spanish', 'english', 'Spanish', 'ENG']) {
+      expect(isExpectedEsEn(l)).toBe(true);
+    }
+  });
+  it('treats absent/blank detection as expected (no retry on uncertainty)', () => {
+    expect(isExpectedEsEn(null)).toBe(true);
+    expect(isExpectedEsEn(undefined)).toBe(true);
+    expect(isExpectedEsEn('  ')).toBe(true);
+  });
+  it('flags confident foreign detections (Scribe hallucinations)', () => {
+    for (const l of ['swe', 'swedish', 'est', 'de', 'french', 'por']) {
+      expect(isExpectedEsEn(l)).toBe(false);
+    }
   });
 });

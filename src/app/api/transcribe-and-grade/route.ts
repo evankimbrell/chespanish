@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import type { Question } from '@/lib/types';
-import { transcribeAudio } from '@/lib/transcription';
+import { transcribeAudio, isExpectedEsEn } from '@/lib/transcription';
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -20,7 +20,16 @@ async function runTranscription(audio: File, forceLang?: string): Promise<Transc
   // `language` is only forced on the Slavic-garble retry. whisperPrime:false keeps the
   // level test's historical behavior of never passing a Whisper prompt (a prime could
   // mask wrong-language errors the test needs to see).
-  const result = await transcribeAudio(audio, { language: forceLang, whisperPrime: false });
+  let result = await transcribeAudio(audio, { language: forceLang, whisperPrime: false });
+  // Scribe's auto-detect can hallucinate an unrelated language on short/noisy mic
+  // clips (seen live: an English answer transcribed as Swedish). Learners here only
+  // ever speak Spanish or English, so any other confident detection is a
+  // misdetection — retry on Whisper auto-detect, whose own failure mode (Slavic
+  // garble on Spanish audio) is caught by the SLAVIC_RE retry downstream.
+  if (!forceLang && !isExpectedEsEn(result.detectedLanguage)) {
+    console.warn(`[transcribe-and-grade] unexpected language "${result.detectedLanguage}" from ${result.provider} — retrying with whisper`);
+    result = await transcribeAudio(audio, { provider: 'whisper', whisperPrime: false });
+  }
   return { text: result.text, words: result.words, detectedLanguage: result.detectedLanguage };
 }
 
@@ -288,31 +297,43 @@ Skipped: false
 
 Prompt ID to echo back: ${q.prompt_id}`;
 
-        const tGrade = Date.now();
-        const completion = await getOpenAI().chat.completions.create({
-          model: 'gpt-5.5',
-          response_format: { type: 'json_object' },
-          max_completion_tokens: 1500,
-          // Minimal reasoning keeps per-answer grading fast (low/medium added 20–30s of
-          // latency before the learner could move on). The detailed rubric in the prompt
-          // carries the nuance; if placement quality dips, raise this to 'low'.
-          reasoning_effort: 'minimal',
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: userMessage },
-          ],
-        });
-        console.log(`[transcribe-and-grade] grade ${Date.now() - tGrade}ms | reasoning ${completion.usage?.completion_tokens_details?.reasoning_tokens ?? 0} tok`);
-
-        const raw = completion.choices[0]?.message?.content ?? '{}';
-        // eslint-disable-next-line prefer-const
-        let parsed: Record<string, unknown> = {};
-        try {
-          parsed = JSON.parse(raw);
-        } catch {
-          // Truncated JSON (token limit hit) — emit what we can and bail gracefully
-          console.error('[transcribe-and-grade] JSON parse failed (token limit?), raw:', raw.slice(0, 200));
-          send({ type: 'error', message: 'Grading response was truncated — increase max_completion_tokens or simplify prompt' });
+        // 'none' is the fast tier ('minimal' was removed from gpt-5.5 and 400s —
+        // which silently broke ALL level-test grading until 2026-07-09). Escalate
+        // to 'low' on any error, empty output, or unparseable JSON before giving
+        // up, mirroring lesson/grade. Generous token budget: reasoning + the large
+        // grade JSON both count against it.
+        let parsed: Record<string, unknown> | null = null;
+        for (const effort of ['none', 'low'] as const) {
+          try {
+            const tGrade = Date.now();
+            const completion = await getOpenAI().chat.completions.create({
+              model: 'gpt-5.5',
+              response_format: { type: 'json_object' },
+              max_completion_tokens: 3000,
+              reasoning_effort: effort,
+              messages: [
+                { role: 'system', content: SYSTEM_PROMPT },
+                { role: 'user', content: userMessage },
+              ],
+            });
+            console.log(`[transcribe-and-grade] grade ${Date.now() - tGrade}ms | effort ${effort} | reasoning ${completion.usage?.completion_tokens_details?.reasoning_tokens ?? 0} tok`);
+            const raw = completion.choices[0]?.message?.content;
+            if (!raw) {
+              console.warn(`[transcribe-and-grade] empty grade content (effort=${effort})`);
+              continue;
+            }
+            try {
+              parsed = JSON.parse(raw);
+              break;
+            } catch {
+              console.warn(`[transcribe-and-grade] grade JSON parse failed (effort=${effort}), raw: ${raw.slice(0, 200)}`);
+            }
+          } catch (e) {
+            console.error(`[transcribe-and-grade] grade error (effort=${effort}):`, e instanceof Error ? e.message : e);
+          }
+        }
+        if (!parsed) {
+          send({ type: 'error', message: 'Grading failed after retries' });
           return;
         }
         const score = Math.max(0, Math.min(5, Number(parsed.overall_score) || 0)) as 0 | 1 | 2 | 3 | 4 | 5;

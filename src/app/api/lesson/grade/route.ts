@@ -84,12 +84,11 @@ export async function POST(req: Request) {
   const modelAnswer = spanishText || '(not available — infer from context)';
   const userContent = buildGradeUserMessage({ modelAnswer, altAnswer, transcript, prevText, playText, nextText, sectionName });
 
-  // gpt-5.5 at reasoning 'minimal' is fast, but with this longer rubric it sometimes
-  // returns empty/truncated output (no JSON) — which previously fell straight through to
-  // the fallback ("Grading was unavailable"). Try 'minimal' first for speed, then escalate
-  // to 'low' for reliability, before giving up. max_completion_tokens covers reasoning +
-  // JSON, so keep generous headroom (empty output = budget exhausted before any JSON).
-  for (const effort of ['minimal', 'low'] as const) {
+  // 'none' is gpt-5.5's fast tier ('minimal' was removed from the API and 400s).
+  // Fast-tier grading can return empty/truncated output with this long rubric, so
+  // escalate to 'low' for reliability before giving up. max_completion_tokens covers
+  // reasoning + JSON, so keep generous headroom (empty output = budget exhausted).
+  for (const effort of ['none', 'low'] as const) {
     const t0 = Date.now();
     try {
       const completion = await getOpenAI().chat.completions.create({
@@ -108,7 +107,7 @@ export async function POST(req: Request) {
       const content = choice?.message?.content;
       console.log(`[lesson/grade] ${Date.now() - t0}ms | effort ${effort} | finish ${finish} | reasoning ${reasoningTokens} tok | output ${completion.usage?.completion_tokens ?? 0} tok`);
       if (!content) {
-        console.warn(`[lesson/grade] empty content (effort=${effort}, finish=${finish}) — ${effort === 'minimal' ? 'escalating to low' : 'giving up'}`);
+        console.warn(`[lesson/grade] empty content (effort=${effort}, finish=${finish}) — ${effort === 'none' ? 'escalating to low' : 'giving up'}`);
         continue;
       }
       try {

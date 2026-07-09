@@ -8,7 +8,7 @@ import { useTTS } from '@/hooks/use-tts';
 import { useRecording } from '@/hooks/use-recording';
 import { useAppStore } from '@/lib/store';
 import {
-  initEngine, selectNextQuestion, updateEngine,
+  initEngine, selectNextQuestion, updateEngine, advanceWithoutEvidence,
   shouldStopTest, generateFinalReport, mapScoreToDisplayLevel,
   calculateEvidenceScore,
 } from '@/lib/test-engine';
@@ -301,8 +301,14 @@ export default function LevelTestPage() {
     addPromptResult(result);
     setPromptResults(newPromptResults);
 
-    const score = gradeResult?.overall_score ?? 3;
-    const newEngine = updateEngine(engine, score, result, question);
+    // A missing grade (grading errored server-side) is missing EVIDENCE, not a
+    // passing answer. The old `?? 3` default here scored every failed grade as
+    // "Good", so an outage sent the difficulty ladder climbing no matter what the
+    // learner actually said. Advance the test without moving the estimate instead.
+    const score = gradeResult?.overall_score ?? null;
+    const newEngine = score != null
+      ? updateEngine(engine, score, result, question)
+      : advanceWithoutEvidence(engine, question);
 
     if (shouldStopTest(newEngine, newPromptResults)) {
       const report = generateFinalReport(newEngine, newPromptResults);

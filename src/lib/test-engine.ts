@@ -5,12 +5,16 @@ import type {
 
 // ── Ability scale mapping ──────────────────────────────────────────────────
 
+// Seeds sit at the CENTROID of each claimed band in the question bank, not the top
+// edge. The old top-edge values (4.2/6.2/8.2) landed in empty gaps of the bank's
+// difficulty distribution, and the ±1.0 early-calibration window then straddled a
+// full band upward — "I've studied a little" could draw a B1- first question.
 const COMFORT_TO_ABILITY: Record<number, number> = {
   0: 0.5,  // brand new → skip test (Pre-A1)
   1: 2.2,  // few words → A1
-  2: 4.2,  // studied a little → A2
-  3: 6.2,  // basic conversations → B1
-  4: 8.2,  // pretty comfortable → B2
+  2: 3.5,  // studied a little → mid-A2 (bank A2 questions cluster 3.2–3.8)
+  3: 5.5,  // basic conversations → mid-B1 (bank B1- / B1 cluster 5.2–5.8)
+  4: 7.5,  // pretty comfortable → mid-B2 (bank B2- / B2 cluster 7.2–7.8)
   5: 9.5,  // advanced → C1
 };
 
@@ -276,6 +280,28 @@ export function updateEngine(
     lastUsedTranscriptHelp: usedTranscriptHelp,
     lastWasSlow: responseWasSlow,
     lastWasSkipped: wasSkipped,
+  };
+}
+
+// Advance past a question that produced NO usable grade (grading failed server-side).
+// A missing grade is missing evidence — it must never move the ability estimate,
+// difficulty target, streaks, or skills. Only bookkeeping advances, so the test
+// continues and this question isn't re-asked.
+export function advanceWithoutEvidence(state: TestEngineState, lastQuestion: Question): TestEngineState {
+  const newCoverage = { ...state.skillCoverage };
+  const skillKey = PROMPT_TYPE_TO_SKILL[lastQuestion.prompt_type];
+  newCoverage[skillKey] = (newCoverage[skillKey] ?? 0) + 1;
+  const newPromptCount = state.promptCount + 1;
+  return {
+    ...state,
+    askedIds: [...state.askedIds, lastQuestion.prompt_id],
+    recentTypes: [...state.recentTypes.slice(-2), lastQuestion.prompt_type],
+    promptCount: newPromptCount,
+    skillCoverage: newCoverage,
+    confidence: deriveConfidence(newPromptCount, state.consecutiveHighScores, state.consecutiveLowScores, newCoverage),
+    lastUsedTranscriptHelp: false,
+    lastWasSlow: false,
+    lastWasSkipped: false,
   };
 }
 

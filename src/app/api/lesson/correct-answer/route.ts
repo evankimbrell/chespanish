@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   });
 
   // Small focused call; escalate reasoning if the first attempt comes back empty.
-  for (const effort of ['minimal', 'low'] as const) {
+  for (const effort of ['none', 'low'] as const) { // 'minimal' was removed from gpt-5.5 (400s)
     try {
       const completion = await getOpenAI().chat.completions.create({
         model: 'gpt-5.5',

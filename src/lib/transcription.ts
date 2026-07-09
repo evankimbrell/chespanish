@@ -24,6 +24,18 @@ export interface TranscriptionResult {
   detectedLanguage?: string;
 }
 
+// Learners in this app only ever speak Spanish or English. Whisper reports full
+// names ('spanish'/'english'); Scribe reports ISO codes ('spa'/'eng', sometimes
+// 'es'/'en'). Anything else is a confident misdetection (Scribe has hallucinated
+// Swedish for English mic audio); absent/unknown counts as expected — only a
+// confident foreign label should trigger a retry.
+const EXPECTED_LANGS = new Set(['es', 'en', 'spa', 'eng', 'spanish', 'english']);
+
+export function isExpectedEsEn(lang: string | null | undefined): boolean {
+  if (!lang || !lang.trim()) return true;
+  return EXPECTED_LANGS.has(lang.trim().toLowerCase());
+}
+
 export function resolveProvider(explicit?: string | null): TranscriptionProvider {
   const v = (explicit ?? process.env.TRANSCRIBE_PROVIDER ?? 'elevenlabs').toLowerCase().trim();
   return v === 'whisper' ? 'whisper' : 'elevenlabs';
