@@ -10,7 +10,13 @@ export const maxDuration = 300; // 4 sequential gpt-5.5 calls — must not hit t
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
-  if (!_openai) _openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+  if (!_openai) _openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY!,
+    // Bound the worst case: SDK defaults (600s timeout x 3 attempts) can hold a
+    // report stream hostage for 30 minutes if a connection black-holes.
+    timeout: 240_000,
+    maxRetries: 1,
+  });
   return _openai;
 }
 

@@ -112,6 +112,9 @@ export default function LevelResultPage() {
   const [localSession, setLocalSession] = useState<LevelTestSession | null>(null);
   const [reportSaved, setReportSaved] = useState(false);
   const [fetchedDiag, setFetchedDiag] = useState<DiagnosticReport | null>(null);
+  // Stream died (deploys sever in-flight streams; networks drop) — offer a retry
+  // instead of spinning forever.
+  const [diagFailed, setDiagFailed] = useState(false);
 
   useEffect(() => {
     if (!storeSession) {
@@ -133,15 +136,21 @@ export default function LevelResultPage() {
 
     // The report is streamed (NDJSON): the diagnostic arrives well before the slow
     // lesson transcript, so we show it the moment it lands instead of waiting for the
-    // whole chain.
+    // whole chain. A watchdog aborts if the diagnostic hasn't landed in 3 minutes
+    // (normal arrival is well under 1) so a severed stream surfaces a retry.
+    setDiagFailed(false);
+    let gotDiag = false;
+    const ac = new AbortController();
+    const watchdog = setTimeout(() => { if (!gotDiag) ac.abort(); }, 180_000);
     (async () => {
       try {
         const res = await fetch('/api/report/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ session, userName: profile.name }),
+          signal: ac.signal,
         });
-        if (!res.body) return;
+        if (!res.body) { setDiagFailed(true); return; }
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buf = '';
@@ -161,9 +170,12 @@ export default function LevelResultPage() {
               if (newLevel) setProfile({ level: newLevel });
             } else if (msg.type === 'diagnostic') {
               if (msg.diagnosticReport) {
+                gotDiag = true;
                 setFetchedDiag(msg.diagnosticReport as DiagnosticReport);
                 setDiagnosticReport(msg.diagnosticReport as DiagnosticReport);
               }
+            } else if (msg.type === 'error') {
+              console.error('[level-result] report generation error:', msg.message);
             } else if (msg.type === 'done') {
               if (msg.lessonTranscript) {
                 setGeneratedLesson({
@@ -180,12 +192,18 @@ export default function LevelResultPage() {
             }
           }
         }
-      } catch { /* leave the fallback path */ }
+        // Stream ended without ever delivering a diagnostic — treat as failed.
+        if (!gotDiag) setDiagFailed(true);
+      } catch {
+        if (!gotDiag) setDiagFailed(true);
+      } finally {
+        clearTimeout(watchdog);
+      }
     })();
   }, [session, reportSaved, profile.name]);
 
   // Spinner shows once generation has been kicked off until the report arrives.
-  const diagPending = reportSaved && !diag;
+  const diagPending = reportSaved && !diag && !diagFailed;
   const report: TestReport | null = session?.report ?? null;
 
   // Derived display values
@@ -224,6 +242,15 @@ export default function LevelResultPage() {
             <div style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '28px', display: 'flex', alignItems: 'center', gap: 12 }}>
               <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
               <span className="small" style={{ color: 'var(--mute)' }}>Analyzing your responses and writing your diagnostic report…</span>
+            </div>
+          ) : diagFailed ? (
+            <div style={{ border: '1px solid var(--line)', borderRadius: 6, padding: '28px', display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+              <span className="small" style={{ color: 'var(--mute)', flex: 1, minWidth: 240 }}>
+                The connection dropped while writing your diagnostic report. Your test results are safe — try again.
+              </span>
+              <button className="btn btn-primary btn-sm" onClick={() => setReportSaved(false)}>
+                Retry report
+              </button>
             </div>
           ) : null}
 
