@@ -1,11 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import type { LessonActivityRecord } from '@/lib/types';
+import * as dp from '@/lib/data-paths';
 
 // Per-user, append-only activity log of in-lesson responses and questions.
 // Stored as JSONL (one JSON record per line) so concurrent appends never clobber
 // each other (no read-modify-write) and the file grows cheaply.
-const ACTIVITY_DIR = path.join(process.cwd(), 'data', 'activity');
+const ACTIVITY_DIR = dp.ACTIVITY_DIR;
 
 function safeName(name: string): string {
   return (name || 'student').toLowerCase().replace(/[^a-z0-9]/g, '-') || 'student';

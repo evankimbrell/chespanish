@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import * as dp from '@/lib/data-paths';
 
 function safeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '-');
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
   // level — from most recent report with a testReport
   let level: string | null = null;
   try {
-    const reportsDir = path.join(process.cwd(), 'data/reports');
+    const reportsDir = dp.REPORTS_DIR;
     if (fs.existsSync(reportsDir)) {
       const files = fs.readdirSync(reportsDir)
         .filter((f) => f.endsWith('.json') && f.startsWith(safeName(user) + '-'))

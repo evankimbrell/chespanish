@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import * as dp from '@/lib/data-paths';
 
 function safeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '-');
@@ -8,8 +9,8 @@ function safeName(name: string) {
 export async function GET(_req: Request, { params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
   const key = safeName(name);
-  const reportsDir = path.join(process.cwd(), 'data/reports');
-  const lessonsDir = path.join(process.cwd(), 'data/lessons');
+  const reportsDir = dp.REPORTS_DIR;
+  const lessonsDir = dp.LESSONS_DIR;
 
   // Find latest report for this user
   let levelTest = null;

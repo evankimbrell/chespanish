@@ -2,8 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import OpenAI from 'openai';
 import type { TestRun } from '@/lib/testing/types';
+import * as dp from '@/lib/data-paths';
 
-const RUNS_DIR = path.join(process.cwd(), 'data', 'test-runs');
+const RUNS_DIR = dp.TEST_RUNS_DIR;
 const SRC_ROOT = path.join(process.cwd(), 'src');
 
 let _openai: OpenAI | null = null;
@@ -45,6 +46,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ runId: string }> }
 ) {
+  // This route edits files under src/ — meaningful in dev, where the running code
+  // is the working tree. In production the container's src/ isn't even what runs
+  // (standalone build), so applying "fixes" there is pure confusion. Refuse.
+  if (process.env.NODE_ENV === 'production') {
+    return Response.json({ error: 'apply-fix is disabled in production' }, { status: 403 });
+  }
   const { runId } = await params;
   const runFile = path.join(RUNS_DIR, `${runId}.json`);
 

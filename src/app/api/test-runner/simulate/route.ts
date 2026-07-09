@@ -5,6 +5,7 @@ import type { SimulationRun, SimulationPrompt, StudentPersona } from '@/lib/test
 import type { PromptResult, ComfortLevel } from '@/lib/types';
 import { generateLessonDesignBrief } from '@/lib/lesson-design';
 import { buildDiagnosticInput, generateDiagnosticReport, diagnosticFallback } from '@/lib/diagnostic-report';
+import * as dp from '@/lib/data-paths';
 import {
   initEngine, selectNextQuestion, updateEngine, shouldStopTest,
   generateFinalReport, calculateEvidenceScore,
@@ -18,7 +19,7 @@ function getOpenAI() {
   return _openai;
 }
 
-const RUNS_DIR = path.join(process.cwd(), 'data', 'test-runs');
+const RUNS_DIR = dp.TEST_RUNS_DIR;
 
 function saveRun(run: SimulationRun) {
   fs.mkdirSync(RUNS_DIR, { recursive: true });

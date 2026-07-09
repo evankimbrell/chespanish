@@ -8,6 +8,7 @@ import { normalizeSpanish } from '@/lib/vocab-match';
 import { createCardsForNote } from '@/lib/srs';
 import { LUNFARDO_DECK } from '@/lib/lunfardo-deck';
 import { readStore, writeStore, noteIdFor, safeName } from '../store';
+import * as dp from '@/lib/data-paths';
 
 export const maxDuration = 300; // two gpt-5.5 calls generating ~150 JSON notes
 
@@ -23,9 +24,9 @@ function getOpenAI() {
   return _openai;
 }
 
-const REPORTS_DIR = path.join(process.cwd(), 'data', 'reports');
-const LESSONS_DIR = path.join(process.cwd(), 'data', 'lessons');
-const ACTIVITY_DIR = path.join(process.cwd(), 'data', 'activity');
+const REPORTS_DIR = dp.REPORTS_DIR;
+const LESSONS_DIR = dp.LESSONS_DIR;
+const ACTIVITY_DIR = dp.ACTIVITY_DIR;
 
 function readLevel(user: string): string {
   try {

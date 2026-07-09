@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
+import * as dp from '@/lib/data-paths';
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -22,7 +23,7 @@ Wrap related groups of content in <section name="3-5 word label"> and </section>
 
 Generate the lesson. Do not include any other text other than the lesson transcript. The English voice should never read Spanish. In the closing, do NOT preview or promise what the next lesson/session will cover (lessons are generated fresh each time, so the next topic is unknown) — never say things like "next time you will…".`;
 
-const REPORTS_DIR = path.join(process.cwd(), 'data', 'reports');
+const REPORTS_DIR = dp.REPORTS_DIR;
 
 function getUserReport(userName: string): { lessonTranscript?: string; title?: string } | null {
   if (!fs.existsSync(REPORTS_DIR)) return null;

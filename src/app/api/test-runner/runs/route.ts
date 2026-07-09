@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import type { TestRun, SimulationRun } from '@/lib/testing/types';
+import * as dp from '@/lib/data-paths';
 
-const RUNS_DIR = path.join(process.cwd(), 'data', 'test-runs');
+const RUNS_DIR = dp.TEST_RUNS_DIR;
 
 function ensureDir() {
   fs.mkdirSync(RUNS_DIR, { recursive: true });
@@ -75,7 +76,7 @@ export async function DELETE() {
   for (const f of files) fs.unlinkSync(path.join(RUNS_DIR, f));
 
   // Also clean up test audio files
-  const audioDir = path.join(process.cwd(), 'public', 'test-audio');
+  const audioDir = dp.MEDIA_TEST_AUDIO_DIR;
   if (fs.existsSync(audioDir)) {
     for (const f of fs.readdirSync(audioDir)) {
       try { fs.unlinkSync(path.join(audioDir, f)); } catch {}

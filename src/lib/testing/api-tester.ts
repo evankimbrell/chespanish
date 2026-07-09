@@ -32,6 +32,8 @@ export async function runScenario(
 
     const res = await fetch(`${baseUrl}/api/transcribe-and-grade`, {
       method: 'POST',
+      // Server-to-self call must pass the deployment's access gate (src/proxy.ts).
+      headers: { 'x-access-code': process.env.ACCESS_CODE ?? '' },
       body: fd,
     });
 

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import type { WordTiming, PlayMeta } from '@/lib/types';
 import { NARRATOR_VOICE_ID, SPANISH_MALE_VOICE_ID, SPANISH_FEMALE_VOICE_ID } from '@/lib/voices';
+import * as dp from '@/lib/data-paths';
 
 export const maxDuration = 300; // 5-minute timeout for long lessons
 
@@ -297,7 +298,7 @@ export async function POST(req: Request) {
     const safeUser = (userName ?? 'student').toLowerCase().replace(/[^a-z0-9]/g, '-');
     const timestamp = startIdx === 0 ? Date.now() : undefined;
     // On subsequent calls, derive timestamp from existing files to keep consistent naming
-    const lessonsDir = path.join(process.cwd(), 'public', 'lessons');
+    const lessonsDir = dp.MEDIA_LESSONS_DIR;
     fs.mkdirSync(lessonsDir, { recursive: true });
 
     // On first call, find a new timestamp; on subsequent calls, caller passes userName and we reuse the pattern

@@ -33,6 +33,17 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# runtime data (lives on the volume in prod; data/reports and data/media/lessons
+# stay tracked as fixtures/seed)
+/data/activity/
+/data/lessons/
+/data/next-briefs/
+/data/test-runs/
+/data/vocab/
+/data/vocab-reviews/
+/data/media/vocab-images/
+/data/media/test-audio/
+
 # vercel
 .vercel
 

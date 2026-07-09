@@ -2,8 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import type { LessonActivityRecord } from '@/lib/types';
 import { aggregateMistakes } from '@/lib/common-mistakes';
+import * as dp from '@/lib/data-paths';
 
-const ACTIVITY_DIR = path.join(process.cwd(), 'data', 'activity');
+const ACTIVITY_DIR = dp.ACTIVITY_DIR;
 
 function safeName(name: string): string {
   return (name || 'student').toLowerCase().replace(/[^a-z0-9]/g, '-') || 'student';

@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import type { TestRun } from '@/lib/testing/types';
+import * as dp from '@/lib/data-paths';
 
-const RUNS_DIR = path.join(process.cwd(), 'data', 'test-runs');
+const RUNS_DIR = dp.TEST_RUNS_DIR;
 
 export async function GET(
   _req: Request,

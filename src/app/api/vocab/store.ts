@@ -1,13 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import type { VocabReviewRecord, VocabStore } from '@/lib/types';
+import * as dp from '@/lib/data-paths';
 
 // Shared persistence helpers for the vocab API routes (not a route itself).
 // Store: data/vocab/[safeName].json (read-modify-write, like lesson/history).
 // Review log: data/vocab-reviews/[safeName].jsonl (append-only, like lesson/activity).
 
-const VOCAB_DIR = path.join(process.cwd(), 'data', 'vocab');
-const REVIEWS_DIR = path.join(process.cwd(), 'data', 'vocab-reviews');
+const VOCAB_DIR = dp.VOCAB_DIR;
+const REVIEWS_DIR = dp.VOCAB_REVIEWS_DIR;
 
 export function safeName(name: string): string {
   return (name || 'student').toLowerCase().replace(/[^a-z0-9]/g, '-') || 'student';

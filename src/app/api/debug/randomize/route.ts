@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 import { QUESTION_BANK } from '@/lib/question-bank';
+import * as dp from '@/lib/data-paths';
 import type {
   LevelTestSession, PromptResult, TestReport, GradeResult,
   GradeDimensions, SkillScores, Question,
@@ -387,7 +388,7 @@ export async function POST() {
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const filename = `${userName}-${timestamp}.json`;
-  const reportsDir = path.join(process.cwd(), 'data', 'reports');
+  const reportsDir = dp.REPORTS_DIR;
   fs.mkdirSync(reportsDir, { recursive: true });
   fs.writeFileSync(
     path.join(reportsDir, filename),

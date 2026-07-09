@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.gitignore
+chats
+project
+coverage
+.env*
+Dockerfile
+fly.toml
+README.md
+# Only committed fixtures ship as seed — never local runtime data
+data/*
+!data/reports
+!data/media
+data/media/*
+!data/media/lessons

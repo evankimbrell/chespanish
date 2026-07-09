@@ -4,6 +4,7 @@ import path from 'path';
 import type { LevelTestSession } from '@/lib/types';
 import { generateLessonDesignBrief, generateLessonTranscript } from '@/lib/lesson-design';
 import { buildDiagnosticInput, generateDiagnosticReport, diagnosticFallback } from '@/lib/diagnostic-report';
+import * as dp from '@/lib/data-paths';
 
 export const maxDuration = 300; // 4 sequential gpt-5.5 calls — must not hit the default timeout
 
@@ -186,7 +187,7 @@ export async function POST(req: Request) {
         const safeUserName = (userName ?? 'student').toLowerCase().replace(/[^a-z0-9]/g, '-');
         const timestamp = (session.completedAt ?? new Date().toISOString()).replace(/[:.]/g, '-');
         const filename = `${safeUserName}-${timestamp}.json`;
-        const reportsDir = path.join(process.cwd(), 'data', 'reports');
+        const reportsDir = dp.REPORTS_DIR;
         fs.mkdirSync(reportsDir, { recursive: true });
         fs.writeFileSync(
           path.join(reportsDir, filename),

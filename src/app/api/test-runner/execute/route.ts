@@ -7,6 +7,7 @@ import { generateHypothesis, selectQuestion } from '@/lib/testing/hypothesis-gen
 import { generateTestAudio, saveTestAudio } from '@/lib/testing/audio-generator';
 import { runScenario } from '@/lib/testing/api-tester';
 import { analyzeResults } from '@/lib/testing/bug-analyzer';
+import * as dp from '@/lib/data-paths';
 
 let _openai: OpenAI | null = null;
 function getOpenAI() {
@@ -181,7 +182,7 @@ The response must answer the actual question. Return ONLY the spoken text.`,
   }
 }
 
-const RUNS_DIR = path.join(process.cwd(), 'data', 'test-runs');
+const RUNS_DIR = dp.TEST_RUNS_DIR;
 
 function saveRun(run: TestRun) {
   fs.mkdirSync(RUNS_DIR, { recursive: true });

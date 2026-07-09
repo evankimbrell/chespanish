@@ -1,11 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { readStore, writeStore, safeName } from '../store';
+import * as dp from '@/lib/data-paths';
 
 // POST /api/vocab/image (FormData: user, deckId, noteId, image) — user-fillable card
-// images, saved under public/vocab-images/. NOTE: files added to public/ after `next
-// build` may not be served by `next start` on some hosts; if that bites in production,
-// switch to serving via a GET route that reads the file.
+// images, saved under DATA_DIR/media/vocab-images and served by the
+// /vocab-images/[file] route handler (public/ can't take runtime writes in prod).
 
 const ALLOWED: Record<string, string> = {
   'image/png': 'png',
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const note = deck?.notes.find((n) => n.id === noteId);
   if (!note) return Response.json({ error: 'note_not_found' }, { status: 404 });
 
-  const dir = path.join(process.cwd(), 'public', 'vocab-images');
+  const dir = dp.MEDIA_VOCAB_IMAGES_DIR;
   fs.mkdirSync(dir, { recursive: true });
   const filename = `${safeName(user)}-${noteId}.${ext}`;
   fs.writeFileSync(path.join(dir, filename), Buffer.from(await image.arrayBuffer()));

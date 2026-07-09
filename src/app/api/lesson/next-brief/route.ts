@@ -5,13 +5,14 @@ import { summarizeLessonResults, formatFirstLessonReport } from '@/lib/lesson-re
 import { condenseLevelTestReport, buildCombinedReport } from '@/lib/next-lesson-brief';
 import { generateNextLessonBrief } from '@/lib/lesson-design';
 import type { DisplayLesson } from '@/lib/lesson-design';
+import * as dp from '@/lib/data-paths';
 
 export const maxDuration = 60; // brief generation is a single model call
 
-const ACTIVITY_DIR = path.join(process.cwd(), 'data', 'activity');
-const LESSONS_DIR = path.join(process.cwd(), 'data', 'lessons');
-const REPORTS_DIR = path.join(process.cwd(), 'data', 'reports');
-const CACHE_DIR = path.join(process.cwd(), 'data', 'next-briefs');
+const ACTIVITY_DIR = dp.ACTIVITY_DIR;
+const LESSONS_DIR = dp.LESSONS_DIR;
+const REPORTS_DIR = dp.REPORTS_DIR;
+const CACHE_DIR = dp.NEXT_BRIEFS_DIR;
 
 function safeName(name: string): string {
   return (name || 'student').toLowerCase().replace(/[^a-z0-9]/g, '-') || 'student';

@@ -1,0 +1,48 @@
+# Fly.io config — single machine + volume. Deploy with:
+#   fly deploy --ha=false --depot --build-arg GIT_SHA=$(git rev-parse --short HEAD)
+# --ha=false matters: the default creates TWO machines, and the second would have
+# no volume. Keep this app at exactly one machine.
+
+app = "chespanish"
+primary_region = "iad"
+swap_size_mb = 512
+
+[build]
+
+[env]
+  DATA_DIR = "/data"
+  # Server-only read (test-runner self-fetches); keeps them off the public edge.
+  NEXT_PUBLIC_BASE_URL = "http://127.0.0.1:3000"
+
+[[mounts]]
+  source = "chespanish_data"
+  destination = "/data"
+  initial_size = "3gb"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  # Fly's default 60s idle timeout would kill lesson/audio + vocab/generate, which
+  # legitimately send no bytes for 2-4 minutes while batching ElevenLabs/GPT calls.
+  [http_service.http_options]
+    idle_timeout = 600
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 100
+    hard_limit = 200
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "15s"
+    method = "GET"
+    path = "/api/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"

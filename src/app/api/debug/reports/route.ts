@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
+import * as dp from '@/lib/data-paths';
 
 export async function GET() {
-  const dir = path.join(process.cwd(), 'data/reports');
+  const dir = dp.REPORTS_DIR;
   if (!fs.existsSync(dir)) return Response.json({ reports: [] });
 
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort().reverse();

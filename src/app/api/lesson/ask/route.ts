@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import fs from 'fs';
 import path from 'path';
 import { NARRATOR_VOICE_ID, SPANISH_MALE_VOICE_ID } from '@/lib/voices';
+import * as dp from '@/lib/data-paths';
 
 const ENGLISH_VOICE = NARRATOR_VOICE_ID;
 const SPANISH_VOICE = SPANISH_MALE_VOICE_ID;
@@ -106,7 +107,7 @@ export async function POST(req: Request) {
 
     const combined = Buffer.concat(buffers);
 
-    const outDir = path.join(process.cwd(), 'public', 'lessons');
+    const outDir = dp.MEDIA_LESSONS_DIR;
     fs.mkdirSync(outDir, { recursive: true });
     const filename = `ask-${Date.now()}.mp3`;
     fs.writeFileSync(path.join(outDir, filename), combined);

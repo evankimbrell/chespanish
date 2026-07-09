@@ -1,8 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import type { LessonHistoryEntry } from '@/lib/types';
+import * as dp from '@/lib/data-paths';
 
-const DIR = path.join(process.cwd(), 'data/lessons');
+const DIR = dp.LESSONS_DIR;
 
 function safeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '-');

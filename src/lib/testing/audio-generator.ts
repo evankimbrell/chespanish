@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { SPANISH_MALE_VOICE_ID, NARRATOR_VOICE_ID } from '@/lib/voices';
+import * as dp from '@/lib/data-paths';
 
 const SPANISH_VOICE = SPANISH_MALE_VOICE_ID;
 const ENGLISH_VOICE = NARRATOR_VOICE_ID;
@@ -39,7 +40,7 @@ export async function saveTestAudio(
   scenarioId: string,
   audioBuffer: Buffer
 ): Promise<string> {
-  const dir = path.join(process.cwd(), 'public', 'test-audio');
+  const dir = dp.MEDIA_TEST_AUDIO_DIR;
   fs.mkdirSync(dir, { recursive: true });
   const filename = `${runId}-${scenarioId}.mp3`;
   fs.writeFileSync(path.join(dir, filename), audioBuffer);

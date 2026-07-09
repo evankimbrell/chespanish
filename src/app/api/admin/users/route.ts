@@ -1,13 +1,14 @@
 import fs from 'fs';
 import path from 'path';
+import * as dp from '@/lib/data-paths';
 
 function safeName(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, '-');
 }
 
 export async function GET() {
-  const reportsDir = path.join(process.cwd(), 'data/reports');
-  const lessonsDir = path.join(process.cwd(), 'data/lessons');
+  const reportsDir = dp.REPORTS_DIR;
+  const lessonsDir = dp.LESSONS_DIR;
 
   // Collect all known usernames from report files
   const userMap: Record<string, {
