@@ -88,6 +88,14 @@ export async function POST(req: Request) {
     return Response.json({ ok: true });
   }
 
+  if (op === 'delete-deck') {
+    const before = store.decks.length;
+    store.decks = store.decks.filter((d) => d.id !== body.deckId);
+    if (store.decks.length === before) return Response.json({ error: 'deck_not_found' }, { status: 404 });
+    writeStore(user, store);
+    return Response.json({ ok: true });
+  }
+
   if (op === 'deck-direction') {
     const deck = store.decks.find((d) => d.id === body.deckId);
     if (!deck) return Response.json({ error: 'deck_not_found' }, { status: 404 });

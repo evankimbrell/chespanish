@@ -79,6 +79,17 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
     }
   };
 
+  // "Not quite" → try saying it again: fresh recording + transcription, as many
+  // times as it takes. The card stays revealed; grading is still the learner's call.
+  const retryRecall = () => {
+    setHeard(null);
+    setVerdict(null);
+    resetRecording();
+    startRecording({ language: 'es' });
+    primeMic();
+    setPhase('recording');
+  };
+
   const advance = useCallback((nextQueue: SessionCard[]) => {
     setQueue(nextQueue);
     setVerdict(null);
@@ -240,15 +251,24 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
               {answerVisible && (
                 <div className="col gap-2 fade-in" style={{ alignItems: 'center', marginTop: 28, width: '100%', maxWidth: 480 }}>
                   {phase === 'heard' && heard !== null && (
-                    <div className="row gap-3" style={{ alignItems: 'center', padding: '12px 18px', border: '1px solid var(--line)', borderRadius: 4, width: '100%', justifyContent: 'center' }}>
+                    <div className="row gap-3" style={{ alignItems: 'center', padding: '12px 18px', border: '1px solid var(--line)', borderRadius: 4, width: '100%', justifyContent: 'center', flexWrap: 'wrap' }}>
                       <span className="kicker">HEARD ·</span>
                       <span className="serif" style={{ fontSize: 20, fontStyle: 'italic', color: verdict === 'match' ? 'var(--leaf)' : 'var(--crit)' }}>&ldquo;{heard || '…'}&rdquo;</span>
                       <Tag kind={verdict === 'match' ? 'leaf' : 'crit'}>{verdict === 'match' ? '● Match' : '● Not quite'}</Tag>
+                      {verdict === 'no_match' && (
+                        <button className="btn btn-ghost btn-sm" onClick={retryRecall}>
+                          <Icons.refresh /> Try again
+                        </button>
+                      )}
                     </div>
                   )}
                   <hr className="divider" style={{ width: 64, margin: '16px auto' }} />
                   <span className="eyebrow">Answer</span>
-                  <p className="serif" style={{ fontSize: 44, fontStyle: 'italic', margin: '6px 0 2px', color: 'var(--warm)' }}>{note.es}</p>
+                  {/* Play sits with the Spanish word it speaks — never with a tag/POS label. */}
+                  <div className="row gap-3" style={{ alignItems: 'center', justifyContent: 'center', margin: '6px 0 2px' }}>
+                    <button className="btn btn-icon btn-ghost" style={{ width: 34, height: 34 }} onClick={() => tts(note.es)}><Icons.play /></button>
+                    <p className="serif" style={{ fontSize: 44, fontStyle: 'italic', margin: 0, color: 'var(--warm)' }}>{note.es}</p>
+                  </div>
                   <ExampleRow note={note} tts={tts} />
                 </div>
               )}

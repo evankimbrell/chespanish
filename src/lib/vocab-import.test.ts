@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseDeckFile, parseCsv, parseTxt } from './vocab-import';
+import { parseDeckFile, parseCsv, parseTxt, looksLikePos } from './vocab-import';
 
 describe('parseCsv', () => {
   it('parses 2-column and 5-column rows', () => {
@@ -54,5 +54,54 @@ describe('parseDeckFile', () => {
   it('treats non-csv as txt', () => {
     const { notes } = parseDeckFile('che — hey', 'words.txt');
     expect(notes[0].es).toBe('che');
+  });
+});
+
+describe('looksLikePos', () => {
+  it('recognizes single and compound POS labels in both languages', () => {
+    expect(looksLikePos('preposition')).toBe(true);
+    expect(looksLikePos('Noun')).toBe(true);
+    expect(looksLikePos('noun/verb')).toBe(true);
+    expect(looksLikePos('connector')).toBe(true);
+    expect(looksLikePos('sustantivo')).toBe(true);
+  });
+  it('rejects sentences and ordinary words', () => {
+    expect(looksLikePos('Soy de Argentina.')).toBe(false);
+    expect(looksLikePos('the fridge')).toBe(false);
+    expect(looksLikePos('')).toBe(false);
+    expect(looksLikePos(undefined)).toBe(false);
+  });
+});
+
+describe('parseCsv — Anki [es,en,POS,example,exampleEn] layout', () => {
+  const anki = [
+    'de,of / from,preposition,Soy de Argentina.,I am from Argentina.',
+    'donde,where,connector,Este es el lugar donde nos conocimos.,This is the place where we met.',
+    'la heladera,fridge,noun,La heladera está rota.,The fridge is broken.',
+  ].join('\n');
+
+  it('routes the POS to tags and keeps the example pair aligned', () => {
+    const { notes, errors } = parseCsv(anki);
+    expect(errors).toEqual([]);
+    expect(notes[0]).toEqual({
+      es: 'de', en: 'of / from',
+      example: 'Soy de Argentina.', exampleEn: 'I am from Argentina.',
+      tags: ['preposition'],
+    });
+    expect(notes[1].tags).toEqual(['connector']);
+    expect(notes[1].example).toBe('Este es el lugar donde nos conocimos.');
+  });
+
+  it('leaves the standard [es,en,example,exampleEn,tags] layout untouched', () => {
+    const { notes } = parseCsv('el subte,subway,Tomá el subte hasta Palermo.,Take the subway to Palermo.,transport;noun');
+    expect(notes[0].example).toBe('Tomá el subte hasta Palermo.');
+    expect(notes[0].tags).toEqual(['transport', 'noun']);
+  });
+
+  it('majority vote: a single odd row follows the file-level layout', () => {
+    const mixed = anki + '\n' + 'che,hey,VERY unusual entry,x,y';
+    const { notes } = parseCsv(mixed);
+    // 3 of 4 rows look like POS → whole file parses as the Anki layout
+    expect(notes[3].tags).toEqual(['very unusual entry']);
   });
 });

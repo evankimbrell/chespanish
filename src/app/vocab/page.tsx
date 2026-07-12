@@ -56,6 +56,14 @@ export default function VocabPage() {
           data={home}
           onReview={startReview}
           onAddDeck={() => setMode('setup')}
+          onDeleteDeck={async (deckId) => {
+            await fetch('/api/vocab', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ user: userName, op: 'delete-deck', deckId }),
+            }).catch(() => {});
+            reload('home');
+          }}
         />
       )}
       {mode === 'review' && (

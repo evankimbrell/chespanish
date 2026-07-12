@@ -4,10 +4,11 @@ import { Icons } from '@/components/ui/icons';
 import type { VocabHomePayload } from './vocab-shared';
 
 // Vocab home: today's totals, retention + due forecast (real data), deck list.
-export function VocabHome({ data, onReview, onAddDeck }: {
+export function VocabHome({ data, onReview, onAddDeck, onDeleteDeck }: {
   data: VocabHomePayload;
   onReview: (scope: string) => void;
   onAddDeck: () => void;
+  onDeleteDeck: (deckId: string) => void;
 }) {
   const { totals, decks, forecast, retention } = data;
   const totalToday = totals.due + totals.learning + Math.min(totals.newCount, 20);
@@ -112,6 +113,17 @@ export function VocabHome({ data, onReview, onAddDeck }: {
                 ))}
                 <button className="btn btn-ghost btn-sm" disabled={!deckTotal} onClick={(e) => { e.stopPropagation(); onReview(d.id); }}>
                   <Icons.play /> Review
+                </button>
+                <button
+                  className="btn btn-ghost btn-sm"
+                  title="Delete this deck (cards and progress included)"
+                  style={{ color: 'var(--mute-2)' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (window.confirm(`Delete "${d.name}" (${d.noteCount} words) and its progress? This can't be undone.`)) onDeleteDeck(d.id);
+                  }}
+                >
+                  ✕
                 </button>
               </div>
             </div>
