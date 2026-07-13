@@ -12,6 +12,7 @@ export interface DeckSummary {
   direction: DeckDirectionSetting;
   noteCount: number;
   counts: { newCount: number; learning: number; due: number };
+  audio: { total: number; ready: number };
 }
 
 export interface VocabHomePayload {

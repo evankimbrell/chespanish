@@ -8,6 +8,7 @@ import { normalizeSpanish } from '@/lib/vocab-match';
 import { createCardsForNote } from '@/lib/srs';
 import { LUNFARDO_DECK } from '@/lib/lunfardo-deck';
 import { readStore, writeStore, noteIdFor, safeName } from '../store';
+import { generateDeckAudio } from '@/lib/vocab-audio';
 import * as dp from '@/lib/data-paths';
 
 export const maxDuration = 300; // two gpt-5.5 calls generating ~150 JSON notes
@@ -188,6 +189,10 @@ export async function POST(req: Request) {
   store.setupCompleted = true;
   store.setupMethod = 'auto';
   writeStore(user, store);
+
+  // Pre-generate card audio in the background (content-addressed cache: repeat
+  // words across decks are free). The vocab UI shows readiness per deck.
+  for (const d of decks) void generateDeckAudio(user, d);
 
   return Response.json({
     decks: decks.map((d) => ({ id: d.id, name: d.name, noteCount: d.notes.length })),

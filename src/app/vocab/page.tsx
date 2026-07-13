@@ -79,7 +79,6 @@ export default function VocabPage() {
           userName={userName}
           results={results}
           onHome={() => setMode('home')}
-          onAgain={() => setMode('review')}
         />
       )}
     </>

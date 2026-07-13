@@ -103,6 +103,13 @@ export function VocabHome({ data, onReview, onAddDeck, onDeleteDeck }: {
                   <span className="kicker">{d.noteCount} words</span>
                 </div>
                 <span className="small">{d.description} · <span style={{ color: 'var(--mute-2)' }}>{d.source}</span></span>
+                {/* Audio pre-generation runs in the background after a deck is created;
+                    cards play instantly once their clip exists (live TTS until then). */}
+                {d.audio && d.audio.ready < d.audio.total && (
+                  <span className="mono" style={{ fontSize: 11, color: 'var(--warm)', marginTop: 2 }}>
+                    ♪ generating audio · {Math.round((d.audio.ready / Math.max(1, d.audio.total)) * 100)}%
+                  </span>
+                )}
               </div>
               <div className="row gap-5" style={{ alignItems: 'center' }}>
                 {([['new', d.counts.newCount, 'var(--ink-2)'], ['learning', d.counts.learning, 'var(--warm)'], ['due', d.counts.due, 'var(--crit)']] as [string, number, string][]).map(([k, v, c]) => (

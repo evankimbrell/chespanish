@@ -1,6 +1,7 @@
 import type { DeckDirectionSetting, VocabCard, VocabDeck, VocabNote } from '@/lib/types';
-import { allowedDirections, buildQueue, countsByState, todaysLog, DEFAULT_SRS_CONFIG } from '@/lib/srs';
+import { allowedDirections, buildQueue, countsByState, todaysLog, remainingNewBudget, DEFAULT_SRS_CONFIG } from '@/lib/srs';
 import { computeRetention, dueForecast, estimateMinutes } from '@/lib/vocab-stats';
+import { audioUrlFor, deckAudioStatus } from '@/lib/vocab-audio';
 import { readStore, writeStore, readReviewLog } from './store';
 
 // GET /api/vocab?user=NAME[&queue=all|<deckId>] — home payload (+ session queue).
@@ -37,15 +38,20 @@ export async function GET(req: Request) {
     direction: d.direction,
     noteCount: d.notes.length,
     counts: countsByState(activeCards(d), now),
+    audio: deckAudioStatus(d),
   }));
 
   const allActive = store.decks.flatMap(activeCards);
   const totalsRaw = countsByState(allActive, now);
+  // "Today's review" must advertise what's LEFT of the daily new-card allowance,
+  // not the raw inventory — otherwise it reads "NEW 20" forever and every visit
+  // looks like a fresh day.
+  const todayLog = todaysLog(log, now);
+  const newToday = Math.min(totalsRaw.newCount, remainingNewBudget(DEFAULT_SRS_CONFIG, todayLog));
   const totals = {
     ...totalsRaw,
-    estMinutes: estimateMinutes(
-      Math.min(totalsRaw.newCount, DEFAULT_SRS_CONFIG.newPerDay) + totalsRaw.learning + totalsRaw.due,
-    ),
+    newCount: newToday,
+    estMinutes: estimateMinutes(newToday + totalsRaw.learning + totalsRaw.due),
   };
 
   const payload: Record<string, unknown> = {
@@ -65,7 +71,14 @@ export async function GET(req: Request) {
     payload.queue = queue
       .map((card) => {
         const meta = noteById.get(card.noteId);
-        return meta ? { card, note: meta.note, deckId: meta.deckId, deckName: meta.deckName } : null;
+        if (!meta) return null;
+        // Enrich with pre-generated audio (null → client falls back to live TTS).
+        const note: VocabNote = {
+          ...meta.note,
+          audioUrl: audioUrlFor(meta.note.es) ?? undefined,
+          exampleAudioUrl: audioUrlFor(meta.note.example) ?? undefined,
+        };
+        return { card, note, deckId: meta.deckId, deckName: meta.deckName };
       })
       .filter((x): x is SessionCard => x !== null);
   }

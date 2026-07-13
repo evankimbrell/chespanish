@@ -27,7 +27,8 @@ export function useTTS() {
     setIsLoading(false);
   }, []);
 
-  const play = useCallback(async (text: string, voiceId?: string) => {
+  // Live TTS through /api/tts — synthesizes on demand and plays the blob.
+  const playLive = useCallback(async (text: string, voiceId?: string) => {
     stop();
 
     const controller = new AbortController();
@@ -76,6 +77,40 @@ export function useTTS() {
       setIsPlaying(false);
     }
   }, [stop]);
+
+  // srcUrl: a pre-generated audio file (e.g. /vocab-audio/<hash>.mp3) — plays
+  // immediately via the media element (range requests, no blob download). Without
+  // it, falls back to live TTS, which synthesizes on demand.
+  const play = useCallback(async (text: string, voiceId?: string, srcUrl?: string | null) => {
+    if (!srcUrl) return playLive(text, voiceId);
+
+    stop();
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setIsLoading(true);
+
+    try {
+      const audio = new Audio(srcUrl);
+      audioRef.current = audio;
+      audio.onended = () => setIsPlaying(false);
+      // A stale URL (file pruned, cache moved) must still make a sound — retry
+      // through the live-TTS path instead of failing silently.
+      audio.onerror = () => {
+        if (controller.signal.aborted) return;
+        void playLive(text, voiceId);
+      };
+      await audio.play();
+      setIsLoading(false);
+      setIsPlaying(true);
+    } catch (e) {
+      if ((e as Error).name === 'AbortError') return; // intentionally cancelled
+      console.error('TTS error:', e);
+      setIsLoading(false);
+      setIsPlaying(false);
+    }
+  }, [stop, playLive]);
 
   return { play, stop, isLoading, isPlaying };
 }

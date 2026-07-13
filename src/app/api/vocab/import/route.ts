@@ -2,6 +2,7 @@ import type { VocabDeck, VocabNote } from '@/lib/types';
 import { parseDeckFile } from '@/lib/vocab-import';
 import { createCardsForNote } from '@/lib/srs';
 import { readStore, writeStore, noteIdFor } from '../store';
+import { generateDeckAudio } from '@/lib/vocab-audio';
 
 // POST /api/vocab/import { user, filename, content, deckName? } — CSV/TXT only
 // (.apkg deferred). The client reads the file as text (FileReader) and sends it inline.
@@ -47,6 +48,10 @@ export async function POST(req: Request) {
   store.setupCompleted = true;
   store.setupMethod = store.setupMethod ?? 'upload';
   writeStore(user, store);
+
+  // Pre-generate card audio in the background so first plays are instant; the
+  // review page shows progress and re-kicks if this run gets interrupted.
+  void generateDeckAudio(user, deck);
 
   return Response.json({
     deckId: deck.id,

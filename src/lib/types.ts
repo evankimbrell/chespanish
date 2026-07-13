@@ -452,6 +452,10 @@ export interface VocabNote {
   exampleEn?: string;
   tags: string[];
   imageUrl?: string;     // '/vocab-images/…' — user-filled; generation leaves empty
+  // Enriched at read time by /api/vocab (never persisted): pre-generated audio,
+  // absent while generation is still catching up → client falls back to live TTS.
+  audioUrl?: string;
+  exampleAudioUrl?: string;
 }
 
 export interface VocabCard {

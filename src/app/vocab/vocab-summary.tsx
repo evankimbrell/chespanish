@@ -1,18 +1,16 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Icons } from '@/components/ui/icons';
 import { normalizeSpanish } from '@/lib/vocab-match';
 import type { MistakeSummary } from '@/lib/common-mistakes';
 import type { SessionResult } from './vocab-shared';
 
 // Post-session summary: stats from the graded cards + a cross-feature nudge when a
 // reviewed word also shows up in the learner's lesson mistakes.
-export function VocabSummary({ userName, results, onHome, onAgain }: {
+export function VocabSummary({ userName, results, onHome }: {
   userName: string;
   results: SessionResult[];
   onHome: () => void;
-  onAgain: () => void;
 }) {
   const router = useRouter();
   const [mistakeOverlap, setMistakeOverlap] = useState<string | null>(null);
@@ -89,7 +87,6 @@ export function VocabSummary({ userName, results, onHome, onAgain }: {
 
       <div className="row gap-3" style={{ justifyContent: 'center' }}>
         <button className="btn btn-primary" onClick={onHome}>Back to Vocab</button>
-        <button className="btn btn-ghost" onClick={onAgain}><Icons.refresh /> Review again</button>
         <button className="btn btn-text" onClick={() => router.push('/dashboard')}>Dashboard</button>
       </div>
     </div>

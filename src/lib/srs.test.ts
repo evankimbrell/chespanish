@@ -6,6 +6,7 @@ import {
   formatInterval,
   buildQueue,
   requeueIndex,
+  remainingNewBudget,
   countsByState,
   todaysLog,
   createCardsForNote,
@@ -205,6 +206,32 @@ describe('buildQueue', () => {
     expect(buildQueue(cards, NOW, cfg, log)).toHaveLength(5); // 20 − 15
   });
 
+  it('buries a new sibling for the whole DAY once its note was reviewed today', () => {
+    // Note 'a' was introduced this morning via its recognize card; its recall
+    // sibling must NOT come back as a new card in the same day's later sessions —
+    // that loop made every visit re-serve the same words flipped around.
+    const cards = [
+      card({ id: 'a:recall', noteId: 'a', direction: 'recall', state: 'new' }),
+      card({ id: 'b:recognize', noteId: 'b', state: 'new' }),
+    ];
+    const log: VocabReviewRecord[] = [{
+      at: NOW.toISOString(), deckId: 'd', cardId: 'a:recognize', noteId: 'a', direction: 'recognize',
+      grade: 'good' as VocabGrade, prevState: 'new', prevIntervalDays: 0,
+      newState: 'learning', newIntervalDays: 0, newDue: NOW.toISOString(),
+    }];
+    expect(buildQueue(cards, NOW, cfg, log).map((c) => c.id)).toEqual(['b:recognize']);
+  });
+
+  it('remainingNewBudget reflects today’s introductions', () => {
+    const log: VocabReviewRecord[] = Array.from({ length: 8 }, (_, i) => ({
+      at: NOW.toISOString(), deckId: 'd', cardId: `x${i}`, noteId: `x${i}`, direction: 'recognize',
+      grade: 'good' as VocabGrade, prevState: 'new', prevIntervalDays: 0,
+      newState: 'learning', newIntervalDays: 0, newDue: NOW.toISOString(),
+    }));
+    expect(remainingNewBudget(cfg, log)).toBe(cfg.newPerDay - 8);
+    expect(remainingNewBudget(cfg, [])).toBe(cfg.newPerDay);
+  });
+
   it('caps reviews by reviewsPerDay', () => {
     const tiny = { ...cfg, reviewsPerDay: 2 };
     const cards = [1, 2, 3].map((i) => card({ id: `n${i}:recognize`, noteId: `n${i}`, state: 'review', due: past(i) }));
@@ -213,17 +240,34 @@ describe('buildQueue', () => {
 });
 
 describe('requeueIndex', () => {
-  it('inserts a learning card before later-due learning and before new cards', () => {
+  it('never re-queues at the front while other cards wait (double-show / flash bug)', () => {
+    // Fresh deck: everything remaining is 'new'. A just-failed card must land
+    // BEHIND them — index 0 both re-showed the same card immediately and caused
+    // the mid-grade flash (next card rendered, async requeue snapped back).
+    const q = [
+      card({ id: 'a:recognize', noteId: 'a', state: 'new' }),
+      card({ id: 'b:recognize', noteId: 'b', state: 'new' }),
+      card({ id: 'c:recognize', noteId: 'c', state: 'new' }),
+    ];
+    const failed = card({ id: 'x:recognize', noteId: 'x', state: 'learning', due: new Date(NOW.getTime() + 60000).toISOString() });
+    expect(requeueIndex(q, failed)).toBe(3);
+  });
+  it('orders by due among learning cards, floored at 1', () => {
     const q = [
       card({ id: 'a:recognize', noteId: 'a', state: 'learning', due: new Date(NOW.getTime() + 2 * 60000).toISOString() }),
-      card({ id: 'b:recognize', noteId: 'b', state: 'new' }),
+      card({ id: 'b:recognize', noteId: 'b', state: 'learning', due: new Date(NOW.getTime() + 99 * 60000).toISOString() }),
     ];
-    const incoming = card({ id: 'c:recognize', noteId: 'c', state: 'learning', due: new Date(NOW.getTime() + 60000).toISOString() });
-    expect(requeueIndex(q, incoming)).toBe(0);
-    const late = card({ id: 'd:recognize', noteId: 'd', state: 'learning', due: new Date(NOW.getTime() + 99 * 60000).toISOString() });
-    expect(requeueIndex(q, late)).toBe(1); // after learning 'a', before new 'b'
+    const earliest = card({ id: 'c:recognize', noteId: 'c', state: 'learning', due: new Date(NOW.getTime() + 30000).toISOString() });
+    expect(requeueIndex(q, earliest)).toBe(1); // due-first but never the immediate next
+    const middle = card({ id: 'd:recognize', noteId: 'd', state: 'learning', due: new Date(NOW.getTime() + 5 * 60000).toISOString() });
+    expect(requeueIndex(q, middle)).toBe(1);
   });
-  it('returns queue length for an empty queue', () => {
+  it('clamps how far back a failed card is pushed in long sessions', () => {
+    const q = Array.from({ length: 20 }, (_, i) => card({ id: `n${i}:recognize`, noteId: `n${i}`, state: 'new' }));
+    const failed = card({ id: 'x:recognize', noteId: 'x', state: 'learning', due: new Date(NOW.getTime() + 60000).toISOString() });
+    expect(requeueIndex(q, failed)).toBe(8);
+  });
+  it('returns 0 for an empty queue', () => {
     expect(requeueIndex([], card())).toBe(0);
   });
 });

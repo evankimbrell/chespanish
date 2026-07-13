@@ -4,7 +4,7 @@ import { Icons } from '@/components/ui/icons';
 import { Tag } from '@/components/ui/tag';
 import { useTTS } from '@/hooks/use-tts';
 import { useRecording } from '@/hooks/use-recording';
-import { formatInterval, previewIntervals, requeueIndex } from '@/lib/srs';
+import { formatInterval, previewIntervals, requeueIndex, scheduleCard } from '@/lib/srs';
 import { matchesAnswer } from '@/lib/vocab-match';
 import type { VocabCard, VocabGrade } from '@/lib/types';
 import type { SessionCard, SessionResult } from './vocab-shared';
@@ -58,6 +58,35 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
     return () => { alive = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userName, scope]);
+
+  // Deck audio pre-generation: kick on open (resumes interrupted runs) and poll
+  // while incomplete so the progress bar fills live. Cards still work meanwhile —
+  // plays without a ready file fall back to live TTS, just slower.
+  const [audioStatus, setAudioStatus] = useState<{ total: number; ready: number } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const poll = (kick: boolean) => {
+      const req = kick
+        ? fetch('/api/vocab/audio', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user: userName, deckId: scope }),
+          })
+        : fetch(`/api/vocab/audio?user=${encodeURIComponent(userName)}&deckId=${encodeURIComponent(scope)}`);
+      req
+        .then((r) => r.json())
+        .then((s) => {
+          if (!alive || typeof s.total !== 'number') return;
+          setAudioStatus({ total: s.total, ready: s.ready });
+          if (s.ready < s.total) timer = setTimeout(() => poll(false), 3000);
+        })
+        .catch(() => {});
+    };
+    poll(true);
+    return () => { alive = false; if (timer) clearTimeout(timer); };
+  }, [userName, scope]);
+  const audioPending = audioStatus !== null && audioStatus.ready < audioStatus.total;
 
   // Recall flow: transcript arrives after stopRecording → advisory verdict
   useEffect(() => {
@@ -117,7 +146,21 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
     }
     setGradedCount((n) => n + 1);
 
+    // Requeue SYNCHRONOUSLY with an optimistic local schedule (scheduleCard is the
+    // same pure function the server runs). Waiting for the server reply to splice
+    // the card back caused two real bugs: failing the LAST card ended the session
+    // before the requeue landed (a failed card must always come back), and the
+    // late insertion flashed the next card before snapping back.
+    const optimistic = scheduleCard(card, g, new Date());
+    let rest = queue.slice(1);
+    if (optimistic.state === 'learning' || optimistic.state === 'relearning') {
+      const idx = requeueIndex(rest.map((s) => s.card), optimistic);
+      rest = [...rest.slice(0, idx), { ...current, card: optimistic }, ...rest.slice(idx)];
+    }
+
     // Serialize POSTs so the server's read-modify-write pairs can't interleave.
+    // The server stays authoritative: its card (fuzzed intervals, server clock)
+    // replaces the optimistic one in place — never re-spliced, so no reordering.
     const post = () =>
       fetch('/api/vocab/review', {
         method: 'POST',
@@ -130,35 +173,32 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
           if (!updated) return;
           const res = resultsRef.current.find((x) => x.note.id === note.id && x.direction === card.direction);
           if (res) res.newDue = updated.due;
-          // Learning/relearning cards come back this session (learn-ahead: even if the
-          // step timer hasn't elapsed by the time the queue empties, we show them).
-          if (updated.state === 'learning' || updated.state === 'relearning') {
-            setQueue((q) => {
-              const idx = requeueIndex(q.map((s) => s.card), updated);
-              const item: SessionCard = { ...current, card: updated };
-              return [...q.slice(0, idx), item, ...q.slice(idx)];
-            });
-          }
+          setQueue((q) => q.map((s) => (s.card.id === updated.id ? { ...s, card: updated } : s)));
         })
         .catch(() => {});
     postChainRef.current = postChainRef.current.then(post, post);
 
-    advance(queue.slice(1));
+    advance(rest);
   }, [current, queue, userName, verdict, heard, advance]);
 
-  // Hotkeys: space reveals (recognize), 1–4 grade when the answer is visible
+  // Hotkeys: space reveals (recognize) / toggles recording (speak cards),
+  // 1–4 grade when the answer is visible
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement).tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
       if (e.code === 'Space' && phase === 'front' && !isRecall) { e.preventDefault(); setPhase('revealed'); }
+      if (e.code === 'Space' && isRecall && (phase === 'front' || phase === 'recording')) {
+        e.preventDefault();
+        record();
+      }
       if ((phase === 'revealed' || phase === 'heard') && ['1', '2', '3', '4'].includes(e.key)) {
         grade(GRADE_ORDER[Number(e.key) - 1]);
       }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  }, [phase, isRecall, grade]);
+  });
 
   if (phase === 'loading') {
     return (
@@ -199,9 +239,23 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
           </div>
         </div>
       </div>
-      <div className="progress" style={{ marginBottom: 36 }}>
+      <div className="progress" style={{ marginBottom: audioPending ? 12 : 36 }}>
         <div className="progress-fill" style={{ width: `${total ? (gradedCount / total) * 100 : 0}%` }} />
       </div>
+
+      {/* Deck audio still generating — cards work (live TTS fallback), just slower */}
+      {audioPending && audioStatus && (
+        <div className="row gap-3" style={{ alignItems: 'center', marginBottom: 24, padding: '10px 14px', border: '1px solid var(--line)', borderRadius: 4 }}>
+          <span className="spinner" style={{ width: 12, height: 12 }} />
+          <span className="mono" style={{ fontSize: 11, color: 'var(--warm)' }}>
+            Generating audio · {audioStatus.ready}/{audioStatus.total}
+          </span>
+          <div className="progress" style={{ flex: 1 }}>
+            <div className="progress-fill" style={{ width: `${(audioStatus.ready / Math.max(1, audioStatus.total)) * 100}%`, background: 'var(--warm)' }} />
+          </div>
+          <span className="mono" style={{ fontSize: 10, color: 'var(--mute-2)' }}>cards play either way</span>
+        </div>
+      )}
 
       {/* Card */}
       <div className="card col" key={card.id} style={{ padding: 0, flex: 1, overflow: 'hidden' }}>
@@ -229,23 +283,32 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
                 <img src={note.imageUrl} alt={note.en} style={{ width: 280, height: 170, objectFit: 'cover', borderRadius: 6, margin: '18px auto 0' }} />
               )}
 
-              {phase === 'front' && (
-                <div className="col gap-3" style={{ alignItems: 'center', marginTop: 32 }}>
-                  <button className="mic-btn" style={{ width: 84, height: 84 }} onClick={record}><Icons.mic /></button>
-                  <span className="mono small" style={{ color: 'var(--mute)' }}>Tap and say it out loud</span>
-                  <button className="btn btn-text small" onClick={() => setPhase('revealed')}>I can&rsquo;t say it — show me</button>
-                </div>
-              )}
-              {phase === 'recording' && (
-                <div className="col gap-3" style={{ alignItems: 'center', marginTop: 32 }}>
-                  <button className="mic-btn recording" style={{ width: 84, height: 84 }} onClick={record}><Icons.mic /></button>
-                  <span className="mono small" style={{ color: 'var(--crit)' }}>● RECORDING · tap to stop</span>
-                </div>
-              )}
-              {phase === 'processing' && (
-                <div className="col gap-3" style={{ alignItems: 'center', marginTop: 32 }}>
-                  <div className="spinner" style={{ width: 28, height: 28 }} />
-                  <span className="mono small">Hearing you…</span>
+              {/* Constant-footprint mic block: same wrapper height and gaps across
+                  front/recording/processing so the button never jumps between states,
+                  and the label clears the recording pulse ring (28px box-shadow). */}
+              {(phase === 'front' || phase === 'recording' || phase === 'processing') && (
+                <div className="col" style={{ alignItems: 'center', marginTop: 32, minHeight: 190, justifyContent: 'flex-start' }}>
+                  {phase === 'processing' ? (
+                    <div style={{ width: 84, height: 84, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div className="spinner" style={{ width: 28, height: 28 }} />
+                    </div>
+                  ) : (
+                    <button
+                      className={`mic-btn${phase === 'recording' ? ' recording' : ''}`}
+                      style={{ width: 84, height: 84 }}
+                      onClick={record}
+                    ><Icons.mic /></button>
+                  )}
+                  <span className="mono small" style={{ marginTop: 22, color: phase === 'recording' ? 'var(--crit)' : 'var(--mute)' }}>
+                    {phase === 'recording' ? '● RECORDING · space or tap to stop'
+                      : phase === 'processing' ? 'Hearing you…'
+                      : 'Space or tap — say it out loud'}
+                  </span>
+                  <button
+                    className="btn btn-text small"
+                    style={{ marginTop: 8, visibility: phase === 'front' ? 'visible' : 'hidden' }}
+                    onClick={() => setPhase('revealed')}
+                  >I can&rsquo;t say it — show me</button>
                 </div>
               )}
               {answerVisible && (
@@ -266,7 +329,7 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
                   <span className="eyebrow">Answer</span>
                   {/* Play sits with the Spanish word it speaks — never with a tag/POS label. */}
                   <div className="row gap-3" style={{ alignItems: 'center', justifyContent: 'center', margin: '6px 0 2px' }}>
-                    <button className="btn btn-icon btn-ghost" style={{ width: 34, height: 34 }} onClick={() => tts(note.es)}><Icons.play /></button>
+                    <button className="btn btn-icon btn-ghost" style={{ width: 34, height: 34 }} onClick={() => tts(note.es, undefined, note.audioUrl)}><Icons.play /></button>
                     <p className="serif" style={{ fontSize: 44, fontStyle: 'italic', margin: 0, color: 'var(--warm)' }}>{note.es}</p>
                   </div>
                   <ExampleRow note={note} tts={tts} />
@@ -278,7 +341,7 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
               <span className="eyebrow">What does this mean?</span>
               <p className="serif" style={{ fontSize: 56, fontStyle: 'italic', letterSpacing: '-.015em', margin: '18px 0 8px', fontWeight: 300, color: 'var(--ink)' }}>{note.es}</p>
               <div className="row gap-2" style={{ justifyContent: 'center', marginBottom: 6 }}>
-                <button className="btn btn-icon btn-ghost" style={{ width: 34, height: 34 }} onClick={() => tts(note.es)}><Icons.play /></button>
+                <button className="btn btn-icon btn-ghost" style={{ width: 34, height: 34 }} onClick={() => tts(note.es, undefined, note.audioUrl)}><Icons.play /></button>
               </div>
               {note.imageUrl && (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -332,12 +395,12 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
   );
 }
 
-function ExampleRow({ note, tts }: { note: SessionCard['note']; tts: (text: string) => void }) {
+function ExampleRow({ note, tts }: { note: SessionCard['note']; tts: (text: string, voiceId?: string, srcUrl?: string | null) => void }) {
   if (!note.example) return null;
   return (
     <>
       <div className="row gap-3" style={{ marginTop: 10, alignItems: 'center', justifyContent: 'center' }}>
-        <button className="btn btn-icon btn-ghost" style={{ width: 34, height: 34 }} onClick={() => tts(note.example!)}><Icons.play /></button>
+        <button className="btn btn-icon btn-ghost" style={{ width: 34, height: 34 }} onClick={() => tts(note.example!, undefined, note.exampleAudioUrl)}><Icons.play /></button>
         <span className="serif" style={{ fontSize: 17, fontStyle: 'italic', color: 'var(--ink-2)' }}>{note.example}</span>
       </div>
       {note.exampleEn && <span className="small" style={{ color: 'var(--mute-2)' }}>{note.exampleEn}</span>}

@@ -28,3 +28,6 @@ export const VOCAB_REVIEWS_DIR = path.join(DATA_DIR, 'vocab-reviews');
 export const MEDIA_LESSONS_DIR = path.join(DATA_DIR, 'media', 'lessons');
 export const MEDIA_VOCAB_IMAGES_DIR = path.join(DATA_DIR, 'media', 'vocab-images');
 export const MEDIA_TEST_AUDIO_DIR = path.join(DATA_DIR, 'media', 'test-audio');
+// Pre-generated vocab card audio, content-addressed (sha1 of voice+text) so decks
+// sharing words share files and regeneration is a no-op.
+export const MEDIA_VOCAB_AUDIO_DIR = path.join(DATA_DIR, 'media', 'vocab-audio');

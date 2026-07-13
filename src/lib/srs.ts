@@ -221,8 +221,11 @@ export function todaysLog(log: VocabReviewRecord[], now: Date): VocabReviewRecor
 }
 
 // Build a session queue: due reviews (by due asc, capped) → due learning/relearning
-// (by due asc) → new cards (insertion order, capped). One card per note (sibling bury —
-// the earlier-positioned card wins; its sibling waits for another session).
+// (by due asc) → new cards (insertion order, capped). One card per note (sibling bury),
+// and — like Anki's bury-siblings default — a note whose OTHER direction was already
+// introduced today does not surface its sibling as a new card until tomorrow. Without
+// the day-level bury, every fresh visit re-served the same words flipped to their
+// other direction, which read as "it isn't recording my reviews".
 export function buildQueue(
   cards: VocabCard[],
   now: Date,
@@ -235,10 +238,13 @@ export function buildQueue(
   const newIntroducedToday = todayLog.filter((r) => r.prevState === 'new').length;
   const reviewBudget = Math.max(0, cfg.reviewsPerDay - reviewsDoneToday);
   const newBudget = Math.max(0, cfg.newPerDay - newIntroducedToday);
+  const notesTouchedToday = new Set(todayLog.map((r) => r.noteId));
 
   const reviews = cards.filter((c) => c.state === 'review' && isDue(c, now)).sort(byDue).slice(0, reviewBudget);
   const learning = cards.filter((c) => (c.state === 'learning' || c.state === 'relearning') && isDue(c, now)).sort(byDue);
-  const fresh = cards.filter((c) => c.state === 'new').slice(0, newBudget);
+  const fresh = cards
+    .filter((c) => c.state === 'new' && !notesTouchedToday.has(c.noteId))
+    .slice(0, newBudget);
 
   const queue: VocabCard[] = [];
   const seenNotes = new Set<string>();
@@ -250,16 +256,31 @@ export function buildQueue(
   return queue;
 }
 
-// Where to splice a re-queued (still-learning) card back into the remaining queue,
-// keeping it sorted by due among learning cards. New cards at the tail always come last.
+// Remaining new-card allowance for today — the dashboard must advertise this, not
+// the raw new-card inventory, or "Today's review: 20" never shrinks as you review.
+export function remainingNewBudget(cfg: SrsConfig, todayLog: VocabReviewRecord[]): number {
+  return Math.max(0, cfg.newPerDay - todayLog.filter((r) => r.prevState === 'new').length);
+}
+
+// Where to splice a re-queued (still-learning) card back into the remaining queue.
+// Cards already waiting — including untouched new ones — are "due now" and go first:
+// re-showing a just-failed card back-to-back has no spacing value when alternatives
+// exist. (The old new-cards-last rule put failed cards at index 0 on fresh decks,
+// which both re-showed the same card immediately AND caused the mid-grade "flash":
+// the next card rendered, then the async requeue snapped the UI back.) Placement is
+// due-ordered among later-due learning cards, clamped to a window so long sessions
+// still bring the card back soon, floored at 1 so it is never the immediate next.
+const REQUEUE_MAX_AHEAD = 8;
+
 export function requeueIndex(queue: VocabCard[], card: VocabCard): number {
   const cardDue = new Date(card.due).getTime();
-  for (let i = 0; i < queue.length; i++) {
+  let i = 0;
+  for (; i < queue.length; i++) {
     const q = queue[i];
-    if (q.state === 'new') return i; // learning steps come before untouched new cards
-    if (new Date(q.due).getTime() > cardDue) return i;
+    if (q.state === 'new') continue; // waiting new cards stay ahead of the step timer
+    if (new Date(q.due).getTime() > cardDue) break;
   }
-  return queue.length;
+  return Math.max(Math.min(i, REQUEUE_MAX_AHEAD), Math.min(1, queue.length));
 }
 
 // Which directions a deck setting allows.
