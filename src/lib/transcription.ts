@@ -98,7 +98,7 @@ async function transcribeWithElevenLabs(audio: File, language?: string): Promise
 
 // Answer-AGNOSTIC Rioplatense anchor, passed only with a Spanish language hint. See
 // /api/transcribe for the full rationale.
-const ES_PRIME = 'Lo siguiente es una frase corta en español rioplatense de Argentina.';
+export const ES_PRIME = 'Lo siguiente es una frase corta en español rioplatense de Argentina.';
 
 let _openai: OpenAI | null = null;
 function getOpenAI() {
@@ -106,8 +106,9 @@ function getOpenAI() {
   return _openai;
 }
 
-async function transcribeWithWhisper(audio: File, language?: string, includePrime = true): Promise<TranscriptionResult> {
+async function transcribeWithWhisper(audio: File, language?: string, includePrime = true, customPrompt?: string): Promise<TranscriptionResult> {
   const isSpanish = !!language && language.toLowerCase().startsWith('es');
+  const prompt = customPrompt ?? (isSpanish && includePrime ? ES_PRIME : undefined);
   const params: Record<string, unknown> = {
     file: audio,
     model: 'whisper-1',
@@ -115,7 +116,7 @@ async function transcribeWithWhisper(audio: File, language?: string, includePrim
     response_format: 'verbose_json',
     timestamp_granularities: ['word'],
     ...(language ? { language } : {}),
-    ...(isSpanish && includePrime ? { prompt: ES_PRIME } : {}),
+    ...(prompt ? { prompt } : {}),
   };
   const t0 = Date.now();
   // SDK return type is narrowed by response_format at runtime; cast needed
@@ -139,6 +140,7 @@ export interface TranscribeOpts {
   language?: string;            // force a language ('es' / 'en'); omit for auto-detect
   provider?: TranscriptionProvider; // override the env-selected provider
   whisperPrime?: boolean;       // include the Rioplatense prime on Spanish-forced Whisper calls
+  prompt?: string;              // Whisper only: replace the default prime (decode biasing)
 }
 
 export async function transcribeAudio(audio: File, opts: TranscribeOpts = {}): Promise<TranscriptionResult> {
@@ -148,8 +150,8 @@ export async function transcribeAudio(audio: File, opts: TranscribeOpts = {}): P
       return await transcribeWithElevenLabs(audio, opts.language);
     } catch (e) {
       console.error('[transcription] ElevenLabs failed, falling back to Whisper:', e instanceof Error ? e.message : e);
-      return transcribeWithWhisper(audio, opts.language, opts.whisperPrime ?? true);
+      return transcribeWithWhisper(audio, opts.language, opts.whisperPrime ?? true, opts.prompt);
     }
   }
-  return transcribeWithWhisper(audio, opts.language, opts.whisperPrime ?? true);
+  return transcribeWithWhisper(audio, opts.language, opts.whisperPrime ?? true, opts.prompt);
 }

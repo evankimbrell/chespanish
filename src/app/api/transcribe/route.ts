@@ -1,5 +1,6 @@
 import type { ResponseTiming, WordTiming } from '@/lib/types';
-import { transcribeAudio, resolveProvider } from '@/lib/transcription';
+import { transcribeAudio, resolveProvider, ES_PRIME } from '@/lib/transcription';
+import { matchesAnswer } from '@/lib/vocab-match';
 
 // Diacritics that appear in Czech/Slovak/Slovenian but never in Spanish.
 // If the STT returns these, it misidentified the language.
@@ -59,6 +60,10 @@ export async function POST(req: Request) {
   // phrase). Short clips auto-detect unreliably, so the caller can tell the STT the
   // language. Absent (level test, ask-a-question) → pure auto-detect.
   const language = (fd.get('language') as string | null) || undefined;
+  // Optional expected answer (vocab speak cards). Bare single words are the worst
+  // case for any STT — Scribe, even forced to Spanish, can snap one syllable to an
+  // adjacent English token ("más" → "Mars."). See the biased retry below.
+  const expected = (fd.get('expected') as string | null) || undefined;
 
   if (!audio) return new Response('audio required', { status: 400 });
 
@@ -69,6 +74,28 @@ export async function POST(req: Request) {
     if (!allowEnglish && SLAVIC_RE.test(result.text)) {
       console.warn('[transcribe] Slavic chars detected, retrying with language:es');
       result = await transcribeAudio(audio, { language: 'es' });
+    }
+
+    // Expected-answer second chance: the first pass heard real speech but not the
+    // target — re-decode the SAME clip with Whisper primed toward the target, and
+    // keep that result only if it matches. The verdict this feeds is advisory (the
+    // learner still grades themselves), so a generous hint beats a false "Not quite"
+    // on a correctly-pronounced word. The speech guard (words > 0) keeps silence
+    // from being hallucinated into a match.
+    if (expected && result.words.length > 0 && !matchesAnswer(result.text, expected)) {
+      try {
+        const biased = await transcribeAudio(audio, {
+          language: 'es',
+          provider: 'whisper',
+          prompt: `${ES_PRIME} Vocabulario: ${expected}.`,
+        });
+        if (matchesAnswer(biased.text, expected)) {
+          console.log(`[transcribe] biased retry rescued "${result.text}" -> "${biased.text}"`);
+          result = biased;
+        }
+      } catch (e) {
+        console.warn('[transcribe] biased retry failed, keeping first pass:', e instanceof Error ? e.message : e);
+      }
     }
 
     console.log(`[transcribe] ${result.provider} ${result.latencyMs}ms | ${result.words.length} words`);

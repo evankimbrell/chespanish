@@ -22,6 +22,7 @@ export function useRecording() {
   const onsetDetected  = useRef(false);
   const allowEnglishRef = useRef(false);
   const languageRef = useRef<string | undefined>(undefined);
+  const expectedRef = useRef<string | undefined>(undefined);
   const onBlobReadyRef = useRef<((blob: Blob) => void) | undefined>(undefined);
 
   const stopVolume = useCallback(() => {
@@ -108,6 +109,7 @@ export function useRecording() {
         fd.append('audio', blob, 'recording.webm');
         if (allowEnglishRef.current) fd.append('allowEnglish', '1');
         if (languageRef.current) fd.append('language', languageRef.current);
+        if (expectedRef.current) fd.append('expected', expectedRef.current);
         const res = await fetch('/api/transcribe', { method: 'POST', body: fd });
         if (!res.ok) throw new Error(`Transcribe failed: ${res.status}`);
         const data = await res.json();
@@ -124,9 +126,10 @@ export function useRecording() {
     mrRef.current.stop();
   }, [stopVolume]);
 
-  const startRecording = useCallback(async (opts?: { allowEnglish?: boolean; language?: string; onBlobReady?: (blob: Blob) => void; maxDurationMs?: number }) => {
+  const startRecording = useCallback(async (opts?: { allowEnglish?: boolean; language?: string; expected?: string; onBlobReady?: (blob: Blob) => void; maxDurationMs?: number }) => {
     allowEnglishRef.current = opts?.allowEnglish ?? false;
     languageRef.current = opts?.language;
+    expectedRef.current = opts?.expected;
     onBlobReadyRef.current = opts?.onBlobReady;
     setTranscript(null);
     setSpeechOnsetMs(null);

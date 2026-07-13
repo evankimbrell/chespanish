@@ -99,7 +99,9 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
   const record = () => {
     if (phase === 'front') {
       resetRecording();
-      startRecording({ language: 'es' });
+      // expected: lets the server re-decode near-misses biased toward the answer
+      // ("más" heard as "Mars") before showing a false Not-quite.
+      startRecording({ language: 'es', expected: current?.note.es });
       primeMic();
       setPhase('recording');
     } else if (phase === 'recording') {
@@ -114,7 +116,7 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
     setHeard(null);
     setVerdict(null);
     resetRecording();
-    startRecording({ language: 'es' });
+    startRecording({ language: 'es', expected: current?.note.es });
     primeMic();
     setPhase('recording');
   };

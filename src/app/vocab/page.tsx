@@ -28,14 +28,18 @@ export default function VocabPage() {
       setHome(data);
       setMode(nextMode ?? (data.setupCompleted ? 'home' : 'setup'));
     } catch {
-      setMode('setup');
+      // Only the initial load falls back to setup; a failed background refresh
+      // must not yank the user off the screen they're on.
+      setMode((m) => (m === 'loading' ? 'setup' : m));
     }
   }, [userName]);
 
   useEffect(() => { setMode('loading'); reload(); }, [reload]);
 
   const startReview = (scope: string) => { setReviewScope(scope); setMode('review'); };
-  const finishReview = (r: SessionResult[]) => { setResults(r); reload('summary'); };
+  // Switch to the summary IMMEDIATELY — reload used to flip the mode only after the
+  // home refetch, so the review's empty state flashed for the fetch duration.
+  const finishReview = (r: SessionResult[]) => { setResults(r); setMode('summary'); reload('summary'); };
 
   return (
     <>
