@@ -11,7 +11,8 @@ export function VocabHome({ data, onReview, onAddDeck, onDeleteDeck }: {
   onDeleteDeck: (deckId: string) => void;
 }) {
   const { totals, decks, forecast, retention } = data;
-  const totalToday = totals.due + totals.learning + Math.min(totals.newCount, 20);
+  // totals.newCount is already budget-aware (what's LEFT of today's allowance)
+  const totalToday = totals.due + totals.learning + totals.newCount;
   const maxForecast = Math.max(1, ...forecast);
   // Day labels rotated from today's weekday (Spanish two-letter, mock style)
   const dayNames = ['do', 'lu', 'ma', 'mi', 'ju', 'vi', 'sa'];
@@ -33,7 +34,7 @@ export function VocabHome({ data, onReview, onAddDeck, onDeleteDeck }: {
           </h1>
         </div>
         <div className="row gap-8" style={{ paddingBottom: 6 }}>
-          {([['New', Math.min(totals.newCount, 20), 'var(--ink-2)'], ['Learning', totals.learning, 'var(--warm)'], ['Due', totals.due, 'var(--crit)']] as [string, number, string][]).map(([k, v, c]) => (
+          {([['New', totals.newCount, 'var(--ink-2)'], ['Learning', totals.learning, 'var(--warm)'], ['Due', totals.due, 'var(--crit)']] as [string, number, string][]).map(([k, v, c]) => (
             <div key={k} className="col gap-1" style={{ minWidth: 70 }}>
               <span className="eyebrow">{k}</span>
               <span className="serif tabular" style={{ fontSize: 34, letterSpacing: '-.01em', color: c }}>{v}</span>
@@ -59,25 +60,32 @@ export function VocabHome({ data, onReview, onAddDeck, onDeleteDeck }: {
         </div>
         <div className="card-flat" style={{ padding: 24 }}>
           <span className="eyebrow">Retention · last 30 days</span>
-          <div className="row gap-6" style={{ marginTop: 16, marginBottom: 18 }}>
+          {/* Overall counts every answer, so it has data from day one; young/mature
+              only exist once cards graduate to review state (~weeks in). */}
+          <div className="row gap-5" style={{ marginTop: 16, marginBottom: 18 }}>
             <div className="col gap-1">
-              <span className="serif tabular" style={{ fontSize: 32 }}>{retention.maturePct != null ? `${retention.maturePct}%` : '—'}</span>
-              <span className="kicker">mature cards</span>
+              <span className="serif tabular" style={{ fontSize: 28 }}>{retention.overallPct != null ? `${retention.overallPct}%` : '—'}</span>
+              <span className="kicker">all answers</span>
             </div>
             <div className="col gap-1">
-              <span className="serif tabular" style={{ fontSize: 32 }}>{retention.youngPct != null ? `${retention.youngPct}%` : '—'}</span>
+              <span className="serif tabular" style={{ fontSize: 28, color: retention.youngPct != null ? undefined : 'var(--mute-2)' }}>{retention.youngPct != null ? `${retention.youngPct}%` : '—'}</span>
               <span className="kicker">young cards</span>
             </div>
             <div className="col gap-1">
-              <span className="serif tabular" style={{ fontSize: 32 }}>{retention.streakDays}</span>
+              <span className="serif tabular" style={{ fontSize: 28, color: retention.maturePct != null ? undefined : 'var(--mute-2)' }}>{retention.maturePct != null ? `${retention.maturePct}%` : '—'}</span>
+              <span className="kicker">mature cards</span>
+            </div>
+            <div className="col gap-1">
+              <span className="serif tabular" style={{ fontSize: 28 }}>{retention.streakDays}</span>
               <span className="kicker">day streak</span>
             </div>
           </div>
           <span className="eyebrow">Due forecast · next 7 days</span>
-          <div className="row gap-1" style={{ alignItems: 'flex-end', height: 56, marginTop: 12 }}>
+          <div className="row gap-1" style={{ alignItems: 'flex-end', height: 68, marginTop: 12 }}>
             {forecast.map((n, i) => (
-              <div key={i} className="col gap-1" style={{ flex: 1, alignItems: 'center' }}>
-                <div style={{ width: '100%', height: `${(n / maxForecast) * 40}px`, minHeight: n > 0 ? 3 : 1, background: i === 0 ? 'var(--warm)' : 'var(--bg-3)', borderRadius: 2 }} />
+              <div key={i} className="col gap-1" style={{ flex: 1, alignItems: 'center', justifyContent: 'flex-end' }}>
+                {n > 0 && <span className="mono tabular" style={{ fontSize: 10, color: i === 0 ? 'var(--warm)' : 'var(--mute-2)' }}>{n}</span>}
+                <div style={{ width: '100%', height: `${(n / maxForecast) * 40}px`, minHeight: n > 0 ? 3 : 1, background: 'var(--warm)', opacity: i === 0 ? 1 : 0.3, borderRadius: 2 }} />
                 <span className="mono" style={{ fontSize: 9, color: 'var(--mute-2)' }}>
                   {i === 0 ? 'hoy' : dayNames[(todayIdx + i) % 7]}
                 </span>

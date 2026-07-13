@@ -21,7 +21,9 @@ export default function VocabPage() {
 
   const reload = useCallback(async (nextMode?: Mode) => {
     try {
-      const res = await fetch(`/api/vocab?user=${encodeURIComponent(userName)}`);
+      // tz: day-bucketed stats (streak, daily budget, forecast) follow THIS device's
+      // clock — the server runs in UTC and would flip "today" mid-evening.
+      const res = await fetch(`/api/vocab?user=${encodeURIComponent(userName)}&tz=${new Date().getTimezoneOffset()}`);
       const data: VocabHomePayload = await res.json();
       setHome(data);
       setMode(nextMode ?? (data.setupCompleted ? 'home' : 'setup'));

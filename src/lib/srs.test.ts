@@ -291,6 +291,26 @@ describe('countsByState / todaysLog', () => {
     ] as VocabReviewRecord[];
     expect(todaysLog(log, NOW)).toHaveLength(1);
   });
+
+  it('todaysLog with a tz offset keeps an evening straddling midnight UTC in one day', () => {
+    // 23:50Z + 00:20Z = one Buenos Aires evening (tz=180). Without the offset the
+    // UTC flip resets the daily budget mid-session.
+    const log = [
+      { at: '2026-06-10T23:50:00.000Z' },
+      { at: '2026-06-11T00:20:00.000Z' },
+    ] as VocabReviewRecord[];
+    const now = new Date('2026-06-11T00:30:00.000Z'); // 21:30 ART June 10
+    expect(todaysLog(log, now, 180)).toHaveLength(2);
+    expect(todaysLog(log, now, 0)).toHaveLength(1);
+  });
+
+  it('countsByState with a tz offset extends "today" to the user\'s midnight', () => {
+    // Learning card due 02:00Z tomorrow = 23:00 ART today → still today's work.
+    const now = new Date('2026-06-10T23:00:00.000Z'); // 20:00 ART
+    const cards = [card({ state: 'learning', due: '2026-06-11T02:00:00.000Z' })];
+    expect(countsByState(cards, now, 180).learning).toBe(1);
+    expect(countsByState(cards, now, 0).learning).toBe(0);
+  });
 });
 
 describe('createCardsForNote / allowedDirections', () => {

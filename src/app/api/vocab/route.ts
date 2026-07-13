@@ -20,10 +20,20 @@ function activeCards(deck: VocabDeck): VocabCard[] {
   return deck.cards.filter((c) => dirs.includes(c.direction));
 }
 
+// Client timezone offset in minutes (new Date().getTimezoneOffset(): positive west
+// of UTC). Day-bucketed stats follow the user's clock; absent/garbage → server-local.
+function parseTz(url: URL): number | undefined {
+  const raw = url.searchParams.get('tz');
+  if (raw === null) return undefined;
+  const n = Number(raw);
+  return Number.isFinite(n) && Math.abs(n) <= 840 ? Math.round(n) : undefined;
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const user = url.searchParams.get('user');
   const queueScope = url.searchParams.get('queue');
+  const tz = parseTz(url);
   if (!user) return Response.json({ error: 'missing_user' }, { status: 400 });
 
   const store = readStore(user);
@@ -37,16 +47,16 @@ export async function GET(req: Request) {
     source: d.source,
     direction: d.direction,
     noteCount: d.notes.length,
-    counts: countsByState(activeCards(d), now),
+    counts: countsByState(activeCards(d), now, tz),
     audio: deckAudioStatus(d),
   }));
 
   const allActive = store.decks.flatMap(activeCards);
-  const totalsRaw = countsByState(allActive, now);
+  const totalsRaw = countsByState(allActive, now, tz);
   // "Today's review" must advertise what's LEFT of the daily new-card allowance,
   // not the raw inventory — otherwise it reads "NEW 20" forever and every visit
   // looks like a fresh day.
-  const todayLog = todaysLog(log, now);
+  const todayLog = todaysLog(log, now, tz);
   const newToday = Math.min(totalsRaw.newCount, remainingNewBudget(DEFAULT_SRS_CONFIG, todayLog));
   const totals = {
     ...totalsRaw,
@@ -58,8 +68,8 @@ export async function GET(req: Request) {
     setupCompleted: store.setupCompleted,
     decks,
     totals,
-    forecast: dueForecast(allActive, now),
-    retention: computeRetention(log, now),
+    forecast: dueForecast(allActive, now, 7, tz),
+    retention: computeRetention(log, now, tz),
   };
 
   if (queueScope) {
@@ -67,7 +77,7 @@ export async function GET(req: Request) {
     const noteById = new Map<string, { note: VocabNote; deckId: string; deckName: string }>();
     for (const d of scoped) for (const n of d.notes) noteById.set(n.id, { note: n, deckId: d.id, deckName: d.name });
     const cards = scoped.flatMap(activeCards);
-    const queue = buildQueue(cards, now, DEFAULT_SRS_CONFIG, todaysLog(log, now));
+    const queue = buildQueue(cards, now, DEFAULT_SRS_CONFIG, todayLog);
     payload.queue = queue
       .map((card) => {
         const meta = noteById.get(card.noteId);

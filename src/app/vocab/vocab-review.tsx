@@ -45,7 +45,7 @@ export function VocabReview({ userName, scope, onExit, onFinish }: {
   // Load the session queue
   useEffect(() => {
     let alive = true;
-    fetch(`/api/vocab?user=${encodeURIComponent(userName)}&queue=${encodeURIComponent(scope)}`)
+    fetch(`/api/vocab?user=${encodeURIComponent(userName)}&queue=${encodeURIComponent(scope)}&tz=${new Date().getTimezoneOffset()}`)
       .then((r) => r.json())
       .then((d) => {
         if (!alive) return;

@@ -188,14 +188,33 @@ export function isDue(card: VocabCard, now: Date): boolean {
   return new Date(card.due).getTime() <= now.getTime();
 }
 
-function endOfLocalDay(now: Date): Date {
-  const d = new Date(now);
-  d.setHours(23, 59, 59, 999);
-  return d;
+// "Today" must mean the USER's day, not the server's. The server runs in UTC
+// (midnight UTC = early evening in the Americas), so bucketing by server-local
+// date made streaks double-count an evening session, reset the daily new-card
+// budget mid-evening, and shifted the due forecast. Clients pass
+// `new Date().getTimezoneOffset()` (minutes, positive west of UTC); when the
+// offset is omitted we fall back to server-local parts (dev, old tests).
+export function localDayParts(d: Date, tzOffsetMin?: number): [number, number, number] {
+  if (tzOffsetMin === undefined) return [d.getFullYear(), d.getMonth(), d.getDate()];
+  const s = new Date(d.getTime() - tzOffsetMin * 60_000);
+  return [s.getUTCFullYear(), s.getUTCMonth(), s.getUTCDate()];
 }
 
-function isSameLocalDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+function endOfLocalDay(now: Date, tzOffsetMin?: number): Date {
+  if (tzOffsetMin === undefined) {
+    const d = new Date(now);
+    d.setHours(23, 59, 59, 999);
+    return d;
+  }
+  const s = new Date(now.getTime() - tzOffsetMin * 60_000);
+  s.setUTCHours(23, 59, 59, 999);
+  return new Date(s.getTime() + tzOffsetMin * 60_000);
+}
+
+function isSameLocalDay(a: Date, b: Date, tzOffsetMin?: number): boolean {
+  const [ay, am, ad] = localDayParts(a, tzOffsetMin);
+  const [by, bm, bd] = localDayParts(b, tzOffsetMin);
+  return ay === by && am === bm && ad === bd;
 }
 
 // Home/deck badges: new = untouched; learning = learning/relearning due by end of today;
@@ -203,8 +222,9 @@ function isSameLocalDay(a: Date, b: Date): boolean {
 export function countsByState(
   cards: VocabCard[],
   now: Date,
+  tzOffsetMin?: number,
 ): { newCount: number; learning: number; due: number } {
-  const eod = endOfLocalDay(now);
+  const eod = endOfLocalDay(now, tzOffsetMin);
   let newCount = 0, learning = 0, due = 0;
   for (const c of cards) {
     if (c.state === 'new') newCount++;
@@ -216,8 +236,8 @@ export function countsByState(
 }
 
 // Records from today's log — used to enforce the daily caps across sessions.
-export function todaysLog(log: VocabReviewRecord[], now: Date): VocabReviewRecord[] {
-  return log.filter((r) => isSameLocalDay(new Date(r.at), now));
+export function todaysLog(log: VocabReviewRecord[], now: Date, tzOffsetMin?: number): VocabReviewRecord[] {
+  return log.filter((r) => isSameLocalDay(new Date(r.at), now, tzOffsetMin));
 }
 
 // Build a session queue: due reviews (by due asc, capped) → due learning/relearning
